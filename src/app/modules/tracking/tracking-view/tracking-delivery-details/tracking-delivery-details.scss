@@ -1,0 +1,37 @@
+:host {
+    .tracking-delivery-details-container {
+        background: white;
+        margin-bottom: 30px;
+        padding: 20px 0;
+
+        .delivery-details {
+            margin-left: 30px;
+            min-height: 80px;
+
+            .delivery-icon {
+                width: 46px;
+                float: left;
+                margin-right: 15px;
+                margin-bottom: 30px;
+            }
+
+            .deliver-title {
+                font-size: 14px;
+                color: #4d4f57;
+                margin-bottom: 2px;
+            }
+
+            .deliver-direction {
+                color: #3f3e3d;
+                font-size: 13px;
+                font-weight: bold;
+            }
+
+            .deliver-date {
+                color: #3f3e3d;
+                font-size: 13px;
+                font-weight: normal;
+            }
+        }
+    }
+}

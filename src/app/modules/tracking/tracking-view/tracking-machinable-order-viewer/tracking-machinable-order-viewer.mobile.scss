@@ -1,0 +1,42 @@
+@import "~bootstrap/scss/bootstrap-grid";
+
+:host {
+    @include media-breakpoint-down(md) {
+        .machinable-container {
+
+            .mat-expansion-panel-header-title {
+                margin-right: 8px;
+            }
+
+            .mat-expansion-panel-header::ng-deep {
+                padding: 0 12px;
+            }
+
+            .machinable-title {
+                font-size: 14px;
+                white-space: nowrap;
+            }
+
+            .machinable-description {
+                white-space: nowrap;
+
+                .machinable-icon {
+                    background: #eb414a3d;
+                    padding: 3px 6px;
+                    border-radius: 10px;
+                    font-size: 10px;
+                    vertical-align: middle;
+                    line-height: 16px;
+                    display: inline-block;
+                    color: #eb414a;
+                    font-weight: normal;
+
+                    img {
+                        vertical-align: middle;
+                        width: 10px;
+                    }
+                }
+            }
+        }
+    }
+}

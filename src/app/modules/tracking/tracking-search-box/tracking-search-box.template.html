@@ -1,0 +1,41 @@
+<div class="search-box-content">
+    <div class="location-icon">
+        <img src="assets/location_outline_2.svg">
+    </div>
+    <form [formGroup]="searchForm" (submit)="onSubmit()">
+        <h1 class="text-center title">Seguimiento de mi pedido</h1>
+        <div>
+            <h3 class="label">¿Tipo de documento?</h3>
+            <mat-radio-group class="invoice-type" formControlName="invoiceType">
+                <mat-radio-button value="BLV" *ngIf="esBoleta">Boleta</mat-radio-button>
+                <mat-radio-button value="FCV">Factura</mat-radio-button>
+                <mat-radio-button value="NVV">Nota de Venta</mat-radio-button>
+            </mat-radio-group>
+            <p class="error-label mat-error" *ngIf="searchForm.get('invoiceType')?.hasError('not-valid-option')">* debe seleccionar un tipo de documneto</p>
+
+        </div>
+        <div>
+            <mat-form-field appearance="outline" class="full-width mt-3">
+                <mat-label>Nº de Documento</mat-label>
+                <input matInput
+                       placeholder="0000000000"
+                       type="number"
+                       formControlName="invoiceId"/>
+                <mat-hint>
+                    <p class="hint" (click)="openHint()">¿Cómo encuentro el número de documento?</p>
+                </mat-hint>
+                <mat-error *ngIf="searchForm.get('invoiceId')?.hasError('required')">* número de boleta/factura requerido.</mat-error>
+                <mat-error *ngIf="searchForm.get('invoiceId')?.hasError('max')">* máximo 10 caracteres.</mat-error>
+            </mat-form-field>
+        </div>
+        <div class="text-center">
+            <button type="submit"
+                    color="accent"
+                    [disabled]="working"
+                    class="mt-4"
+                    mat-raised-button>
+                Buscar mi pedido
+            </button>
+        </div>
+    </form>
+</div>

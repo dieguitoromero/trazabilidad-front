@@ -1,0 +1,51 @@
+@import '~@angular/material/theming';
+
+$imperial-blue: (
+    50: #e2eff5,
+    100: #b8d7e7,
+    200: #8dbed7,
+    300: #67a5c7,
+    400: #4b93be,
+    500: #3183b5,
+    600: #2677aa,
+    700: #196799,
+    800: #0f5788,
+    900: #003c69,
+    contrast: (
+        50: $dark-primary-text,
+        100: $dark-primary-text,
+        200: $dark-primary-text,
+        300: $dark-primary-text,
+        400: $dark-primary-text,
+        500: $light-primary-text,
+        600: $light-primary-text,
+        700: $light-primary-text,
+        800: $light-primary-text,
+        900: $light-primary-text,
+    )
+);
+
+$imperial-red: (
+    50: #ffeaed,
+    100: #fecad0,
+    200: #ed9596,
+    300: #e26c6e,
+    400: #eb494a,
+    500: #ef352f,
+    600: #e02a2e,
+    700: #ce1f29,
+    800: #c11621,
+    900: #B30015,
+    contrast: (
+        50: $dark-primary-text,
+        100: $dark-primary-text,
+        200: $dark-primary-text,
+        300: $dark-primary-text,
+        400: $dark-primary-text,
+        500: $light-primary-text,
+        600: $light-primary-text,
+        700: $light-primary-text,
+        800: $light-primary-text,
+        900: $light-primary-text,
+    )
+);

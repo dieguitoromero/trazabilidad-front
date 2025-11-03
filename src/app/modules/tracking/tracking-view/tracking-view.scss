@@ -1,0 +1,12 @@
+:host {
+    .box-container {
+        width: 100%;
+        margin: 0 auto;
+        box-shadow: 1px 3px 11px #CCC;
+        padding: 0 24px;
+
+        &.no-padding {
+            padding: 0;
+        }
+    }
+}

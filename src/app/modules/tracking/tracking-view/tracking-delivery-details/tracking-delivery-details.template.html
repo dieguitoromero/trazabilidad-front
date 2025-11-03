@@ -1,0 +1,10 @@
+<div class="tracking-delivery-details-container" *ngIf="pickup">
+    <div class="delivery-details">
+        <h3>Resumen de tu compra</h3>
+
+        <img src="{{pickup?.icon}}" class="delivery-icon" />
+        <p class="deliver-title">{{pickup?.title}}</p>
+        <p class="deliver-direction">{{pickup?.text}}</p>
+        <p class="deliver-date">{{pickup?.dateTitle}} {{pickup?.date | date: 'shortDate'}}</p>
+    </div>
+</div>

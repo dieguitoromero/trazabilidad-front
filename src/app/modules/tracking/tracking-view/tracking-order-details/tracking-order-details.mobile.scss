@@ -1,0 +1,24 @@
+@import "~bootstrap/scss/bootstrap-grid";
+
+:host {
+    @include media-breakpoint-down(md) {
+        .order-details-container {
+
+            &.box {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+
+            .order-detail {
+                min-height: 78px !important;
+
+                .product-quantity {
+                    max-width: 70px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+            }
+        }
+    }
+}

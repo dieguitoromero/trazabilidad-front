@@ -1,0 +1,64 @@
+:host {
+    .search-box-content {
+        padding: 10px 40px;
+        border-radius: 5px;
+        -webkit-box-shadow: 1px 3px 11px #CCC;
+        -moz-box-shadow: 1px 3px 11px #CCC;
+        box-shadow: 1px 3px 11px #CCC;
+        background-color: white;
+        position: relative;
+        min-height: 310px;
+        width: 360px;
+        margin: 0 auto;
+
+        .location-icon {
+            position: absolute;
+            top: -35px;
+            left: 41%;
+            background: #003c69;
+            padding: 5px;
+            border-radius: 30px;
+            width: 60px;
+            height: 60px;
+            text-align: center;
+            vertical-align: middle;
+            line-height: 49px;
+
+
+            img {
+                vertical-align: middle;
+            }
+        }
+        
+        .title {
+            margin-top: 20px;
+            color: #616060;
+        }
+
+        .label {
+            margin-bottom: 0px;
+            color: #616060;
+        }
+
+        .invoice-type ::ng-deep{
+            width: 105%;
+            display: block;
+            padding: 9px;
+            background: #f5f5f5;
+            border-radius: 3px;
+            margin: 0 -3%;
+
+            .mat-radio-label-content {
+                margin-right: 7px;
+                font-size: 13px;
+            }
+        }
+        
+        .hint {
+            text-decoration: underline;
+            color: #12507f;
+            margin-left: -9px;
+             cursor: pointer;
+        }
+    }
+}

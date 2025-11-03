@@ -1,0 +1,26 @@
+<div class="order-details-container" [ngClass]="{'box': isBox}">
+    <h3>Resumen de tu pedido </h3>
+    <div *ngIf="status.length === 0">
+        <div *ngFor="let orderDetail of orderDetails" class="order-detail">
+            <img class="product-image" src="{{orderDetail.image}}"/>
+            <p class="product-name">{{orderDetail.description}}</p>
+            <p class="product-quantity">{{orderDetail.quantity}} {{ orderDetail.quantity <= 1 ? "UNIDAD" : "UNIDADES"
+                }}</p>
+            <p class="product-sku">SKU {{orderDetail.code}}</p>
+        </div>
+    </div>
+    <div *ngIf="status.length > 0 ">
+        <div *ngFor="let item of status">
+           <p class="order-status">{{item.status}}</p>
+
+            <div *ngFor="let orderDetail of item.products" class="order-detail mr-3 ml-3">
+                <img class="product-image" src="{{orderDetail.image}}"/>
+                <p class="product-name">{{orderDetail.description}}</p>
+                <p class="product-quantity">{{orderDetail.quantity}} {{ orderDetail.quantity <= 1 ? "UNIDAD" : "UNIDADES"
+                    }}</p>
+                <p class="product-sku">SKU {{orderDetail.code}}</p>
+            </div>
+        </div>
+    </div>
+
+</div>

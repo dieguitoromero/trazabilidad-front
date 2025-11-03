@@ -1,0 +1,15 @@
+@import "~bootstrap/scss/bootstrap-grid";
+
+:host {
+    @include media-breakpoint-down(md) {
+
+        .hint-close-button {
+            right: 7px;
+            top: 3px;
+        }
+
+        .hint-img {
+            max-width: 100%;
+        }
+    }
+}

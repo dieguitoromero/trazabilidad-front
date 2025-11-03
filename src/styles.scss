@@ -1,0 +1,57 @@
+/* You can add global styles to this file, and also import other style files */
+@import "~bootstrap/scss/bootstrap-grid";
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.common-title {
+    margin-top: 20px;
+    color: #616060;
+}
+
+.common-subtitle {
+    margin-bottom: 0px;
+    color: #616060;
+}
+
+.full-width {
+    width: 100%;
+}
+
+
+.hint-modal-container {
+    .mat-dialog-container {
+        padding: 50px;
+        position: relative;
+    }
+}
+
+.error-label {
+    font-size: 75%;
+    padding-left: 8px;
+}
+
+
+@include media-breakpoint-down(md) {
+    .container {
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .hint-modal-container {
+        .mat-dialog-container {
+            padding: 25px;
+            position: relative;
+        }
+    }
+}

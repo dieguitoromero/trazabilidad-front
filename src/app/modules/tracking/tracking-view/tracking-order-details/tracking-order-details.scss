@@ -1,0 +1,55 @@
+:host {
+    .order-details-container {
+        background: white;
+
+        &.box {
+            margin-bottom: 30px;
+            padding: 20px 0;
+            margin-left: 30px;
+            margin-right: 30px;
+        }
+
+        .order-status {
+            font-size: 18px;
+            border-bottom: 1px solid #d01e1e;
+            padding-bottom: 10px;
+        }
+
+        .order-detail {
+            clear: both;
+            min-height: 61px;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 19px;
+
+            .product-image {
+                width: 46px;
+                float: left;
+                margin-right: 15px;
+                border: 1px solid #cccccc6b;
+                height: 46px;
+            }
+
+            .product-name {
+                font-size: 14px;
+                color: #4d4f57;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .product-quantity {
+                color: #3f3e3d;
+                font-size: 13px;
+                font-weight: bold;
+                float: left;
+            }
+
+            .product-sku {
+                color: #3f3e3d;
+                font-size: 13px;
+                font-weight: normal;
+                float: right;
+            }
+        }
+    }
+}

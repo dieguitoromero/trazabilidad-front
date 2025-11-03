@@ -1,0 +1,16 @@
+@import "~bootstrap/scss/bootstrap-grid";
+
+:host {
+    @include media-breakpoint-down(md) {
+        .search-box-content {
+            width: 87%;
+        }
+
+        .invoice-type {
+            .mat-radio-button {
+                display: block;
+                margin-bottom: 5px;
+            }
+        }
+    }
+}

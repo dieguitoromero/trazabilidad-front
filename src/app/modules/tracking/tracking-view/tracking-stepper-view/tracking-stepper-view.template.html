@@ -1,0 +1,35 @@
+<div class="d-flex stepper-view-container mobile-vertical flex-column "
+     [ngClass]="{'justify-content-md-center flex-md-row': !vertical, 'vertical': vertical}">
+    <div class="fadingEffect" *ngIf="steps && steps.length > 0"></div>
+    <ng-container *ngFor="let step of steps; let i = index;">
+        <div class="step-container d-flex" [ngClass]="{'d-md-block': !vertical}">
+            <div class="step-title order-1"
+                 [ngClass]="{'order-2': vertical, 'beginning': i <= 0, 'order-md-0': !vertical}"
+                 [ngStyle]="{ 'color': step.title.color }">
+                <p class="title"
+                   [matBadge]="numberOfItemsOnStatus(step.title, i)"
+                   matBadgeOverlap="false"
+                   matBadgeColor="warn"
+                   [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0">{{step.title.text}}</p>
+                <p class="sub-title" [ngClass]="{'d-block d-md-none': !vertical}">{{step.description}}</p>
+                <span class="date" [ngClass]="{'d-block d-md-none': !vertical}">{{step.date | date: 'shortDate'}}</span>
+            </div>
+
+            <div class="step d-block order-0"
+                 [ngClass]="{'order-1': vertical, 'beginning': i <= 0, 'd-md-flex order-md-1': !vertical,'in-progress': isStepInProgress(step, i), 'completed': isStepCompleted(step), 'last': isLastStepCompleted(i)}">
+                <div class="step-separator from align-self-center flex-grow-1"
+                     *ngIf="i > 0 || !vertical"
+                     [ngClass]="{ 'beginning': i <= 0, 'd-none d-md-block': (i == 0 && !vertical)}"></div>
+                <img class="icon" src="{{step.icon}}"/>
+                <div class="step-separator to align-self-center flex-grow-1"
+                     *ngIf="i < (steps ? steps.length - 1 : 0) || !vertical"
+                     [ngClass]="{ 'end': i >= (steps ? steps.length - 1 : 0), 'd-none d-md-block': !vertical && i >= (steps ? steps.length - 1 : 0)}"></div>
+            </div>
+
+            <div class="step-details d-none d-md-block" *ngIf="!vertical">
+                <p>{{step.description}}</p>
+                <span>{{step.date | date: 'shortDate'}}</span>
+            </div>
+        </div>
+    </ng-container>
+</div>

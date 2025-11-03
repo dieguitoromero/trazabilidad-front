@@ -1,0 +1,16 @@
+@import "~bootstrap/scss/bootstrap-grid";
+
+:host {
+    @include media-breakpoint-down(md) {
+        .box-container {
+            width: 87%;
+            margin: 0 auto;
+            box-shadow: 1px 3px 11px #CCC;
+            padding: 0 24px;
+
+            &.no-padding {
+                padding: 0;
+            }
+        }
+    }
+}

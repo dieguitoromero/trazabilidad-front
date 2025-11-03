@@ -1,0 +1,52 @@
+<div class="machinable-container">
+    <mat-accordion>
+        <mat-expansion-panel *ngFor="let order of machinableOrders; let i = index"
+                             [expanded]="step === i"
+                             (opened)="setStep(i)">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    <div class="machinable-description d-flex align-self-center">
+                        <div class="machinable-icon">
+                            <img src="{{icon}}"/> <span class="d-none d-md-inline">Dimensionado</span>
+                        </div>
+                    </div>
+                </mat-panel-title>
+                <mat-panel-description class="d-flex justify-content-between mr-1">
+
+                    <span class="machinable-title align-self-center">{{ order.title.text }}</span>
+                    <small class="align-self-center ml-3" [ngStyle]="{'color': order.color}">{{ order.description }}</small>
+
+                    <button class="p-0 view-more" mat-flat-button>
+                        Ver
+                    </button>
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <div class="row no-gutters">
+                <div class="col-12 col-md-5">
+                    <app-tracking-stepper-view [vertical]="true" [steps]="order?.steps"></app-tracking-stepper-view>
+                </div>
+                <div class="col-12 col-md-6">
+                    <app-tracking-order-details [orderDetails]="order?.orderDetails"></app-tracking-order-details>
+                </div>
+            </div>
+
+            <mat-action-row>
+                <button mat-button
+                        color="primary"
+                        [disabled]="!isPrevBtnEnable()"
+                        (click)="prevStep()">Anterior
+                </button>
+
+                <button mat-button
+                        color="secondary"
+                        [disabled]="!isNextBtnEnable()"
+                        (click)="nextStep()">Siguiente
+                </button>
+
+            </mat-action-row>
+        </mat-expansion-panel>
+    </mat-accordion>
+</div>
+
+
