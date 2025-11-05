@@ -75,6 +75,14 @@
                     "configurations": {
                         "production": {
                             "browserTarget": "imperial-trazabilidad:build:production"
+                        },
+                        "desa": {
+                            "browserTarget": "imperial-trazabilidad:build",
+                            "proxyConfig": "proxy.desa.json"
+                        },
+                        "qa": {
+                            "browserTarget": "imperial-trazabilidad:build",
+                            "proxyConfig": "proxy.qa.json"
                         }
                     }
                 },

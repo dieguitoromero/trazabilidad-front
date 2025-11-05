@@ -1,0 +1,8 @@
+{
+  "/traceability": {
+    "target": "https://soa-qa-iis.imperial.cl",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "info"
+  }
+}

@@ -4,7 +4,8 @@
 
 export const environment = {
     production: false,
-    baseApiUrl: 'https://soa-desa-iis.imperial.cl'
+    // Use relative path in dev; proxy config will point to DESA or QA
+    baseApiUrl: ''
 };
 
 /*
