@@ -24,37 +24,35 @@ import {TrackingDeliveryDetailsComponent} from './tracking-view/tracking-deliver
 import {MatBadgeModule} from '@angular/material/badge';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        TrackingRoutingModule,
-        ReactiveFormsModule,
+  imports: [
+    CommonModule,
+    TrackingRoutingModule,
+    ReactiveFormsModule,
 
-        MatInputModule,
-        MatFormFieldModule,
-        MatRadioModule,
-        MatButtonModule,
-        MatDialogModule,
-        MatIconModule,
-        MatExpansionModule,
-        MatBadgeModule
-    ],
-    declarations: [
-        TrackingComponent,
-        TrackingSearchBoxComponent,
-        TrackingHintModalComponent,
-        TrackingNotFoundComponent,
-        TrackingViewComponent,
-        TrackingStepperViewComponent,
-        TrackingMachinableProcessComponent,
-        TrackingMachinableOrderViewerComponent,
-        TrackingOrderDetailsComponent,
-        TrackingDeliveryDetailsComponent
-    ],
-    providers: [
-        TrackingService,
-        TrackingRepository
-    ]
+    MatInputModule,
+    MatFormFieldModule,
+    MatRadioModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    MatExpansionModule,
+    MatBadgeModule,
+  ],
+  declarations: [
+    TrackingComponent,
+    TrackingSearchBoxComponent,
+    TrackingHintModalComponent,
+    TrackingNotFoundComponent,
+    TrackingViewComponent,
+    TrackingStepperViewComponent,
+    TrackingMachinableProcessComponent,
+    TrackingMachinableOrderViewerComponent,
+    TrackingOrderDetailsComponent,
+    TrackingDeliveryDetailsComponent,
+  ],
+  providers: [
+    TrackingService,
+    TrackingRepository,
+  ],
 })
-export class TrackingModule {
-
-}
+export class TrackingModule {}

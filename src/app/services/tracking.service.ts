@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
+import {from, Observable} from 'rxjs';
 import {InvoiceModel} from '../core/models/invoice.model';
 import {TrackingRepository} from '../repositories/tracking.repository';
 
@@ -18,6 +18,10 @@ export class TrackingService {
     public getInvoiceTracking(invoiceId: number, invoiceType: string): Observable<InvoiceModel | undefined> {
         return this.trackingRepository.getTracking(this.padInvoiceNumber(invoiceId, 10), invoiceType);
     }
+    public getInvoiceTrackingV2(invoiceId: number, invoiceType: string): Observable<InvoiceModel | undefined> {
+        return this.trackingRepository.getTrackingV2(this.padInvoiceNumber(invoiceId, 10), invoiceType);
+    }
+
 
     private padInvoiceNumber(invoiceId: number, lenght: number): string {
         let num = invoiceId.toString();
