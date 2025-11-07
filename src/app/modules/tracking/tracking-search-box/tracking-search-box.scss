@@ -60,5 +60,17 @@
             margin-left: -9px;
              cursor: pointer;
         }
+
+        // Remove up/down arrows from number input (Chrome/Safari/Edge/Firefox)
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield; // Firefox
+            appearance: textfield;      // Modern browsers
+        }
     }
 }

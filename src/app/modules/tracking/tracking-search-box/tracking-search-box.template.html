@@ -17,10 +17,12 @@
         <div>
             <mat-form-field appearance="outline" class="full-width mt-3">
                 <mat-label>Nº de Documento</mat-label>
-                <input matInput
-                       placeholder="0000000000"
-                       type="number"
-                       formControlName="invoiceId"/>
+          <input matInput
+              placeholder="0000000000"
+              type="number"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              formControlName="invoiceId"/>
                 <mat-hint>
                     <p class="hint" (click)="openHint()">¿Cómo encuentro el número de documento?</p>
                 </mat-hint>
