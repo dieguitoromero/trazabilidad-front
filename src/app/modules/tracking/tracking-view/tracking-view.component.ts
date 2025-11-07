@@ -87,4 +87,17 @@ export class TrackingViewComponent {
         this.hasError = true;
         this.working = false;
     }
+
+    public showPickupDate(): boolean {
+        if (!this.invoice || !this.invoice.trackingSteps || this.invoice.trackingSteps.length === 0) {
+            return false;
+        }
+        const steps = this.invoice.trackingSteps;
+        const last = steps[steps.length - 1];
+        // Consider delivered if last step is not pending and its title mentions Entregado
+        const lastTitle = (last.title && last.title.text) ? last.title.text.toLowerCase() : '';
+        const isDeliveredTitle = lastTitle.indexOf('entregado') >= 0;
+        const isNotPending = last.icon.indexOf('pending') < 0;
+        return isDeliveredTitle && isNotPending;
+    }
 }

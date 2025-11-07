@@ -1,7 +1,17 @@
-<app-tracking-search-box (search)="onSearch($event)" [searchModel]="searchModel"></app-tracking-search-box>
+<div class="search-wrapper">
+    <app-tracking-search-box (search)="onSearch($event)" [searchModel]="searchModel"></app-tracking-search-box>
+</div>
 
 <div class="box-container" *ngIf="invoice">
-    <app-tracking-stepper-view [steps]="invoice?.trackingSteps" [orderDetails]="invoice?.orderProducts"></app-tracking-stepper-view>
+    <div style="padding: 16px 0 8px; display: flex; flex-direction: column; align-items: flex-start;">
+        <div class="tipografia1" >
+            Nro {{ invoice.documentLabel }}: {{ invoice.printedNumber }}
+        </div>
+        <div *ngIf="showPickupDate()" class="tipografia2">
+            Retirado: {{ invoice.pickup.date | date:'dd/MM/yyyy' }}
+        </div>
+    </div>
+    <app-tracking-stepper-view [steps]="invoice.trackingSteps" [orderDetails]="invoice.orderProducts"></app-tracking-stepper-view>
 </div>
 
 <div class="box-container">
