@@ -3,21 +3,25 @@
 </div>
 
 <div class="box-container" *ngIf="invoice">
-    <div style="padding: 16px 0 8px; display: flex; flex-direction: column; align-items: flex-start;">
-        <div class="tipografia1" >
-            Nro {{ invoice.documentLabel }}: {{ invoice.printedNumber }}
+    <div class="doc-header">
+        <div class="doc-title">
+            {{ invoice.documentLabel }} N° {{ invoice.printedNumber }}
         </div>
-        <div *ngIf="showPickupDate()" class="tipografia2">
-            Retirado: {{ invoice.pickup.date | date:'dd/MM/yyyy' }}
+        <div class="doc-subtitle" *ngIf="invoice.issueDate">
+            Fecha de compra {{ invoice.issueDate | date:"d 'de' MMMM 'del' y" }}
+        </div>
+        <div class="doc-location-row" *ngIf="invoice.pickup">
+            <div class="doc-location-icon">
+                <img [src]="invoice.pickup.icon" alt="ubicación" />
+            </div>
+            <div class="doc-location-text">
+                <span class="doc-location-title">{{ invoice.pickup.title }}:</span>
+                <span class="doc-location-desc"> {{ invoice.pickup.text }}</span>
+            </div>
         </div>
     </div>
     <app-tracking-stepper-view [steps]="invoice.trackingSteps" [orderDetails]="invoice.orderProducts"></app-tracking-stepper-view>
 </div>
-
-<div class="box-container">
-    <app-tracking-delivery-details [pickup]="invoice?.pickup"></app-tracking-delivery-details>
-</div>
-
 <div class="box-container" *ngIf="invoice?.hasProductDetails">
     <app-tracking-order-details [orderDetails]="invoice?.orderProducts" [isBox]="true"></app-tracking-order-details>
 </div>
