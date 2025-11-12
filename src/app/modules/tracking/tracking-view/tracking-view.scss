@@ -1,4 +1,33 @@
 :host {
+    .tracking-back-row {
+        display: flex;
+        margin-top: 16px;
+        margin-bottom: 8px;
+    }
+    .back-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #f1f3f5;
+        color: #333;
+        border: 1px solid #d0d5dd;
+        border-radius: 24px;
+        padding: 6px 14px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .15s ease, box-shadow .15s ease;
+    }
+    .back-badge:hover {
+        background: #e6eaed;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .back-badge .arrow {
+        font-size: 20px;
+        line-height: 1;
+        font-weight: 600;
+    }
+    .back-badge .text { line-height: 1; }
     .doc-header {
         padding: 16px 0 8px;
         display: flex;
@@ -51,5 +80,10 @@
         &.no-padding {
             padding: 0;
         }
+    }
+
+    /* Más separación del top para la primera card (la que tiene el pin) */
+    .box-container:first-of-type {
+        margin-top: 32px;
     }
 }

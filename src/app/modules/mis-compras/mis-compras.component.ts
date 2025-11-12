@@ -25,6 +25,7 @@ export class MisComprasComponent implements OnInit {
   searchTerm = '';
   showAll = false;
   searchPressed = false;
+  private asociadasOpen = new Set<string>();
 
   constructor(private router: Router) {}
 
@@ -114,5 +115,45 @@ export class MisComprasComponent implements OnInit {
     if (t.includes('nota') && t.includes('venta')) return 'NVV';
     // Por defecto, considerar Boleta
     return 'BLV';
+  }
+
+  // Ver detalle de factura asociada (para Nota de Venta)
+  verDetalleFactura(numeroFactura: string): void {
+    const folio = this.tryParseFolio(numeroFactura);
+    this.router.navigate(['/tracking'], {
+      queryParams: {
+        folioDocumento: folio,
+        tipoDocumento: 'FCV'
+      },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  private tryParseFolio(n: string): number | string {
+    // Si viene con prefijos tipo "F-2001" u otros, extraer dígitos
+    const digits = (n || '').match(/\d+/g)?.join('') || '';
+    const num = Number(digits);
+    return isNaN(num) ? n : num;
+  }
+
+  // Estado actual (último paso alcanzado) para vista móvil
+  estadoActual(c: Compra): string {
+    const idx = this.lastReachedIndex(c);
+    return idx >= 0 ? this.pasos[idx] : this.pasos[0];
+  }
+
+  // Toggle de facturas asociadas (por documento)
+  toggleAsociadas(c: Compra): void {
+    const key = `${c.tipoDocumento}-${c.numeroDocumento}`;
+    if (this.asociadasOpen.has(key)) {
+      this.asociadasOpen.delete(key);
+    } else {
+      this.asociadasOpen.add(key);
+    }
+  }
+
+  isAsociadasOpen(c: Compra): boolean {
+    const key = `${c.tipoDocumento}-${c.numeroDocumento}`;
+    return this.asociadasOpen.has(key);
   }
 }

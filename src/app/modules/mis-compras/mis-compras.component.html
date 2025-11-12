@@ -39,19 +39,42 @@
       </div>
 
       <div class="entrega-row">
-        <span class="icon">📦</span>
+        <span class="icon">
+          <img [src]="c.tipoEntrega === 'Despacho a domicilio' ? 'assets/domicilio-icon.svg' : 'assets/tienda-icon.svg'" alt="Entrega" />
+        </span>
         <span class="entrega-text">
           {{ c.tipoEntrega }}{{ c.direccionEntrega ? ': ' + c.direccionEntrega : '' }}
         </span>
       </div>
 
-      <div class="stepper">
+      <div class="stepper hide-on-mobile">
         <div class="step"
              *ngFor="let p of pasos; let i = index"
              [class.completed]="i <= lastReachedIndex(c)"
              [class.current]="i === lastReachedIndex(c)">
           <div class="dot"></div>
           <div class="label">{{ p }}</div>
+        </div>
+      </div>
+
+      <!-- Mobile: estado actual en una línea -->
+      <div class="estado-movil show-on-mobile">
+        <span class="estado-icon"><img src="assets/estado-icon.svg" alt="Estado" /></span>
+        <span class="estado-text">Estado: {{ estadoActual(c) }}</span>
+      </div>
+
+      <!-- Facturas asociadas (para Nota de Venta) -->
+      <div class="asociadas" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
+        <button type="button" class="asociadas-toggle" (click)="toggleAsociadas(c)">
+          <span class="link">Facturas asociadas ({{ c.facturasAsociadas.length }})</span>
+          <span class="chev" [class.open]="isAsociadasOpen(c)">▾</span>
+        </button>
+        <div class="asociadas-list" *ngIf="isAsociadasOpen(c)">
+          <div class="asociada-item" *ngFor="let f of c.facturasAsociadas">
+            <span class="dot-bullet">•</span>
+            <span class="asociada-text">Factura N° {{ f.numeroFactura }} - {{ f.fechaEmision | date:'dd-MM-y' }}</span>
+            <button class="detail-btn small" (click)="verDetalleFactura(f.numeroFactura)">Ver detalle</button>
+          </div>
         </div>
       </div>
     </div>

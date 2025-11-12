@@ -15,6 +15,8 @@ export class TrackingViewComponent {
     public working = false;
     public hasError = false;
     public searchModel: SearchModel | undefined;
+    public hideSearch = false;
+    private autoSearched = false;
 
     @ViewChild('trackingStepperView')
     public trackingStepperView: ElementRef | undefined;
@@ -25,16 +27,24 @@ export class TrackingViewComponent {
 
         this.activeRoute.params.subscribe((params) => {
             if (params.invoiceId || params.invoiceType) {
-                this.searchModel = new SearchModel(params.invoiceId, params.invoiceType);
+                this.hideSearch = true;
+                const id = Number(params.invoiceId);
+                const type = params.invoiceType;
+                this.searchModel = new SearchModel(id, type);
+                this.triggerAutoSearch();
+                this.applyHideHeroBg();
             }
-
         });
 
         this.activeRoute.queryParams.subscribe((params) => {
             if (params.folioDocumento || params.tipoDocumento) {
-                this.searchModel = new SearchModel(params.folioDocumento, params.tipoDocumento);
+                this.hideSearch = true;
+                const id = Number(params.folioDocumento);
+                const type = params.tipoDocumento;
+                this.searchModel = new SearchModel(id, type);
+                this.triggerAutoSearch();
+                this.applyHideHeroBg();
             }
-
         });
 
     }
@@ -42,8 +52,8 @@ export class TrackingViewComponent {
 
     public onSearch(search: SearchModel): void {
 
-        // Llama al servicio real v1 con padding (10 dígitos) y tipo de documento (BLV/FCV/NVV)
-        this.trackingService.getInvoiceTracking(search.invoiceId, search.invoiceType)
+        // Llama al servicio V2 (token + uuid) con padding (10 dígitos) y tipo de documento (BLV/FCV/NVV)
+        this.trackingService.getInvoiceTrackingV2(search.invoiceId, search.invoiceType)
             .pipe(take(1))
             .subscribe({next: this.onSuccess.bind(this), error: this.onError.bind(this)});
 
@@ -82,11 +92,23 @@ export class TrackingViewComponent {
 
         this.invoice = invoice;
         this.working = false;
+        if (invoice) {
+            this.hideSearch = true;
+            this.applyHideHeroBg();
+        }
     }
 
     private onError(err: InvoiceModel): void {
         this.hasError = true;
         this.working = false;
+    }
+
+    private triggerAutoSearch(): void {
+        if (!this.autoSearched && this.searchModel && this.searchModel.invoiceId && this.searchModel.invoiceType) {
+            this.autoSearched = true;
+            // Ejecutar en el siguiente tick para asegurar que Angular procese bindings
+            setTimeout(() => this.onSearch(this.searchModel as SearchModel), 0);
+        }
     }
 
     public showPickupDate(): boolean {
@@ -100,5 +122,21 @@ export class TrackingViewComponent {
         const isDeliveredTitle = lastTitle.indexOf('entregado') >= 0;
         const isNotPending = last.icon.indexOf('pending') < 0;
         return isDeliveredTitle && isNotPending;
+    }
+
+    public volver(): void {
+        this.router.navigate(['/mis-compras']);
+    }
+
+    ngOnDestroy(): void {
+        document.body.classList.remove('hide-hero-bg');
+    }
+
+    private applyHideHeroBg(): void {
+        if (this.hideSearch) {
+            document.body.classList.add('hide-hero-bg');
+        } else {
+            document.body.classList.remove('hide-hero-bg');
+        }
     }
 }

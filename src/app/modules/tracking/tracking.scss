@@ -1,6 +1,16 @@
 :host {
     .tracking-container {
-        background: url('~/src/assets/background.svg') 50% 40px;
+        /* Fondo blanco para toda la vista de tracking */
+        background-color: #ffffff;
+        min-height: 100vh;
+        /* Si en el futuro se vuelve a habilitar una imagen de fondo, que no opaque el color */
         background-repeat: no-repeat;
+        background-position: 50% 40px;
     }
+}
+
+/* Ocultar background de camión/tienda cuando el hero está escondido */
+body.hide-hero-bg .tracking-container {
+    /* Solo ocultar la imagen de fondo si existiera, manteniendo el color blanco */
+    background-image: none !important;
 }
