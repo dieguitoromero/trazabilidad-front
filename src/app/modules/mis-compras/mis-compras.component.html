@@ -1,0 +1,63 @@
+<div class="mis-compras-wrapper">
+  <h2 class="title">Mis Compras</h2>
+
+  <div class="search-row">
+    <input
+      type="text"
+      placeholder="Buscar por N° de pedido"
+      [(ngModel)]="searchTerm"
+      (keyup.enter)="buscar()"
+      (input)="onInputChange()"
+    />
+    <button class="search-btn" aria-label="Buscar" (click)="buscar()">
+      🔍
+    </button>
+  </div>
+
+  <div class="empty" *ngIf="hasNoResults">
+    <div class="info-icon">i</div>
+    <div class="text">No se encontró documento</div>
+  </div>
+
+  <div class="cards" *ngIf="!hasNoResults">
+    <div class="card" *ngFor="let c of filteredCompras">
+      <div class="card-header">
+        <div class="doc-title">
+          {{ c.tipoDocumento }} N° {{ c.numeroDocumento }}
+        </div>
+  <button class="detail-btn" (click)="verDetalle(c)">Ver detalle</button>
+      </div>
+
+      <div class="meta">
+        <div class="fecha">Fecha de compra: {{ c.fechaCompra | date:'d MMMM y' : '' : 'es-CL' }}</div>
+        <div class="dimensionado-row" *ngIf="c.esDimensionado">
+          <span class="badge dimensionado">
+            <img src="assets/dimensionado-icon.svg" alt="Dimensionado" />
+            Dimensionado
+          </span>
+        </div>
+      </div>
+
+      <div class="entrega-row">
+        <span class="icon">📦</span>
+        <span class="entrega-text">
+          {{ c.tipoEntrega }}{{ c.direccionEntrega ? ': ' + c.direccionEntrega : '' }}
+        </span>
+      </div>
+
+      <div class="stepper">
+        <div class="step"
+             *ngFor="let p of pasos; let i = index"
+             [class.completed]="i <= lastReachedIndex(c)"
+             [class.current]="i === lastReachedIndex(c)">
+          <div class="dot"></div>
+          <div class="label">{{ p }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="more-row" *ngIf="!hasNoResults && !showAll && totalFilteredCount > 3">
+    <button class="more-btn" (click)="verMas()">Más compras</button>
+  </div>
+</div>

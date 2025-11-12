@@ -17,16 +17,18 @@ import { LoadingService } from "./services/loading.service";
 import { AuthRepository } from "./repositories/auth.repository";
 import { AuthService } from "./services/auth.service";
 import { AuthInterceptor } from "./core/interceptors/auth.interceptor";
+import { MisComprasComponent } from './modules/mis-compras/mis-compras.component';
+import { FormsModule } from '@angular/forms';
 
 registerLocaleData(localeCL);
 
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [AppComponent, MisComprasComponent],
   imports: [
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
-
+    FormsModule,
     HttpClientModule,
   ],
   providers: [

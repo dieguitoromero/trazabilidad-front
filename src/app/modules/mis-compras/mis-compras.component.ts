@@ -1,0 +1,118 @@
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { ADMIN_MOCK_DATA } from './mock-admin-data';
+
+type Trazabilidad = { glosa: string; fechaRegistro: string; estado: 'activo' | 'finalizado' };
+type Compra = {
+  tipoDocumento: string;
+  numeroDocumento: string;
+  fechaCompra: string;
+  tipoEntrega: string;
+  direccionEntrega: string;
+  trazabilidad: Trazabilidad[];
+  esDimensionado: boolean;
+  total: number;
+  facturasAsociadas?: Array<{ numeroFactura: string; fechaEmision: string; idFactura: number }>;
+};
+
+@Component({
+  selector: 'app-mis-compras',
+  templateUrl: './mis-compras.component.html',
+  styleUrls: ['./mis-compras.component.scss']
+})
+export class MisComprasComponent implements OnInit {
+  compras: Compra[] = [];
+  searchTerm = '';
+  showAll = false;
+  searchPressed = false;
+
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    // Emula la respuesta del servicio para el usuario admin
+    console.log('Mock compras admin:', ADMIN_MOCK_DATA);
+    this.compras = ADMIN_MOCK_DATA.compras as Compra[];
+  }
+
+  private fullFiltered(): Compra[] {
+    const t = (this.searchTerm || '').trim().toLowerCase();
+    return !t ? this.compras : this.compras.filter(c => c.numeroDocumento.toLowerCase().includes(t));
+  }
+
+  get filteredCompras(): Compra[] {
+    const list = this.fullFiltered();
+    return this.showAll ? list : list.slice(0, 3);
+  }
+
+  get totalFilteredCount(): number {
+    return this.fullFiltered().length;
+  }
+
+  get hasNoResults(): boolean {
+    const typed = (this.searchTerm || '').trim().length > 0;
+    return (this.searchPressed || typed) && this.totalFilteredCount === 0;
+  }
+
+  // Orden de pasos a mostrar en el stepper
+  readonly pasos = [
+    'Pedido ingresado',
+    'Pedido pagado',
+    'Preparación de pedido',
+    'Disponible para retiro',
+    'Pedido entregado'
+  ];
+
+  pasoActivo(compra: Compra, paso: string): boolean {
+    const item = compra.trazabilidad.find(p => p.glosa.toLowerCase() === paso.toLowerCase());
+    return !!item && (item.estado === 'activo' || item.estado === 'finalizado');
+  }
+
+  lastReachedIndex(compra: Compra): number {
+    // Busca el índice más alto cuyo glosa exista en la trazabilidad
+    let last = -1;
+    const reached = new Set(compra.trazabilidad.map(t => t.glosa.toLowerCase()));
+    this.pasos.forEach((p, idx) => {
+      if (reached.has(p.toLowerCase())) last = idx;
+    });
+    return last;
+  }
+
+  verDetalle(c: Compra): void {
+    // Mapear tipoDocumento a los códigos esperados por el buscador (BLV, FCV, NVV)
+    const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
+    const folio = Number(c.numeroDocumento);
+    // Navega al módulo de tracking con query params para que se auto-ejecute la búsqueda
+    this.router.navigate(['/tracking'], {
+      queryParams: {
+        folioDocumento: isNaN(folio) ? c.numeroDocumento : folio,
+        tipoDocumento: tipo
+      },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  verMas(): void {
+    this.showAll = true;
+  }
+
+  buscar(): void {
+    this.searchPressed = true;
+    // Al buscar, volvemos a contraer la lista a 3 por claridad
+    this.showAll = false;
+  }
+
+  onInputChange(): void {
+    // Considerar la búsqueda activa mientras se escribe
+    this.searchPressed = true;
+    this.showAll = false;
+  }
+
+  private mapTipoDocumentoToCode(tipo: string): string {
+    const t = (tipo || '').toLowerCase().trim();
+    if (t.includes('boleta')) return 'BLV';
+    if (t.includes('factura')) return 'FCV';
+    if (t.includes('nota') && t.includes('venta')) return 'NVV';
+    // Por defecto, considerar Boleta
+    return 'BLV';
+  }
+}

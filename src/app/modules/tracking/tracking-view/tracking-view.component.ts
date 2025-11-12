@@ -42,7 +42,8 @@ export class TrackingViewComponent {
 
     public onSearch(search: SearchModel): void {
 
-        this.trackingService.getInvoiceTrackingV2(search.invoiceId, search.invoiceType)
+        // Llama al servicio real v1 con padding (10 dígitos) y tipo de documento (BLV/FCV/NVV)
+        this.trackingService.getInvoiceTracking(search.invoiceId, search.invoiceType)
             .pipe(take(1))
             .subscribe({next: this.onSuccess.bind(this), error: this.onError.bind(this)});
 

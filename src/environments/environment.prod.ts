@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-    baseApiUrl: ''
+    baseApiUrl: 'https://soa-iis.imperial.cl'
 };
