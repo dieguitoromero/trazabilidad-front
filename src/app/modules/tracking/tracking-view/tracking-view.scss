@@ -3,17 +3,17 @@
         display: flex;
         margin-top: 16px;
         margin-bottom: 8px;
-        margin-left: 24px; /* más separado del borde izquierdo */
+        margin-left: 24px;
     }
     .back-badge {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background: transparent; /* transparente para que se funda con el fondo */
+        background: transparent;
         color: #333;
-        border: none; /* sin borde */
-        border-radius: 0; /* sin pill */
-        padding: 0; /* sin padding de cápsula */
+        border: none;
+        border-radius: 0;
+        padding: 0;
         font-size: 15px;
         font-weight: 600;
         cursor: pointer;
@@ -35,7 +35,7 @@
     .doc-title {
         font-weight: 700;
         font-size: 22px;
-        color: #0a3a6b; // azul acorde a screenshot
+        color: #0a3a6b;
     }
     .doc-subtitle {
         margin-top: 4px;
@@ -52,7 +52,7 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: #e8f0fe; // azul muy claro
+        background: #e8f0fe;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -69,29 +69,26 @@
     }
     .box-container {
         width: 100%;
-        // margin: 0 auto;
         margin: 24px 0 0 0;
         box-shadow: 1px 3px 11px #CCC;
         padding: 0 24px;
-        margin-bottom: 8px; // reduce spacing between stacked cards
+        margin-bottom: 8px;
 
         &.no-padding {
             padding: 0;
         }
     }
 
-    /* Más separación del top para la primera card (la que tiene el pin) */
     .box-container:first-of-type {
         margin-top: 32px;
     }
 
-    /* Responsive helpers y estado compacto en móvil */
     .estado-movil {
         display: none;
         align-items: center;
         gap: 8px;
         color: #344054;
-        margin: 4px 0 20px; /* más arriba y con espacio debajo del texto */
+        margin: 4px 0 20px;
     }
     .estado-movil .estado-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
     .estado-movil .estado-icon img { width: 18px; height: 18px; display: block; }
@@ -100,12 +97,9 @@
     @media (max-width: 768px) {
         .hide-on-mobile { display: none !important; }
         .show-on-mobile { display: flex !important; }
-        /* El contenedor del icono de ubicación del header del doc al mismo porte que el icono en móvil */
         .doc-location-icon { width: 28px; height: 28px; display: block; margin: 0 0 18px 8px; background: transparent; border-radius: 0; }
         .doc-location-icon img { width: 28px; height: 28px; display: block; }
-        /* Texto de ubicación en 14px en móvil */
         .doc-location-text { font-size: 14px; margin: 0 0 14px 8px; }
-        /* Número de documento (title) en 18px en móvil */
         .doc-title { font-size: 18px; font-weight: 700; color: #0a3a6b; }
     }
 }
