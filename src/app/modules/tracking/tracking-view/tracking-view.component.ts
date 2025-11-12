@@ -139,4 +139,32 @@ export class TrackingViewComponent {
             document.body.classList.remove('hide-hero-bg');
         }
     }
+
+    // Estado compacto para móvil: toma el último paso disponible
+    public statusActual(): string {
+        const pasosOrden = [
+            'Pedido ingresado',
+            'Pedido pagado',
+            'Preparación de pedido',
+            'Disponible para retiro',
+            'Pedido entregado'
+        ];
+
+        if (!this.invoice || !this.invoice.trackingSteps || this.invoice.trackingSteps.length === 0) {
+            return pasosOrden[0];
+        }
+
+        const titles = new Set(
+            this.invoice.trackingSteps
+                .map(s => (s.title && s.title.text ? s.title.text.toLowerCase() : ''))
+        );
+
+        let last = pasosOrden[0];
+        for (const p of pasosOrden) {
+            if (titles.has(p.toLowerCase())) {
+                last = p;
+            }
+        }
+        return last;
+    }
 }

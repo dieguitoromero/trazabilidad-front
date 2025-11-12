@@ -3,25 +3,23 @@
         display: flex;
         margin-top: 16px;
         margin-bottom: 8px;
+        margin-left: 24px; /* más separado del borde izquierdo */
     }
     .back-badge {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background: #f1f3f5;
+        background: transparent; /* transparente para que se funda con el fondo */
         color: #333;
-        border: 1px solid #d0d5dd;
-        border-radius: 24px;
-        padding: 6px 14px;
+        border: none; /* sin borde */
+        border-radius: 0; /* sin pill */
+        padding: 0; /* sin padding de cápsula */
         font-size: 15px;
         font-weight: 600;
         cursor: pointer;
-        transition: background .15s ease, box-shadow .15s ease;
+        transition: color .15s ease;
     }
-    .back-badge:hover {
-        background: #e6eaed;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
+    .back-badge:hover { background: transparent; box-shadow: none; }
     .back-badge .arrow {
         font-size: 20px;
         line-height: 1;
@@ -85,5 +83,29 @@
     /* Más separación del top para la primera card (la que tiene el pin) */
     .box-container:first-of-type {
         margin-top: 32px;
+    }
+
+    /* Responsive helpers y estado compacto en móvil */
+    .estado-movil {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        color: #344054;
+        margin: 4px 0 20px; /* más arriba y con espacio debajo del texto */
+    }
+    .estado-movil .estado-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
+    .estado-movil .estado-icon img { width: 18px; height: 18px; display: block; }
+    .estado-movil .estado-text { font-size: 14px; }
+
+    @media (max-width: 768px) {
+        .hide-on-mobile { display: none !important; }
+        .show-on-mobile { display: flex !important; }
+        /* El contenedor del icono de ubicación del header del doc al mismo porte que el icono en móvil */
+        .doc-location-icon { width: 28px; height: 28px; display: block; margin: 0 0 18px 8px; background: transparent; border-radius: 0; }
+        .doc-location-icon img { width: 28px; height: 28px; display: block; }
+        /* Texto de ubicación en 14px en móvil */
+        .doc-location-text { font-size: 14px; margin: 0 0 14px 8px; }
+        /* Número de documento (title) en 18px en móvil */
+        .doc-title { font-size: 18px; font-weight: 700; color: #0a3a6b; }
     }
 }

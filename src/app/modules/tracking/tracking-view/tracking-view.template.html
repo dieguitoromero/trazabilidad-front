@@ -27,7 +27,12 @@
             </div>
         </div>
     </div>
-    <app-tracking-stepper-view [steps]="invoice.trackingSteps" [orderDetails]="invoice.orderProducts"></app-tracking-stepper-view>
+    <!-- Estado compacto en móvil -->
+    <div class="estado-movil show-on-mobile" *ngIf="invoice">
+        <span class="estado-icon"><img src="/assets/estado-icon.svg" alt="estado" /></span>
+        <span class="estado-text">Estado: {{ statusActual() }}</span>
+    </div>
+    <app-tracking-stepper-view class="hide-on-mobile" [steps]="invoice.trackingSteps" [orderDetails]="invoice.orderProducts"></app-tracking-stepper-view>
 </div>
 <div class="box-container" *ngIf="invoice?.hasProductDetails">
     <app-tracking-order-details [orderDetails]="invoice?.orderProducts" [isBox]="true"></app-tracking-order-details>
