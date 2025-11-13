@@ -87,7 +87,7 @@ export class TrackingRepository {
             return of(undefined);
           }
 
-          return throwError(() => error); // Re-lanzamos otros errores
+          return throwError(() => error);
         })
       );
   }

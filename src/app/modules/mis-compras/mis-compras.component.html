@@ -57,13 +57,11 @@
         </div>
       </div>
 
-      <!-- Mobile: estado actual en una línea -->
       <div class="estado-movil show-on-mobile">
         <span class="estado-icon"><img src="assets/estado-icon.svg" alt="Estado" /></span>
         <span class="estado-text">Estado: {{ estadoActual(c) }}</span>
       </div>
 
-      <!-- Facturas asociadas (para Nota de Venta) -->
       <div class="asociadas" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
         <button type="button" class="asociadas-toggle" (click)="toggleAsociadas(c)">
           <span class="link">Facturas asociadas ({{ c.facturasAsociadas.length }})</span>
@@ -80,7 +78,6 @@
     </div>
   </div>
 
-  <!-- Paginación -->
   <div class="pagination-row" *ngIf="!hasNoResults && totalFilteredCount > perPage">
     <button
       class="page-box"

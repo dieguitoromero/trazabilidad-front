@@ -34,10 +34,8 @@ export class MisComprasComponent implements OnInit {
   constructor(private router: Router) {}
 
   ngOnInit(): void {
-    // Emula la respuesta del servicio para el usuario admin
     console.log('Mock compras admin:', ADMIN_MOCK_DATA);
     this.compras = ADMIN_MOCK_DATA.compras as Compra[];
-    // Cargar metadatos de paginación si vienen
     this.perPage = (ADMIN_MOCK_DATA as any).perPage || 10;
     this.page = (ADMIN_MOCK_DATA as any).page || 1;
     this.totalPages = (ADMIN_MOCK_DATA as any).totalPages || Math.max(1, Math.ceil(this.compras.length / this.perPage));
@@ -50,7 +48,6 @@ export class MisComprasComponent implements OnInit {
 
   get filteredCompras(): Compra[] {
     const list = this.fullFiltered();
-    // Paginación por 10 ítems
     const start = (this.page - 1) * this.perPage;
     return list.slice(start, start + this.perPage);
   }
@@ -68,7 +65,6 @@ export class MisComprasComponent implements OnInit {
     return (this.searchPressed || typed) && this.totalFilteredCount === 0;
   }
 
-  // Orden de pasos a mostrar en el stepper
   readonly pasos = [
     'Pedido ingresado',
     'Pedido pagado',
@@ -83,7 +79,6 @@ export class MisComprasComponent implements OnInit {
   }
 
   lastReachedIndex(compra: Compra): number {
-    // Busca el índice más alto cuyo glosa exista en la trazabilidad
     let last = -1;
     const reached = new Set(compra.trazabilidad.map(t => t.glosa.toLowerCase()));
     this.pasos.forEach((p, idx) => {
@@ -93,10 +88,8 @@ export class MisComprasComponent implements OnInit {
   }
 
   verDetalle(c: Compra): void {
-    // Mapear tipoDocumento a los códigos esperados por el buscador (BLV, FCV, NVV)
     const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
     const folio = Number(c.numeroDocumento);
-    // Navega al módulo de tracking con query params para que se auto-ejecute la búsqueda
     this.router.navigate(['/tracking'], {
       queryParams: {
         folioDocumento: isNaN(folio) ? c.numeroDocumento : folio,
@@ -107,7 +100,6 @@ export class MisComprasComponent implements OnInit {
   }
 
   verMas(): void {
-    // Con paginación, avanzar a la siguiente página si existe
     if (this.page < this.totalPages) {
       this.page += 1;
     }
@@ -115,12 +107,10 @@ export class MisComprasComponent implements OnInit {
 
   buscar(): void {
     this.searchPressed = true;
-    // Resetear a la primera página al buscar
     this.page = 1;
   }
 
   onInputChange(): void {
-    // Considerar la búsqueda activa mientras se escribe
     this.searchPressed = true;
     this.page = 1;
   }
@@ -130,11 +120,9 @@ export class MisComprasComponent implements OnInit {
     if (t.includes('boleta')) return 'BLV';
     if (t.includes('factura')) return 'FCV';
     if (t.includes('nota') && t.includes('venta')) return 'NVV';
-    // Por defecto, considerar Boleta
     return 'BLV';
   }
 
-  // Ver detalle de factura asociada (para Nota de Venta)
   verDetalleFactura(numeroFactura: string): void {
     const folio = this.tryParseFolio(numeroFactura);
     this.router.navigate(['/tracking'], {
@@ -147,19 +135,16 @@ export class MisComprasComponent implements OnInit {
   }
 
   private tryParseFolio(n: string): number | string {
-    // Si viene con prefijos tipo "F-2001" u otros, extraer dígitos
     const digits = (n || '').match(/\d+/g)?.join('') || '';
     const num = Number(digits);
     return isNaN(num) ? n : num;
   }
 
-  // Estado actual (último paso alcanzado) para vista móvil
   estadoActual(c: Compra): string {
     const idx = this.lastReachedIndex(c);
     return idx >= 0 ? this.pasos[idx] : this.pasos[0];
   }
 
-  // Toggle de facturas asociadas (por documento)
   toggleAsociadas(c: Compra): void {
     const key = `${c.tipoDocumento}-${c.numeroDocumento}`;
     if (this.asociadasOpen.has(key)) {
@@ -174,7 +159,6 @@ export class MisComprasComponent implements OnInit {
     return this.asociadasOpen.has(key);
   }
 
-  // Cambiar de página
   goToPage(p: number): void {
     if (p >= 1 && p <= this.totalPages) {
       this.page = p;

@@ -51,8 +51,6 @@ export class TrackingViewComponent {
 
 
     public onSearch(search: SearchModel): void {
-
-        // Llama al servicio V2 (token + uuid) con padding (10 dígitos) y tipo de documento (BLV/FCV/NVV)
         this.trackingService.getInvoiceTrackingV2(search.invoiceId, search.invoiceType)
             .pipe(take(1))
             .subscribe({next: this.onSuccess.bind(this), error: this.onError.bind(this)});
@@ -106,7 +104,6 @@ export class TrackingViewComponent {
     private triggerAutoSearch(): void {
         if (!this.autoSearched && this.searchModel && this.searchModel.invoiceId && this.searchModel.invoiceType) {
             this.autoSearched = true;
-            // Ejecutar en el siguiente tick para asegurar que Angular procese bindings
             setTimeout(() => this.onSearch(this.searchModel as SearchModel), 0);
         }
     }
@@ -117,7 +114,6 @@ export class TrackingViewComponent {
         }
         const steps = this.invoice.trackingSteps;
         const last = steps[steps.length - 1];
-        // Consider delivered if last step is not pending and its title mentions Entregado
         const lastTitle = (last.title && last.title.text) ? last.title.text.toLowerCase() : '';
         const isDeliveredTitle = lastTitle.indexOf('entregado') >= 0;
         const isNotPending = last.icon.indexOf('pending') < 0;
@@ -140,7 +136,6 @@ export class TrackingViewComponent {
         }
     }
 
-    // Estado compacto para móvil: toma el último paso disponible
     public statusActual(): string {
         const pasosOrden = [
             'Pedido ingresado',
