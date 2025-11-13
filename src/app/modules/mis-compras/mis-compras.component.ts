@@ -25,6 +25,10 @@ export class MisComprasComponent implements OnInit {
   searchTerm = '';
   showAll = false;
   searchPressed = false;
+  // Paginación
+  page = 1;
+  perPage = 10;
+  totalPages = 1;
   private asociadasOpen = new Set<string>();
 
   constructor(private router: Router) {}
@@ -33,6 +37,10 @@ export class MisComprasComponent implements OnInit {
     // Emula la respuesta del servicio para el usuario admin
     console.log('Mock compras admin:', ADMIN_MOCK_DATA);
     this.compras = ADMIN_MOCK_DATA.compras as Compra[];
+    // Cargar metadatos de paginación si vienen
+    this.perPage = (ADMIN_MOCK_DATA as any).perPage || 10;
+    this.page = (ADMIN_MOCK_DATA as any).page || 1;
+    this.totalPages = (ADMIN_MOCK_DATA as any).totalPages || Math.max(1, Math.ceil(this.compras.length / this.perPage));
   }
 
   private fullFiltered(): Compra[] {
@@ -42,11 +50,17 @@ export class MisComprasComponent implements OnInit {
 
   get filteredCompras(): Compra[] {
     const list = this.fullFiltered();
-    return this.showAll ? list : list.slice(0, 3);
+    // Paginación por 10 ítems
+    const start = (this.page - 1) * this.perPage;
+    return list.slice(start, start + this.perPage);
   }
 
-  get totalFilteredCount(): number {
-    return this.fullFiltered().length;
+  get totalFilteredCount(): number { return this.fullFiltered().length; }
+
+  get pages(): number[] {
+    const total = Math.max(1, Math.ceil(this.totalFilteredCount / this.perPage));
+    this.totalPages = total;
+    return Array.from({ length: total }, (_, i) => i + 1);
   }
 
   get hasNoResults(): boolean {
@@ -93,19 +107,22 @@ export class MisComprasComponent implements OnInit {
   }
 
   verMas(): void {
-    this.showAll = true;
+    // Con paginación, avanzar a la siguiente página si existe
+    if (this.page < this.totalPages) {
+      this.page += 1;
+    }
   }
 
   buscar(): void {
     this.searchPressed = true;
-    // Al buscar, volvemos a contraer la lista a 3 por claridad
-    this.showAll = false;
+    // Resetear a la primera página al buscar
+    this.page = 1;
   }
 
   onInputChange(): void {
     // Considerar la búsqueda activa mientras se escribe
     this.searchPressed = true;
-    this.showAll = false;
+    this.page = 1;
   }
 
   private mapTipoDocumentoToCode(tipo: string): string {
@@ -155,5 +172,12 @@ export class MisComprasComponent implements OnInit {
   isAsociadasOpen(c: Compra): boolean {
     const key = `${c.tipoDocumento}-${c.numeroDocumento}`;
     return this.asociadasOpen.has(key);
+  }
+
+  // Cambiar de página
+  goToPage(p: number): void {
+    if (p >= 1 && p <= this.totalPages) {
+      this.page = p;
+    }
   }
 }

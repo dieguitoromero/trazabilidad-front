@@ -90,8 +90,8 @@
         color: #344054;
         margin: 4px 0 20px;
     }
-    .estado-movil .estado-icon { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
-    .estado-movil .estado-icon img { width: 18px; height: 18px; display: block; }
+    .estado-movil .estado-icon { width: 24px; height: 24px; display: block; margin: 0 -2px 0 0; }
+    .estado-movil .estado-icon img { width: 24px; height: 24px; display: block; }
     .estado-movil .estado-text { font-size: 14px; }
 
     @media (max-width: 768px) {

@@ -228,7 +228,7 @@
   margin-top: 12px;
 }
 .estado-movil .estado-icon { display: inline-flex; }
-.estado-movil .estado-icon img { width: 18px; height: 18px; display: block; }
+.estado-movil .estado-icon img { width: 24px; height: 24px; display: block; margin: 0 -2px 0 0; }
 
 .more-row {
   display: flex;
@@ -298,3 +298,28 @@
   border-radius: 8px;
   font-size: 13px;
 }
+
+/* Paginación */
+.pagination-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 0 0; /* separación respecto al listado */
+}
+.page-box {
+  width: 36px;
+  height: 36px;
+  background: #153a65; /* azul por defecto */
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s ease, transform .15s ease;
+}
+.page-box.active { background: #f8323e; }
+.page-box:hover:not(.active) { background: #0e2a4a; }
+.page-box:active { transform: scale(.94); }

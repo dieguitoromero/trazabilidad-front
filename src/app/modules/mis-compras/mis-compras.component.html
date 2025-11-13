@@ -80,7 +80,14 @@
     </div>
   </div>
 
-  <div class="more-row" *ngIf="!hasNoResults && !showAll && totalFilteredCount > 3">
-    <button class="more-btn" (click)="verMas()">Más compras</button>
+  <!-- Paginación -->
+  <div class="pagination-row" *ngIf="!hasNoResults && totalFilteredCount > perPage">
+    <button
+      class="page-box"
+      *ngFor="let p of pages"
+      [class.active]="p === page"
+      (click)="goToPage(p)">
+      {{ p }}
+    </button>
   </div>
 </div>
