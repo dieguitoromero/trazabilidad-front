@@ -14,7 +14,9 @@
     </button>
   </div>
 
-  <div class="empty" *ngIf="hasNoResults">
+  <div class="loading" *ngIf="loading">Cargando compras...</div>
+  <div class="error" *ngIf="!loading && error">No se pudo cargar desde el servicio, mostrando datos locales.</div>
+  <div class="empty" *ngIf="hasNoResults && !loading">
     <div class="info-icon">i</div>
     <div class="text">No se encontró documento</div>
   </div>
@@ -70,7 +72,7 @@
         <div class="asociadas-list" *ngIf="isAsociadasOpen(c)">
           <div class="asociada-item" *ngFor="let f of c.facturasAsociadas">
             <span class="dot-bullet">•</span>
-            <span class="asociada-text">Factura N° {{ f.numeroFactura }} - {{ f.fechaEmision | date:'dd-MM-y' }}</span>
+            <span class="asociada-text">Factura N° {{ f.numeroFactura }} - {{ f.fechaEmision }}</span>
             <button class="detail-btn small" (click)="verDetalleFactura(f.numeroFactura)">Ver detalle</button>
           </div>
         </div>

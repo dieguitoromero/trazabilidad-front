@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ADMIN_MOCK_DATA } from './mock-admin-data';
+import { MisComprasService, MisComprasResponseDto } from '../../services/mis-compras.service';
+import { environment } from '../../../environments/environment';
 
 type Trazabilidad = { glosa: string; fechaRegistro: string; estado: 'activo' | 'finalizado' };
 type Compra = {
@@ -31,10 +33,51 @@ export class MisComprasComponent implements OnInit {
   totalPages = 1;
   private asociadasOpen = new Set<string>();
 
-  constructor(private router: Router) {}
+  loading = false;
+  error = false;
+
+  constructor(private router: Router, private misComprasService: MisComprasService) {}
 
   ngOnInit(): void {
-    console.log('Mock compras admin:', ADMIN_MOCK_DATA);
+    this.fetchComprasReal();
+  }
+
+  private fetchComprasReal(): void {
+    this.loading = true;
+    const rutPrueba = '762530058';
+    this.misComprasService.getCompras(rutPrueba).subscribe({
+      next: (resp: MisComprasResponseDto) => {
+        const hasData = !!resp.compras && resp.compras.length > 0;
+        if (hasData || !environment.useMockOnEmpty) {
+          // Usar siempre la respuesta real; si viene vacía y no queremos mock, mostrar vacío
+          this.compras = (resp.compras || []) as Compra[];
+          this.perPage = resp.perPage || 10;
+          this.page = resp.page || 1;
+          const base = this.compras.length || 1;
+          this.totalPages = resp.totalPages || Math.max(1, Math.ceil(base / this.perPage));
+          this.error = false;
+        } else {
+          // Fallback a mock sólo si está permitido en env
+          this.applyMock();
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('[MisComprasComponent] Error API, usando mock', err);
+        this.error = true;
+        if (environment.useMockOnEmpty) {
+          this.applyMock();
+        } else {
+          // Mantener vacío si no se permite mock
+          this.compras = [];
+          this.totalPages = 1;
+        }
+        this.loading = false;
+      }
+    });
+  }
+
+  private applyMock(): void {
     this.compras = ADMIN_MOCK_DATA.compras as Compra[];
     this.perPage = (ADMIN_MOCK_DATA as any).perPage || 10;
     this.page = (ADMIN_MOCK_DATA as any).page || 1;
@@ -128,7 +171,8 @@ export class MisComprasComponent implements OnInit {
     this.router.navigate(['/tracking'], {
       queryParams: {
         folioDocumento: folio,
-        tipoDocumento: 'FCV'
+        tipoDocumento: 'FCV',
+        api: 'v1'
       },
       queryParamsHandling: 'merge'
     });

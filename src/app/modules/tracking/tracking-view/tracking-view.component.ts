@@ -42,6 +42,8 @@ export class TrackingViewComponent {
                 const id = Number(params.folioDocumento);
                 const type = params.tipoDocumento;
                 this.searchModel = new SearchModel(id, type);
+                // Si viene api=v1, usaremos v1 en onSearch
+                (this.searchModel as any).api = params.api || 'v2';
                 this.triggerAutoSearch();
                 this.applyHideHeroBg();
             }
@@ -51,7 +53,12 @@ export class TrackingViewComponent {
 
 
     public onSearch(search: SearchModel): void {
-        this.trackingService.getInvoiceTrackingV2(search.invoiceId, search.invoiceType)
+        const api = (search as any).api || 'v2';
+        const source$ = api === 'v1'
+            ? this.trackingService.getInvoiceTracking(search.invoiceId, search.invoiceType)
+            : this.trackingService.getInvoiceTrackingV2(search.invoiceId, search.invoiceType);
+
+        source$
             .pipe(take(1))
             .subscribe({next: this.onSuccess.bind(this), error: this.onError.bind(this)});
 
@@ -61,7 +68,8 @@ export class TrackingViewComponent {
             this.router.navigate(['tracking'], {
                 queryParams: {
                     folioDocumento: search.invoiceId,
-                    tipoDocumento: search.invoiceType
+                    tipoDocumento: search.invoiceType,
+                    api
                 },
                 queryParamsHandling: 'merge'
             });

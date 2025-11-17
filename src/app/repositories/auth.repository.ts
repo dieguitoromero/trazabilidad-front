@@ -15,25 +15,29 @@ export class AuthRepository {
 
   constructor(private http: HttpClient) {
     this.token = new BehaviorSubject<AuthModel | undefined>(undefined);
-    this.tokenExpiration = new Date(Number.MAX_SAFE_INTEGER);
+    // Force initial fetch by setting an already-expired time
+    this.tokenExpiration = new Date(0);
   }
 
   // Método para obtener el token (de memoria o del servidor)
   getToken(): Observable<AuthModel | undefined> {
-    const now : Date = new Date(Date.now());
-    if (this.token && this.tokenExpiration && this.tokenExpiration > now) {
-      return this.token.asObservable();
+    const now: Date = new Date();
+    const current = this.token.value;
+    if (current && this.tokenExpiration && this.tokenExpiration > now) {
+      return of(current);
     }
 
     return this.http.post(this.url, null).pipe(
-      map((response: any) => { const tokenModel: AuthModel = AuthModel.mapFromObj(response)
+      map((response: any) => {
+        const tokenModel: AuthModel = AuthModel.mapFromObj(response);
         this.token.next(tokenModel);
-        const expirationInMilis = response.expires_in * 1000;
+        const expiresInSec = Number(response?.expires_in) || 300; // default 5 minutes if absent
+        const expirationInMilis = expiresInSec * 1000;
         this.tokenExpiration = new Date(now.getTime() + expirationInMilis);
         return tokenModel;
       }),
       catchError((error) => {
-        console.error(error);
+        console.error('[AuthRepository] Token fetch failed', error);
         return of(undefined);
       })
     );
