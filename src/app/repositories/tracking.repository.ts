@@ -10,6 +10,7 @@ import { InvoiceTokenModel } from "../core/models/invoice-token.model";
 export class TrackingRepository {
   public baseApiUrl: string = environment.baseApiUrl;
   baseApiUrlV2: string = environment.baseApiUrlV2;
+  private apimBase: string = environment.baseMisComprasApiUrl || environment.baseApiUrlV2;
 
   constructor(private http: HttpClient) {}
 
@@ -90,5 +91,25 @@ export class TrackingRepository {
           return throwError(() => error);
         })
       );
+  }
+
+  public getDocument(invoiceId: string, invoiceType: string): Observable<InvoiceModel | undefined> {
+    // Requisito: usar URL absoluta con clienteId para facturas (FCV)
+    // https://apim-imperial-dev-ues-001.azure-api.net/api/documents/FCV/(numero)/?clienteId=762530058
+    const base = 'https://apim-imperial-dev-ues-001.azure-api.net/api';
+    const clienteId = '762530058';
+    const url = `${base}/documents/${invoiceType}/${invoiceId}/?clienteId=${clienteId}`;
+    return this.http.get<any>(url).pipe(
+      map(resp => {
+        if (!resp) { return undefined; }
+        return InvoiceModel.mapFromObj(resp);
+      }),
+      catchError(err => {
+        if (err instanceof HttpErrorResponse && err.status === 404) {
+          return of(undefined);
+        }
+        return throwError(() => err);
+      })
+    );
   }
 }

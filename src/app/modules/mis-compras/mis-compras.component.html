@@ -31,7 +31,7 @@
       </div>
 
       <div class="meta">
-        <div class="fecha">Fecha de compra: {{ c.fechaCompra | date:'d MMMM y' : '' : 'es-CL' }}</div>
+  <div class="fecha">Fecha de compra: {{ c.fechaCompra | formatFechaCompra }}</div>
         <div class="dimensionado-row" *ngIf="c.esDimensionado">
           <span class="badge dimensionado">
             <img src="assets/dimensionado-icon.svg" alt="Dimensionado" />
@@ -40,8 +40,8 @@
         </div>
       </div>
 
-      <div class="entrega-row">
-        <span class="icon">
+      <div class="entrega-row" *ngIf="c.tipoEntrega">
+        <span class="icon" *ngIf="c.tipoEntrega === 'Despacho a domicilio' || c.tipoEntrega === 'Retiro en tienda'">
           <img [src]="c.tipoEntrega === 'Despacho a domicilio' ? 'assets/domicilio-icon.svg' : 'assets/tienda-icon.svg'" alt="Entrega" />
         </span>
         <span class="entrega-text">
@@ -70,17 +70,19 @@
           <span class="chev" [class.open]="isAsociadasOpen(c)">▾</span>
         </button>
         <div class="asociadas-list" *ngIf="isAsociadasOpen(c)">
-          <div class="asociada-item" *ngFor="let f of c.facturasAsociadas">
-            <span class="dot-bullet">•</span>
-            <span class="asociada-text">Factura N° {{ f.numeroFactura }} - {{ f.fechaEmision }}</span>
-            <button class="detail-btn small" (click)="verDetalleFactura(f.numeroFactura)">Ver detalle</button>
-          </div>
+          <ng-container *ngFor="let f of c.facturasAsociadas">
+            <div class="asociada-item" *ngIf="f && (f.numeroFactura || f.fechaEmision)">
+              <span class="dot-bullet">•</span>
+              <span class="asociada-text">Factura N° {{ f.numeroFactura }}<ng-container *ngIf="f.fechaEmision"> - {{ f.fechaEmision }}</ng-container></span>
+                <button class="detail-btn small" [class.disabled]="!f.numeroFactura || f.numeroFactura === '0'" [disabled]="!f.numeroFactura || f.numeroFactura === '0'" (click)="verDetalleFactura(f.numeroFactura)">Ver detalle</button>
+            </div>
+          </ng-container>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="pagination-row" *ngIf="!hasNoResults && totalFilteredCount > perPage">
+  <div class="pagination-row" *ngIf="!hasNoResults && totalPages > 1">
     <button
       class="page-box"
       *ngFor="let p of pages"

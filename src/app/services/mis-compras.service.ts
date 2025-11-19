@@ -32,17 +32,14 @@ export class MisComprasService {
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
-  public getCompras(rut: string | number): Observable<MisComprasResponseDto> {
+  public getCompras(rut: string | number, page: number = 1, limit: number = 10): Observable<MisComprasResponseDto> {
     const r = typeof rut === 'number' ? rut.toString() : rut;
+    const url = `${this.baseUrl}/clients/${r}/documents?page=${page}&limit=${limit}`;
     return this.getToken().pipe(
-      switchMap(() => {
-        return this.http.get<any>(`${this.baseUrl}/clients/${r}/documents`).pipe(
-          map(resp => this.mapResponse(resp))
-        );
-      }),
+      switchMap(() => this.http.get<any>(url).pipe(map(resp => this.mapResponse(resp)))),
       catchError(err => {
         console.error('[MisComprasService] Error fetching compras', err);
-        return of({ compras: [] } as MisComprasResponseDto);
+        return of({ compras: [], page, perPage: limit, totalPages: 1 } as MisComprasResponseDto);
       })
     );
   }
@@ -80,24 +77,23 @@ export class MisComprasService {
       const t = Date.parse(str);
       return isNaN(t) ? 0 : t;
     };
-    const compras: CompraApiDto[] = (resp.compras || resp.documents || []).map((c: any) => ({
-      tipoDocumento: c.tipoDocumento || c.documentType || '',
-      numeroDocumento: sanitizeNumber(c.numeroDocumento || c.number || ''),
-      fechaCompra: c.fechaCompra || c.purchaseDate || '',
-      tipoEntrega: c.tipoEntrega || c.deliveryType || '',
-      direccionEntrega: c.direccionEntrega || c.deliveryAddress || '',
-      trazabilidad: (c.trazabilidad || c.traceability || []).map((t: any) => ({
+    const comprasRaw: CompraApiDto[] = (resp.compras || resp.documents || []).map((c: any) => {
+      const trazabilidad = (c.trazabilidad || c.traceability || []).map((t: any) => ({
         glosa: t.glosa || t.label || '',
         fechaRegistro: t.fechaRegistro || t.date || '',
         estado: t.estado || t.state || ''
-      })),
-      esDimensionado: c.esDimensionado || c.dimensionado || false,
-      total: c.total || c.amount || 0,
-      facturasAsociadas: ((c.facturasAsociadas || c.associatedInvoices || []).map((f: any) => ({
-        numeroFactura: sanitizeNumber(f.numeroFactura || f.number || ''),
-        fechaEmision: (f.fechaEmision || f.fecha || ''),
-        idFactura: f.idFactura || f.id || 0
-      })) as Array<{numeroFactura: string; fechaEmision: string; idFactura: number}>).sort((a, b) => {
+      }));
+
+      type Asociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
+      const asociadas: Asociada[] = (c.facturasAsociadas || c.associatedInvoices || [])
+        .map((f: any) => ({
+          numeroFactura: sanitizeNumber(f?.numeroFactura ?? f?.number ?? ''),
+          fechaEmision: String(f?.fechaEmision ?? f?.fecha ?? '').trim(),
+          idFactura: Number(f?.idFactura ?? f?.id ?? 0)
+        }))
+        .filter((f: Asociada) => (f.numeroFactura?.length || 0) > 0 || (f.fechaEmision?.length || 0) > 0);
+
+      asociadas.sort((a: Asociada, b: Asociada) => {
         const aNonZero = a.numeroFactura && a.numeroFactura !== '0' ? 1 : 0;
         const bNonZero = b.numeroFactura && b.numeroFactura !== '0' ? 1 : 0;
         if (aNonZero !== bNonZero) return bNonZero - aNonZero; // no-cero primero
@@ -105,8 +101,22 @@ export class MisComprasService {
         const tb = parseDateDMY(b.fechaEmision);
         if (tb !== ta) return tb - ta; // más reciente primero
         return (b.idFactura || 0) - (a.idFactura || 0);
-      })
-    }));
+      });
+
+      return {
+        tipoDocumento: c.tipoDocumento || c.documentType || '',
+        numeroDocumento: sanitizeNumber(c.numeroDocumento || c.number || ''),
+        fechaCompra: c.fechaCompra || c.purchaseDate || '',
+        tipoEntrega: c.tipoEntrega || c.deliveryType || '',
+        direccionEntrega: c.direccionEntrega || c.deliveryAddress || '',
+        trazabilidad,
+        esDimensionado: c.esDimensionado || c.dimensionado || false,
+        total: c.total || c.amount || 0,
+        facturasAsociadas: asociadas
+      } as CompraApiDto;
+    });
+
+  const compras: CompraApiDto[] = comprasRaw.filter((c: CompraApiDto) => (c.numeroDocumento || '').trim().length > 0);
 
     return {
       usuario: resp.usuario || resp.user || undefined,

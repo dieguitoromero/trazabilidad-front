@@ -20,6 +20,8 @@ export class TrackingViewComponent {
 
     @ViewChild('trackingStepperView')
     public trackingStepperView: ElementRef | undefined;
+    @ViewChild('orderDetailsView')
+    public orderDetailsView: ElementRef | undefined;
 
     constructor(private trackingService: TrackingService,
                 private router: Router,
@@ -44,6 +46,7 @@ export class TrackingViewComponent {
                 this.searchModel = new SearchModel(id, type);
                 // Si viene api=v1, usaremos v1 en onSearch
                 (this.searchModel as any).api = params.api || 'v2';
+                (this.searchModel as any).section = params.section;
                 this.triggerAutoSearch();
                 this.applyHideHeroBg();
             }
@@ -56,7 +59,9 @@ export class TrackingViewComponent {
         const api = (search as any).api || 'v2';
         const source$ = api === 'v1'
             ? this.trackingService.getInvoiceTracking(search.invoiceId, search.invoiceType)
-            : this.trackingService.getInvoiceTrackingV2(search.invoiceId, search.invoiceType);
+            : api === 'doc'
+                ? this.trackingService.getInvoiceDocument(search.invoiceId, search.invoiceType)
+                : this.trackingService.getInvoiceTrackingV2(search.invoiceId, search.invoiceType);
 
         source$
             .pipe(take(1))
@@ -86,14 +91,17 @@ export class TrackingViewComponent {
             this.router.navigate(['not-found']);
         }
 
-        if (invoice?.trackingSteps.find(t => t.machinable !== null &&
-            t.machinable?.orders !== undefined &&
-            t.machinable?.orders?.length > 0)) {
-
+        const section = (this.searchModel as any)?.section;
+        // Si se pide 'details' y hay detalles, ir primero a detalles
+        if (section === 'details' && invoice?.hasProductDetails) {
+            setTimeout(() => {
+                this.orderDetailsView?.nativeElement.scrollIntoView({ behavior: 'smooth' });
+            }, 400);
+        } else if (invoice?.trackingSteps && invoice.trackingSteps.length > 0) {
+            // Scroll siempre si hay pasos (no limitar sólo a los que tienen machinable orders)
             setTimeout(() => {
                 this.trackingStepperView?.nativeElement.scrollIntoView({ behavior: 'smooth' });
-            }, 600);
-
+            }, 400);
         }
 
         this.invoice = invoice;

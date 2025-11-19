@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
-import {from, Observable} from 'rxjs';
+import {from, Observable, of} from 'rxjs';
+import {switchMap, map, catchError} from 'rxjs/operators';
 import {InvoiceModel} from '../core/models/invoice.model';
 import {TrackingRepository} from '../repositories/tracking.repository';
 
@@ -20,6 +21,27 @@ export class TrackingService {
     }
     public getInvoiceTrackingV2(invoiceId: number, invoiceType: string): Observable<InvoiceModel | undefined> {
         return this.trackingRepository.getTrackingV2(this.padInvoiceNumber(invoiceId, 10), invoiceType);
+    }
+
+    public getInvoiceDocument(invoiceId: number, invoiceType: string): Observable<InvoiceModel | undefined> {
+        const padded = this.padInvoiceNumber(invoiceId, 10);
+        return this.trackingRepository.getDocument(padded, invoiceType).pipe(
+            switchMap(doc => {
+                if (!doc) { return of(undefined); }
+                // Si el documento no trae pasos de trazabilidad, intentamos obtenerlos vía V2
+                const hasSteps = doc.trackingSteps && doc.trackingSteps.length > 0;
+                if (hasSteps) { return of(doc); }
+                return this.trackingRepository.getTrackingV2(padded, invoiceType).pipe(
+                    map(v2 => {
+                        if (v2 && v2.trackingSteps && v2.trackingSteps.length > 0) {
+                            doc.trackingSteps = v2.trackingSteps;
+                        }
+                        return doc;
+                    }),
+                    catchError(() => of(doc))
+                );
+            })
+        );
     }
 
 

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ADMIN_MOCK_DATA } from './mock-admin-data';
 import { MisComprasService, MisComprasResponseDto } from '../../services/mis-compras.service';
 import { environment } from '../../../environments/environment';
@@ -36,16 +36,22 @@ export class MisComprasComponent implements OnInit {
   loading = false;
   error = false;
 
-  constructor(private router: Router, private misComprasService: MisComprasService) {}
+  constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService) {}
 
   ngOnInit(): void {
+    // Restaurar estado de paginación desde query params si existen
+    const qp = this.route.snapshot.queryParams || {};
+    const qpPage = Number(qp.page);
+    const qpPerPage = Number(qp.perPage);
+    if (!isNaN(qpPage) && qpPage > 0) { this.page = qpPage; }
+    if (!isNaN(qpPerPage) && qpPerPage > 0) { this.perPage = qpPerPage; }
     this.fetchComprasReal();
   }
 
   private fetchComprasReal(): void {
     this.loading = true;
     const rutPrueba = '762530058';
-    this.misComprasService.getCompras(rutPrueba).subscribe({
+  this.misComprasService.getCompras(rutPrueba, this.page, this.perPage).subscribe({
       next: (resp: MisComprasResponseDto) => {
         const hasData = !!resp.compras && resp.compras.length > 0;
         if (hasData || !environment.useMockOnEmpty) {
@@ -90,16 +96,16 @@ export class MisComprasComponent implements OnInit {
   }
 
   get filteredCompras(): Compra[] {
-    const list = this.fullFiltered();
-    const start = (this.page - 1) * this.perPage;
-    return list.slice(start, start + this.perPage);
+    // Con paginación server-side: el backend ya devolvió sólo la página actual
+    // Aún aplicamos filtro de búsqueda sobre el subset actual para coherencia rápida
+    return this.fullFiltered();
   }
 
   get totalFilteredCount(): number { return this.fullFiltered().length; }
 
   get pages(): number[] {
-    const total = Math.max(1, Math.ceil(this.totalFilteredCount / this.perPage));
-    this.totalPages = total;
+    // Usar totalPages entregado por la API directamente
+    const total = Math.max(1, this.totalPages);
     return Array.from({ length: total }, (_, i) => i + 1);
   }
 
@@ -133,10 +139,15 @@ export class MisComprasComponent implements OnInit {
   verDetalle(c: Compra): void {
     const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
     const folio = Number(c.numeroDocumento);
+    const api = tipo === 'NVV' ? 'v1' : undefined;
     this.router.navigate(['/tracking'], {
       queryParams: {
         folioDocumento: isNaN(folio) ? c.numeroDocumento : folio,
-        tipoDocumento: tipo
+        tipoDocumento: tipo,
+        ...(api ? { api } : {}),
+        section: 'details',
+        page: this.page,
+        perPage: this.perPage
       },
       queryParamsHandling: 'merge'
     });
@@ -144,7 +155,7 @@ export class MisComprasComponent implements OnInit {
 
   verMas(): void {
     if (this.page < this.totalPages) {
-      this.page += 1;
+      this.goToPage(this.page + 1);
     }
   }
 
@@ -172,7 +183,10 @@ export class MisComprasComponent implements OnInit {
       queryParams: {
         folioDocumento: folio,
         tipoDocumento: 'FCV',
-        api: 'v1'
+        api: 'doc',
+        section: 'details',
+        page: this.page,
+        perPage: this.perPage
       },
       queryParamsHandling: 'merge'
     });
@@ -206,6 +220,13 @@ export class MisComprasComponent implements OnInit {
   goToPage(p: number): void {
     if (p >= 1 && p <= this.totalPages) {
       this.page = p;
+      // Actualizar URL para persistir estado y permitir volver con la misma página
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { page: this.page, perPage: this.perPage },
+        queryParamsHandling: 'merge'
+      });
+      this.fetchComprasReal();
     }
   }
 }
