@@ -29,7 +29,7 @@ export class MisComprasComponent implements OnInit {
   searchPressed = false;
   // Paginación
   page = 1;
-  perPage = 10;
+  perPage = environment.limitDefault;
   totalPages = 1;
   private asociadasOpen = new Set<string>();
 
@@ -50,14 +50,14 @@ export class MisComprasComponent implements OnInit {
 
   private fetchComprasReal(): void {
     this.loading = true;
-    const rutPrueba = '762530058';
-  this.misComprasService.getCompras(rutPrueba, this.page, this.perPage).subscribe({
+    const rut = environment.clienteId;
+    this.misComprasService.getCompras(rut, this.page, this.perPage).subscribe({
       next: (resp: MisComprasResponseDto) => {
         const hasData = !!resp.compras && resp.compras.length > 0;
         if (hasData || !environment.useMockOnEmpty) {
           // Usar siempre la respuesta real; si viene vacía y no queremos mock, mostrar vacío
           this.compras = (resp.compras || []) as Compra[];
-          this.perPage = resp.perPage || 10;
+          this.perPage = resp.perPage || environment.limitDefault;
           this.page = resp.page || 1;
           const base = this.compras.length || 1;
           this.totalPages = resp.totalPages || Math.max(1, Math.ceil(base / this.perPage));
@@ -138,18 +138,24 @@ export class MisComprasComponent implements OnInit {
 
   verDetalle(c: Compra): void {
     const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
-    const folio = Number(c.numeroDocumento);
-    const api = tipo === 'NVV' ? 'v1' : undefined;
-    this.router.navigate(['/tracking'], {
-      queryParams: {
-        folioDocumento: isNaN(folio) ? c.numeroDocumento : folio,
-        tipoDocumento: tipo,
-        ...(api ? { api } : {}),
-        section: 'details',
-        page: this.page,
-        perPage: this.perPage
-      },
-      queryParamsHandling: 'merge'
+    const rut = environment.clienteId;
+    // Primero hacer búsqueda específica para asegurar consistencia con nueva URL requerida
+    this.misComprasService.buscarDocumento(rut, c.numeroDocumento, 1).subscribe(resp => {
+      const encontrado = resp.compras?.[0];
+      const folioRaw = encontrado?.numeroDocumento || c.numeroDocumento;
+      const folioDigits = this.tryParseFolio(folioRaw);
+      const api = tipo === 'NVV' ? 'v1' : undefined;
+      this.router.navigate(['/tracking'], {
+        queryParams: {
+          folioDocumento: folioDigits,
+          tipoDocumento: tipo,
+          ...(api ? { api } : {}),
+          section: 'details',
+          page: this.page,
+          perPage: this.perPage
+        },
+        queryParamsHandling: 'merge'
+      });
     });
   }
 

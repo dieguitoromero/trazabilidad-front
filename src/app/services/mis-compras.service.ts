@@ -28,11 +28,12 @@ export interface MisComprasResponseDto {
 
 @Injectable({ providedIn: 'root' })
 export class MisComprasService {
-  private baseUrl = environment.baseMisComprasApiUrl;
+  // Unified baseUrl for APIM host; derive API root from it to avoid duplicating '/api' everywhere
+  private baseUrl = `${environment.baseUrl}/api`;
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
-  public getCompras(rut: string | number, page: number = 1, limit: number = 10): Observable<MisComprasResponseDto> {
+  public getCompras(rut: string | number, page: number = 1, limit: number = environment.limitDefault): Observable<MisComprasResponseDto> {
     const r = typeof rut === 'number' ? rut.toString() : rut;
     const url = `${this.baseUrl}/clients/${r}/documents?page=${page}&limit=${limit}`;
     return this.getToken().pipe(
@@ -40,6 +41,24 @@ export class MisComprasService {
       catchError(err => {
         console.error('[MisComprasService] Error fetching compras', err);
         return of({ compras: [], page, perPage: limit, totalPages: 1 } as MisComprasResponseDto);
+      })
+    );
+  }
+
+  /**
+   * Busca un documento específico (BLV, FCV, NVV) usando parámetro ?buscar= en la API.
+   * Siempre fuerza page=1 como lo requiere el flujo de "ver detalle".
+   * Sanitiza el número removiendo prefijos N°, Nº y ceros a la izquierda.
+   */
+  public buscarDocumento(rut: string | number, numero: string, page: number = 1): Observable<MisComprasResponseDto> {
+    const r = typeof rut === 'number' ? rut.toString() : rut;
+    const sanitized = this.sanitizeNumero(numero);
+    const url = `${this.baseUrl}/clients/${r}/documents?buscar=${encodeURIComponent(sanitized)}&page=${page}`;
+    return this.getToken().pipe(
+      switchMap(() => this.http.get<any>(url).pipe(map(resp => this.mapResponse(resp)))),
+      catchError(err => {
+        console.error('[MisComprasService] Error buscando documento', err);
+        return of({ compras: [], page, perPage: 0, totalPages: 1 } as MisComprasResponseDto);
       })
     );
   }
@@ -62,6 +81,8 @@ export class MisComprasService {
       // Remover prefijos tipo 'N°', 'Nº', 'N° ' etc.
       return raw.replace(/^N[°º]?\s*/i, '').trim();
     };
+    // Sanitizador expuesto para otros métodos
+    this.sanitizeNumero = sanitizeNumber as any;
     const parseDateDMY = (s: any): number => {
       if (!s) return 0;
       const str = String(s).trim();
@@ -127,4 +148,7 @@ export class MisComprasService {
       totalPages: resp.totalPages || 1
     };
   }
+
+  // Se asignará en mapResponse; tipado público para reutilización.
+  private sanitizeNumero: (val: any) => string = (v: any) => (v == null ? '' : String(v));
 }

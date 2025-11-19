@@ -56,12 +56,16 @@ export class TrackingViewComponent {
 
 
     public onSearch(search: SearchModel): void {
-        const api = (search as any).api || 'v2';
-        const source$ = api === 'v1'
-            ? this.trackingService.getInvoiceTracking(search.invoiceId, search.invoiceType)
-            : api === 'doc'
-                ? this.trackingService.getInvoiceDocument(search.invoiceId, search.invoiceType)
-                : this.trackingService.getInvoiceTrackingV2(search.invoiceId, search.invoiceType);
+        const api = (search as any).api || 'doc';
+        // Nuevo flujo: intentar siempre con documents search primero (api='doc'), luego fallback según tipo
+        let source$ = this.trackingService.getInvoiceFromDocumentsSearch(search.invoiceId, search.invoiceType);
+        if (api === 'v1') {
+            source$ = this.trackingService.getInvoiceTracking(search.invoiceId, search.invoiceType);
+        } else if (api === 'v2') {
+            source$ = this.trackingService.getInvoiceTrackingV2(search.invoiceId, search.invoiceType);
+        } else if (api === 'doc') {
+            // ya definido arriba
+        }
 
         source$
             .pipe(take(1))
