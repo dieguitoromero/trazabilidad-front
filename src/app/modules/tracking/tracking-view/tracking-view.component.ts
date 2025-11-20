@@ -5,6 +5,7 @@ import {take} from 'rxjs/operators';
 import {TrackingService} from '../../../services/tracking.service';
 import { TrackingDataService } from '../../../services/tracking-data.service';
 import {ActivatedRoute, Router} from '@angular/router';
+import { TrackingStepModel } from '../../../core/models/tracking-step.model';
 
 @Component({
     templateUrl: './tracking-view.template.html',
@@ -15,6 +16,8 @@ export class TrackingViewComponent {
     public invoice: InvoiceModel | undefined;
     // Objeto adaptado para PurchaseTimelineComponent
     public compraAdaptada: any | undefined;
+    // Pasos derivados de 'trazabilidad' (o invoice.trackingSteps) para alimentar el nuevo componente stepper
+    public stepperSteps: TrackingStepModel[] = [];
     public working = false;
     public hasError = false;
     public searchModel: SearchModel | undefined;
@@ -78,6 +81,8 @@ export class TrackingViewComponent {
                                             })),
                                             productos: raw.productos || []
                                         };
+                    // Derivar pasos para el stepper desde la trazabilidad cruda
+                    this.stepperSteps = this.mapTrazabilidadToSteps(raw.trazabilidad || []);
                     // eslint-disable-next-line no-console
                     console.log('[TrackingView] Invoice (transported) preloaded:', this.invoice);
                     this.hideSearch = true;
@@ -163,6 +168,14 @@ export class TrackingViewComponent {
                             })),
                             productos: invoice.orderProducts || []
                         };
+            // Si ya vienen trackingSteps directos, derivar pasos para el componente
+            if (invoice.trackingSteps && invoice.trackingSteps.length) {
+                this.stepperSteps = invoice.trackingSteps;
+            }
+            // Refuerzo: si compraAdaptada existe, regenerar desde su trazabilidad (aplica normalización)
+            if (this.compraAdaptada?.trazabilidad) {
+                this.stepperSteps = this.mapTrazabilidadToSteps(this.compraAdaptada.trazabilidad);
+            }
         }
     }
 
@@ -176,6 +189,40 @@ export class TrackingViewComponent {
             this.autoSearched = true;
             setTimeout(() => this.onSearch(this.searchModel as SearchModel), 0);
         }
+    }
+
+    /** Convierte arreglo de items de trazabilidad crudos en TrackingStepModel[] para el stepper nuevo */
+    private mapTrazabilidadToSteps(trazabilidad: any[]): TrackingStepModel[] {
+        if (!trazabilidad || !Array.isArray(trazabilidad)) { return []; }
+        return trazabilidad.map((t: any) => {
+            const step = new TrackingStepModel();
+            step.title = { text: this.normalizeGlosa(t.glosa), color: '', isBold: false } as any;
+            step.description = t.observacion || '';
+            step.date = this.parseFechaRegistro(t.fechaRegistro) as any;
+            step.icon = this.computeIconFromEstado(t.estado);
+            return step;
+        });
+    }
+
+    private computeIconFromEstado(estado: string | undefined): string {
+        const e = (estado || '').toLowerCase();
+        if (!e) return 'pending';
+        const doneStates = ['activo','finalizado','completado','entregado'];
+        return doneStates.some(ds => e.indexOf(ds) >= 0) ? 'done' : 'pending';
+    }
+
+    private parseFechaRegistro(raw: string): Date | undefined {
+        if (!raw) return undefined;
+        // Intentar parseo directo (ISO / timestamp)
+        const direct = Date.parse(raw);
+        if (!isNaN(direct)) return new Date(direct);
+        // Intentar formato dd-MM-yyyy
+        const m = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (m) {
+            const d = parseInt(m[1],10); const mo = parseInt(m[2],10)-1; const y = parseInt(m[3],10);
+            return new Date(y,mo,d);
+        }
+        return undefined;
     }
 
     public showPickupDate(): boolean {

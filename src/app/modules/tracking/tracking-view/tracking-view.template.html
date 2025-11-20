@@ -5,8 +5,8 @@
     </button>
 </div>
 
-<div class="box-container" *ngIf="compraAdaptada">
-  <app-purchase-stepper [trazabilidad]="compraAdaptada.trazabilidad"></app-purchase-stepper>
+<div class="box-container" *ngIf="stepperSteps && stepperSteps.length">
+  <app-tracking-stepper-view [steps]="stepperSteps" [orderDetails]="invoice?.orderProducts"></app-tracking-stepper-view>
 </div>
 <div class="box-container" *ngIf="compraAdaptada">
   <app-purchase-summary
