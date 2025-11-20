@@ -260,4 +260,37 @@ export class TrackingViewComponent {
         };
         return map[g] || glosa;
     }
+
+    public resumenTipoEntrega(): string | undefined {
+        // Preferir pickup info si existe
+        if (this.invoice?.pickup) {
+            // Asumimos que si hay pickup es retiro en tienda
+            return 'Retiro en Tienda';
+        }
+        // Si no hay pickup, fallback por tipo de documento u otros flags (simplificado)
+        return 'Despacho a domicilio';
+    }
+
+    public resumenDireccion(): string | undefined {
+        // Intentar obtener dirección desde pickup (suponiendo propiedades standard)
+        const p: any = this.invoice?.pickup as any;
+        if (p) {
+            // Construir dirección legible si existen partes
+            const parts = [p.address, p.commune, p.city, p.region].filter(Boolean);
+            if (parts.length) return parts.join(', ');
+        }
+        return undefined;
+    }
+
+    public resumenFechaRetiro(): string | undefined {
+        // Usar issueDate como placeholder si no tenemos pickup date específica
+        if (this.invoice?.issueDate) {
+            const d = this.invoice.issueDate;
+            const dd = String(d.getDate()).padStart(2,'0');
+            const mm = String(d.getMonth()+1).padStart(2,'0');
+            const yyyy = d.getFullYear();
+            return `${dd}-${mm}-${yyyy}`;
+        }
+        return undefined;
+    }
 }

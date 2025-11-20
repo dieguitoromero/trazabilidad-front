@@ -23,6 +23,7 @@ import {MatExpansionModule} from '@angular/material/expansion';
 import {TrackingOrderDetailsComponent} from './tracking-view/tracking-order-details/tracking-order-details.component';
 import {TrackingDeliveryDetailsComponent} from './tracking-view/tracking-delivery-details/tracking-delivery-details.component';
 import {MatBadgeModule} from '@angular/material/badge';
+import { PurchaseSummaryComponent } from './tracking-view/purchase-summary/purchase-summary.component';
 
 @NgModule({
   imports: [
@@ -50,7 +51,8 @@ import {MatBadgeModule} from '@angular/material/badge';
     TrackingMachinableProcessComponent,
     TrackingMachinableOrderViewerComponent,
     TrackingOrderDetailsComponent,
-    TrackingDeliveryDetailsComponent,
+  TrackingDeliveryDetailsComponent,
+  PurchaseSummaryComponent,
   ],
   providers: [
     TrackingService,

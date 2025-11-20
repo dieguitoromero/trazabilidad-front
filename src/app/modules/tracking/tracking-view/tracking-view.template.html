@@ -8,5 +8,12 @@
 <div class="box-container" *ngIf="compraAdaptada">
   <app-purchase-stepper [trazabilidad]="compraAdaptada.trazabilidad"></app-purchase-stepper>
 </div>
+<div class="box-container" *ngIf="compraAdaptada">
+  <app-purchase-summary
+    [tipoEntrega]="resumenTipoEntrega()"
+    [direccionEntrega]="resumenDireccion()"
+    [fechaRetiro]="resumenFechaRetiro()">
+  </app-purchase-summary>
+</div>
 
 
