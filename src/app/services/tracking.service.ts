@@ -71,14 +71,29 @@ export class TrackingService {
             if (!isNaN(t)) dateIssue = new Date(t);
         }
         model.issueDate = dateIssue as any;
-        // map pasos
+        // map pasos: preservar íconos si vienen desde legacy traceability (usar URLs si existen en otra fuente)
         model.trackingSteps = (dto.trazabilidad || []).map(t => ({
-            title: { text: t.glosa },
+            title: { text: this.normalizeGlosa(t.glosa) },
             date: t.fechaRegistro,
-            icon: t.estado === 'finalizado' ? 'done' : 'pending'
+            icon: t.estado === 'finalizado' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending'
         })) as any;
         // productos y seller quedan vacíos en este flujo (si el endpoint entrega luego detalles se puede ampliar)
         return model;
+    }
+
+    private normalizeGlosa(glosa: string): string {
+        if (!glosa) return glosa;
+        const g = glosa.trim().toLowerCase();
+        const map: Record<string,string> = {
+            'pedido ingresado':'Pedido Ingresado',
+            'pedido pagado':'Pedido pagado',
+            'pedido aprobado':'Pedido pagado',
+            'preparacion de pedido':'Preparacion de Pedido',
+            'preparación de pedido':'Preparacion de Pedido',
+            'disponible para retiro':'Disponible para retiro',
+            'pedido entregado':'Pedido Entregado'
+        };
+        return map[g] || glosa;
     }
 
     private mapTipoDocumentoToCode(tipo: string): string {

@@ -155,6 +155,39 @@ export class MisComprasComponent implements OnInit {
       console.log('[MisComprasComponent] respuesta buscarDocumento:', resp);
       // Guardar payload para que Tracking lo consuma sin re-llamar
       this.trackingDataService.setCompraPayload(resp);
+      // Simular carga de invoice completo legacy si se requiere para tracking-stepper-view
+      const legacyInvoice = {
+        number_printed: folioDigits.toString().padStart(10,'0'),
+        type_document: tipo,
+        label_document: c.tipoDocumento,
+        total: c.total,
+        date_issue: new Date().toISOString(),
+        id_pay: 0,
+        pickup: {
+          title: c.tipoEntrega && c.tipoEntrega.toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho',
+          text: c.direccionEntrega || '',
+          title_date: 'Retira a partir del ',
+          date: new Date().toISOString(),
+          icon: 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
+        },
+        traceability: {
+          steps: (c.trazabilidad || []).map(t => ({
+            title: { text: t.glosa, color: '#4d4f57', isBold: true },
+            description: '',
+            date: t.fechaRegistro,
+            icon: t.estado === 'finalizado' || t.estado === 'activo' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending',
+            machinable: null
+          }))
+        },
+        seller: {
+          title: 'Vendedor', name: '', mail: '', phone: '',
+          icon_principal: 'https://dvimperial.blob.core.windows.net/traceability/contact_icon.svg',
+          icon_phone: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg',
+          icon_mail: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg'
+        },
+        DetailsProduct: []
+      };
+      this.trackingDataService.setInvoicePayload(legacyInvoice);
       // Forzar uso del flujo de documentos (api='doc')
       const api = 'doc';
       this.router.navigate(['/tracking'], {

@@ -6,6 +6,9 @@
 </div>
 
 <div class="box-container" *ngIf="stepperSteps && stepperSteps.length">
+  <div class="stepper-progress" *ngIf="completedCount() > 0">
+    {{completedCount()}} de {{totalCanonical()}} pasos
+  </div>
   <app-tracking-stepper-view [steps]="stepperSteps" [orderDetails]="invoice?.orderProducts"></app-tracking-stepper-view>
 </div>
 <div class="box-container" *ngIf="compraAdaptada">

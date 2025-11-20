@@ -55,34 +55,22 @@ export class TrackingViewComponent {
                 (this.searchModel as any).api = params.api || 'doc';
                 (this.searchModel as any).section = params.section;
                 // Intentar consumir payload transportado para evitar nueva llamada
+                const invoiceTransport = this.trackingData.consumeInvoicePayload();
+                if (invoiceTransport) {
+                    const mapped = InvoiceModel.mapFromObj(invoiceTransport);
+                    if (mapped) {
+                        this.formatInvoiceForStepper(mapped);
+                        // eslint-disable-next-line no-console
+                        console.log('[TrackingView] Invoice (legacy transport) preloaded:', this.invoice);
+                        this.hideSearch = true;
+                        this.applyHideHeroBg();
+                        return;
+                    }
+                }
                 const transport = this.trackingData.consumeCompraPayload();
                 if (transport && transport.compras && transport.compras.length > 0) {
                     const raw = transport.compras[0];
-                    // Mapear a estructura mínima que espera la vista
-                    this.invoice = {
-                        printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i,'').replace(/^0+/, ''),
-                        documentType: this.mapTipoDocumentoToCode(raw.tipoDocumento),
-                        documentLabel: raw.tipoDocumento,
-                        issueDate: this.parseDate(raw.fechaCompra),
-                        trackingSteps: (raw.trazabilidad || []).map((t: any) => ({
-                            title: { text: this.normalizeGlosa(t.glosa) },
-                            date: t.fechaRegistro,
-                            icon: 'done'
-                        })),
-                        orderProducts: raw.productos || [],
-                        hasProductDetails: (raw.productos || []).length > 0
-                    } as any;
-                                        this.compraAdaptada = {
-                                            trazabilidad: (raw.trazabilidad || []).map((t: any) => ({
-                                                glosa: this.normalizeGlosa(t.glosa),
-                                                fechaRegistro: t.fechaRegistro,
-                                                estado: t.estado || 'activo',
-                                                observacion: t.observacion || ''
-                                            })),
-                                            productos: raw.productos || []
-                                        };
-                    // Derivar pasos para el stepper desde la trazabilidad cruda
-                    this.stepperSteps = this.mapTrazabilidadToSteps(raw.trazabilidad || []);
+                    this.formatCompraDtoForStepper(raw);
                     // eslint-disable-next-line no-console
                     console.log('[TrackingView] Invoice (transported) preloaded:', this.invoice);
                     this.hideSearch = true;
@@ -159,23 +147,7 @@ export class TrackingViewComponent {
         if (invoice) {
             this.hideSearch = true;
             this.applyHideHeroBg();
-                        this.compraAdaptada = {
-                            trazabilidad: (invoice.trackingSteps || []).map(s => ({
-                                glosa: s.title?.text,
-                                fechaRegistro: s.date,
-                                estado: s.icon === 'done' ? 'activo' : 'pendiente',
-                                observacion: ''
-                            })),
-                            productos: invoice.orderProducts || []
-                        };
-            // Si ya vienen trackingSteps directos, derivar pasos para el componente
-            if (invoice.trackingSteps && invoice.trackingSteps.length) {
-                this.stepperSteps = invoice.trackingSteps;
-            }
-            // Refuerzo: si compraAdaptada existe, regenerar desde su trazabilidad (aplica normalización)
-            if (this.compraAdaptada?.trazabilidad) {
-                this.stepperSteps = this.mapTrazabilidadToSteps(this.compraAdaptada.trazabilidad);
-            }
+            this.formatInvoiceForStepper(invoice);
         }
     }
 
@@ -196,8 +168,15 @@ export class TrackingViewComponent {
         if (!trazabilidad || !Array.isArray(trazabilidad)) { return []; }
         return trazabilidad.map((t: any) => {
             const step = new TrackingStepModel();
-            step.title = { text: this.normalizeGlosa(t.glosa), color: '', isBold: false } as any;
-            step.description = t.observacion || '';
+            const original = t.glosa;
+            const canonical = this.normalizeGlosa(original);
+            step.title = { text: canonical, color: '', isBold: false } as any;
+            // si la glosa original difiere y es 'Pedido aprobado', mostrarla como descripción
+            if (original && original.trim().toLowerCase() !== canonical.trim().toLowerCase() && original.trim().toLowerCase() === 'pedido aprobado') {
+                step.description = original;
+            } else {
+                step.description = t.observacion || '';
+            }
             step.date = this.parseFechaRegistro(t.fechaRegistro) as any;
             step.icon = this.computeIconFromEstado(t.estado);
             return step;
@@ -213,7 +192,7 @@ export class TrackingViewComponent {
 
     private parseFechaRegistro(raw: string): Date | undefined {
         if (!raw) return undefined;
-        // Intentar parseo directo (ISO / timestamp)
+        // Intentar parseo directo (ISO / timestamp, incluyendo milisegundos y zona)
         const direct = Date.parse(raw);
         if (!isNaN(direct)) return new Date(direct);
         // Intentar formato dd-MM-yyyy
@@ -301,12 +280,101 @@ export class TrackingViewComponent {
         const map: Record<string,string> = {
           'pedido ingresado':'Pedido ingresado',
           'pedido pagado':'Pedido pagado',
-          'pedido aprobado':'Pedido pagado',
+                    // 'Pedido aprobado' mantenemos canonical 'Pedido pagado' pero necesitaremos descripción con original
+                    'pedido aprobado':'Pedido pagado',
           'preparacion de pedido':'Preparación de pedido',
           'preparación de pedido':'Preparación de pedido'
         };
         return map[g] || glosa;
     }
+
+    private formatInvoiceForStepper(invoice: InvoiceModel): void {
+        this.invoice = invoice;
+        const steps = this.padCanonicalSteps(invoice.trackingSteps || []);
+        // Preservar íconos originales cuando son URLs, normalizar glosa si es necesario
+        this.stepperSteps = steps.map(s => {
+            const m = new TrackingStepModel();
+            m.title = { text: this.normalizeGlosa(s.title?.text), color: s.title?.color, isBold: s.title?.isBold } as any;
+            m.description = s.description;
+            m.date = s.date;
+            m.icon = s.icon; // ya debería ser URL o ícono válido
+            m.machinable = s.machinable;
+            return m;
+        });
+        this.compraAdaptada = {
+            trazabilidad: steps.map(s => ({
+                glosa: this.normalizeGlosa(s.title?.text),
+                fechaRegistro: s.date,
+                estado: s.icon?.indexOf('timeline_complete_icon') >= 0 ? 'finalizado' : (s.icon?.indexOf('pending') >= 0 ? 'pendiente' : 'activo'),
+                observacion: s.description || ''
+            })),
+            productos: invoice.orderProducts || []
+        };
+    }
+
+    private formatCompraDtoForStepper(raw: any): void {
+        this.invoice = {
+            printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i,'').replace(/^0+/, ''),
+            documentType: this.mapTipoDocumentoToCode(raw.tipoDocumento),
+            documentLabel: raw.tipoDocumento,
+            issueDate: this.parseDate(raw.fechaCompra),
+            trackingSteps: (raw.trazabilidad || []).map((t: any) => ({
+                title: { text: this.normalizeGlosa(t.glosa) },
+                description: (t.glosa && t.glosa.trim().toLowerCase() === 'pedido aprobado' && this.normalizeGlosa(t.glosa).toLowerCase() !== t.glosa.trim().toLowerCase()) ? t.glosa : '',
+                date: t.fechaRegistro,
+                icon: t.estado === 'finalizado' || t.estado === 'activo' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending'
+            })),
+            orderProducts: raw.productos || [],
+            hasProductDetails: (raw.productos || []).length > 0
+        } as any;
+        this.stepperSteps = this.padCanonicalSteps(this.mapTrazabilidadToSteps(raw.trazabilidad || []));
+        this.compraAdaptada = {
+            trazabilidad: (raw.trazabilidad || []).map((t: any) => ({
+                glosa: this.normalizeGlosa(t.glosa),
+                fechaRegistro: t.fechaRegistro,
+                estado: t.estado || 'activo',
+                observacion: t.observacion || ''
+            })),
+            productos: raw.productos || []
+        };
+    }
+
+    private padCanonicalSteps(existing: TrackingStepModel[]): TrackingStepModel[] {
+        const order = [
+            'Pedido ingresado',
+            'Pedido pagado',
+            'Preparacion de Pedido',
+            'Disponible para retiro',
+            'Pedido Entregado'
+        ];
+        const normalizedExisting = existing.map(s => ({
+            key: (s.title?.text || '').toLowerCase(),
+            step: s
+        }));
+        const hasMap = new Map<string, TrackingStepModel>();
+        normalizedExisting.forEach(e => hasMap.set(e.key, e.step));
+        const result: TrackingStepModel[] = [];
+        order.forEach(label => {
+            const key = label.toLowerCase();
+            if (hasMap.has(key)) {
+                result.push(hasMap.get(key)!);
+            } else {
+                const pending = new TrackingStepModel();
+                pending.title = { text: label, color: '#4d4f57', isBold: true } as any;
+                pending.description = '';
+                pending.date = undefined as any;
+                pending.icon = 'pending';
+                result.push(pending);
+            }
+        });
+        return result;
+    }
+
+    public completedCount(): number {
+        return this.stepperSteps.filter(s => s.icon !== 'pending').length;
+    }
+
+    public totalCanonical(): number { return 5; }
 
     public resumenTipoEntrega(): string | undefined {
         // Preferir pickup info si existe

@@ -12,7 +12,7 @@
                    matBadgeColor="warn"
                    [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0">{{step.title.text}}</p>
                 <p class="sub-title" [ngClass]="{'d-block d-md-none': !vertical}">{{step.description}}</p>
-                <span class="date" [ngClass]="{'d-block d-md-none': !vertical}">{{step.date | date: 'shortDate'}}</span>
+                <span class="date" [ngClass]="{'d-block d-md-none': !vertical}">{{step.date | date: 'shortDate'}} <ng-container *ngIf="step.date">{{step.date | date:'HH:mm'}}</ng-container></span>
             </div>
 
             <div class="step d-block order-0"
@@ -20,7 +20,12 @@
                 <div class="step-separator from align-self-center flex-grow-1"
                      *ngIf="i > 0 || !vertical"
                      [ngClass]="{ 'beginning': i <= 0, 'd-none d-md-block': (i == 0 && !vertical)}"></div>
-                <img class="icon" src="{{step.icon}}"/>
+                                <ng-container *ngIf="step.icon !== 'pending'; else pendingIcon">
+                                    <img class="icon" [src]="step.icon" alt="step icon" />
+                                </ng-container>
+                                <ng-template #pendingIcon>
+                                    <div class="icon pending"></div>
+                                </ng-template>
                 <div class="step-separator to align-self-center flex-grow-1"
                      *ngIf="i < (steps ? steps.length - 1 : 0) || !vertical"
                      [ngClass]="{ 'end': i >= (steps ? steps.length - 1 : 0), 'd-none d-md-block': !vertical && i >= (steps ? steps.length - 1 : 0)}"></div>
@@ -28,7 +33,7 @@
 
             <div class="step-details d-none d-md-block" *ngIf="!vertical">
                 <p>{{step.description}}</p>
-                <span>{{step.date | date: 'shortDate'}}</span>
+                <span>{{step.date | date: 'shortDate'}} <ng-container *ngIf="step.date">{{step.date | date:'HH:mm'}}</ng-container></span>
             </div>
         </div>
     </ng-container>

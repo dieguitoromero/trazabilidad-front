@@ -7,6 +7,7 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class TrackingDataService {
   private compraPayload: any | undefined;
+  private invoicePayload: any | undefined;
 
   public setCompraPayload(payload: any): void {
     this.compraPayload = payload;
@@ -15,6 +16,16 @@ export class TrackingDataService {
   public consumeCompraPayload(): any | undefined {
     const p = this.compraPayload;
     this.compraPayload = undefined; // evitar reutilización accidental
+    return p;
+  }
+
+  public setInvoicePayload(payload: any): void {
+    this.invoicePayload = payload;
+  }
+
+  public consumeInvoicePayload(): any | undefined {
+    const p = this.invoicePayload;
+    this.invoicePayload = undefined;
     return p;
   }
 }
