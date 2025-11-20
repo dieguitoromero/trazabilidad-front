@@ -5,46 +5,8 @@
     </button>
 </div>
 
-<div class="search-wrapper" *ngIf="!hideSearch">
-    <app-tracking-search-box (search)="onSearch($event)" [searchModel]="searchModel"></app-tracking-search-box>
-</div>
-
-<div class="box-container" *ngIf="invoice">
-    <div class="doc-header">
-        <div class="doc-title">
-            {{ invoice.documentLabel }} N° {{ invoice.printedNumber }}
-        </div>
-        <div class="doc-subtitle" *ngIf="invoice.issueDate">
-            Fecha de compra {{ invoice.issueDate | date:"d 'de' MMMM 'del' y" }}
-        </div>
-        <div class="doc-location-row" *ngIf="invoice.pickup">
-            <div class="doc-location-icon">
-                <img [src]="invoice.pickup.icon" alt="ubicación" />
-            </div>
-            <div class="doc-location-text">
-                <span class="doc-location-title">{{ invoice.pickup.title }}:</span>
-                <span class="doc-location-desc"> {{ invoice.pickup.text }}</span>
-            </div>
-        </div>
-    </div>
-    <!-- Estado compacto en móvil -->
-    <div class="estado-movil show-on-mobile" *ngIf="invoice">
-        <span class="estado-icon"><img src="/assets/estado-icon.svg" alt="estado" /></span>
-        <span class="estado-text">Estado: {{ statusActual() }}</span>
-    </div>
-    <app-tracking-stepper-view class="hide-on-mobile" [steps]="invoice.trackingSteps" [orderDetails]="invoice.orderProducts"></app-tracking-stepper-view>
-</div>
-<div class="box-container" *ngIf="invoice?.hasProductDetails" #orderDetailsView>
-    <app-tracking-order-details [orderDetails]="invoice?.orderProducts" [isBox]="true"></app-tracking-order-details>
-    
-</div>
-
-<div class="box-container no-padding"  #trackingStepperView>
-    <ng-container *ngFor="let step of invoice?.trackingSteps">
-        <app-tracking-machinable-process *ngIf="step.machinable && step.machinable.orders.length > 0"
-                                         [machinableProcess]="step.machinable"></app-tracking-machinable-process>
-    </ng-container>
-
+<div class="box-container" *ngIf="compraAdaptada">
+  <app-purchase-stepper [trazabilidad]="compraAdaptada.trazabilidad"></app-purchase-stepper>
 </div>
 
 

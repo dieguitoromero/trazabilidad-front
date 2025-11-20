@@ -10,12 +10,13 @@ import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
 import {TrackingHintModalComponent} from './tracking-hint-modal/tracking-hint-modal.component';
 import {MatDialogModule} from '@angular/material/dialog';
+import {MatIconModule} from '@angular/material/icon';
 import {TrackingService} from '../../services/tracking.service';
 import {TrackingRepository} from '../../repositories/tracking.repository';
 import {TrackingNotFoundComponent} from './tracking-not-found/tracking-not-found.component';
 import {TrackingViewComponent} from './tracking-view/tracking-view.component';
-import {MatIconModule} from '@angular/material/icon';
 import {TrackingStepperViewComponent} from './tracking-view/tracking-stepper-view/tracking-stepper-view.component';
+import { TimelineModule } from '../timeline/timeline.module';
 import {TrackingMachinableProcessComponent} from './tracking-view/tracking-machinable-process/tracking-machinable-process.component';
 import {TrackingMachinableOrderViewerComponent} from './tracking-view/tracking-machinable-order-viewer/tracking-machinable-order-viewer.component';
 import {MatExpansionModule} from '@angular/material/expansion';
@@ -35,16 +36,17 @@ import {MatBadgeModule} from '@angular/material/badge';
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
-    MatExpansionModule,
-    MatBadgeModule,
+  MatExpansionModule,
+  MatBadgeModule,
+  TimelineModule,
   ],
   declarations: [
     TrackingComponent,
     TrackingSearchBoxComponent,
-    TrackingHintModalComponent,
+  TrackingStepperViewComponent,
     TrackingNotFoundComponent,
+    TrackingHintModalComponent,
     TrackingViewComponent,
-    TrackingStepperViewComponent,
     TrackingMachinableProcessComponent,
     TrackingMachinableOrderViewerComponent,
     TrackingOrderDetailsComponent,

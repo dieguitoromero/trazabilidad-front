@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ADMIN_MOCK_DATA } from './mock-admin-data';
 import { MisComprasService, MisComprasResponseDto } from '../../services/mis-compras.service';
+import { TrackingDataService } from '../../services/tracking-data.service';
 import { environment } from '../../../environments/environment';
 
 type Trazabilidad = { glosa: string; fechaRegistro: string; estado: 'activo' | 'finalizado' };
@@ -36,7 +37,7 @@ export class MisComprasComponent implements OnInit {
   loading = false;
   error = false;
 
-  constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService) {}
+  constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService, private trackingDataService: TrackingDataService) {}
 
   ngOnInit(): void {
     // Restaurar estado de paginación desde query params si existen
@@ -122,17 +123,24 @@ export class MisComprasComponent implements OnInit {
     'Pedido entregado'
   ];
 
+  private normalize(s: string): string {
+    return (s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  }
+
   pasoActivo(compra: Compra, paso: string): boolean {
-    const item = compra.trazabilidad.find(p => p.glosa.toLowerCase() === paso.toLowerCase());
+    const target = this.normalize(paso);
+    const item = compra.trazabilidad.find(p => this.normalize(p.glosa) === target);
     return !!item && (item.estado === 'activo' || item.estado === 'finalizado');
   }
 
   lastReachedIndex(compra: Compra): number {
     let last = -1;
-    const reached = new Set(compra.trazabilidad.map(t => t.glosa.toLowerCase()));
-    this.pasos.forEach((p, idx) => {
-      if (reached.has(p.toLowerCase())) last = idx;
-    });
+    const reached = new Set(compra.trazabilidad.map(t => this.normalize(t.glosa)));
+    this.pasos.forEach((p, idx) => { if (reached.has(this.normalize(p))) last = idx; });
     return last;
   }
 
@@ -144,12 +152,18 @@ export class MisComprasComponent implements OnInit {
       const encontrado = resp.compras?.[0];
       const folioRaw = encontrado?.numeroDocumento || c.numeroDocumento;
       const folioDigits = this.tryParseFolio(folioRaw);
-      const api = tipo === 'NVV' ? 'v1' : undefined;
+      // Loguear la respuesta completa en consola para inspección
+      // eslint-disable-next-line no-console
+      console.log('[MisComprasComponent] respuesta buscarDocumento:', resp);
+      // Guardar payload para que Tracking lo consuma sin re-llamar
+      this.trackingDataService.setCompraPayload(resp);
+      // Forzar uso del flujo de documentos (api='doc')
+      const api = 'doc';
       this.router.navigate(['/tracking'], {
         queryParams: {
           folioDocumento: folioDigits,
           tipoDocumento: tipo,
-          ...(api ? { api } : {}),
+          api,
           section: 'details',
           page: this.page,
           perPage: this.perPage

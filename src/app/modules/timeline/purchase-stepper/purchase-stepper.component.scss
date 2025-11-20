@@ -1,0 +1,59 @@
+.purchase-stepper {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 8px 0 4px;
+  .step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 90px;
+    .icon-wrapper, .dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+    .dot { background: #b9c5d1; }
+    .icon-wrapper {
+      background: #003b79; /* azul consistente */
+    }
+    .icon-wrapper img { width: 20px; height: 20px; }
+    .label {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      text-align: center;
+      color: #4a5965;
+    }
+    .secondary {
+      margin-top: 4px;
+      text-align: center;
+      .text { font-size: 11px; color: #5e6b76; }
+      .date { font-size: 11px; color: #003b79; font-weight: 500; margin-top: 2px; }
+    }
+    /* Estados: mantenemos mismo tamaño, sólo color azul e icono */
+    &.completed .dot, &.current .dot { /* fallback si icon-wrapper no se usa */
+      background: #003b79;
+    }
+    &.current .icon-wrapper {
+      box-shadow: 0 0 0 3px #003b791a;
+    }
+  }
+}
+
+/* Modo compacto: ocultamos secondary y ajustamos padding para mantener altura original */
+.purchase-stepper.compact {
+  padding: 4px 0 0;
+  .step { min-width: 70px; }
+  .step .secondary { display: none !important; }
+  .step .label { margin-top: 6px; }
+}
+
+@media (max-width: 768px) {
+  .purchase-stepper { display: none; }
+}

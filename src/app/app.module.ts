@@ -18,6 +18,7 @@ import { AuthRepository } from "./repositories/auth.repository";
 import { AuthService } from "./services/auth.service";
 import { AuthInterceptor } from "./core/interceptors/auth.interceptor";
 import { MisComprasComponent } from './modules/mis-compras/mis-compras.component';
+import { TimelineModule } from './modules/timeline/timeline.module';
 import { FormatFechaCompraPipe } from './modules/mis-compras/format-fecha-compra.pipe';
 import { FormsModule } from '@angular/forms';
 
@@ -31,6 +32,7 @@ registerLocaleData(localeCL);
     BrowserAnimationsModule,
     FormsModule,
     HttpClientModule,
+    TimelineModule,
   ],
   providers: [
     LoadingService,

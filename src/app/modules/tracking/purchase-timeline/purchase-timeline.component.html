@@ -1,0 +1,16 @@
+<div class="purchase-timeline" *ngIf="compra" style="margin-top: 25px !important;">
+  <div class="timeline-row">
+    <div class="step" *ngFor="let s of renderSteps; let i = index" [class.active]="s.active">
+      <div class="label">{{ s.label }}</div>
+      <div class="connector left" *ngIf="i > 0" [class.pending]="!s.active" [class.completed]="s.active"></div>
+      <div class="icon-wrapper">
+        <img *ngIf="s.active" src="assets/timeline_complete_icon.svg" class="icon-img" alt="completado" />
+        <div *ngIf="!s.active" class="icon placeholder"></div>
+      </div>
+      <div class="connector right" *ngIf="i < renderSteps.length - 1" [class.pending]="!s.active" [class.completed]="s.active"></div>
+      <div class="observacion">{{ s.observacion }}</div>
+      <div class="fecha" *ngIf="s.fechaRegistro">{{ s.fechaRegistro }}</div>
+    </div>
+    <div class="badge" *ngIf="(compra.productos?.length || 0) > 0">{{ compra.productos.length }}</div>
+  </div>
+</div>

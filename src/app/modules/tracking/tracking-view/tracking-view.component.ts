@@ -3,6 +3,7 @@ import {InvoiceModel} from '../../../core/models/invoice.model';
 import {SearchModel} from '../models/search-model';
 import {take} from 'rxjs/operators';
 import {TrackingService} from '../../../services/tracking.service';
+import { TrackingDataService } from '../../../services/tracking-data.service';
 import {ActivatedRoute, Router} from '@angular/router';
 
 @Component({
@@ -12,6 +13,8 @@ import {ActivatedRoute, Router} from '@angular/router';
 export class TrackingViewComponent {
 
     public invoice: InvoiceModel | undefined;
+    // Objeto adaptado para PurchaseTimelineComponent
+    public compraAdaptada: any | undefined;
     public working = false;
     public hasError = false;
     public searchModel: SearchModel | undefined;
@@ -25,7 +28,8 @@ export class TrackingViewComponent {
 
     constructor(private trackingService: TrackingService,
                 private router: Router,
-                private activeRoute: ActivatedRoute) {
+                private activeRoute: ActivatedRoute,
+                private trackingData: TrackingDataService) {
 
         this.activeRoute.params.subscribe((params) => {
             if (params.invoiceId || params.invoiceType) {
@@ -45,8 +49,42 @@ export class TrackingViewComponent {
                 const type = params.tipoDocumento;
                 this.searchModel = new SearchModel(id, type);
                 // Si viene api=v1, usaremos v1 en onSearch
-                (this.searchModel as any).api = params.api || 'v2';
+                (this.searchModel as any).api = params.api || 'doc';
                 (this.searchModel as any).section = params.section;
+                // Intentar consumir payload transportado para evitar nueva llamada
+                const transport = this.trackingData.consumeCompraPayload();
+                if (transport && transport.compras && transport.compras.length > 0) {
+                    const raw = transport.compras[0];
+                    // Mapear a estructura mínima que espera la vista
+                    this.invoice = {
+                        printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i,'').replace(/^0+/, ''),
+                        documentType: this.mapTipoDocumentoToCode(raw.tipoDocumento),
+                        documentLabel: raw.tipoDocumento,
+                        issueDate: this.parseDate(raw.fechaCompra),
+                        trackingSteps: (raw.trazabilidad || []).map((t: any) => ({
+                            title: { text: this.normalizeGlosa(t.glosa) },
+                            date: t.fechaRegistro,
+                            icon: 'done'
+                        })),
+                        orderProducts: raw.productos || [],
+                        hasProductDetails: (raw.productos || []).length > 0
+                    } as any;
+                                        this.compraAdaptada = {
+                                            trazabilidad: (raw.trazabilidad || []).map((t: any) => ({
+                                                glosa: this.normalizeGlosa(t.glosa),
+                                                fechaRegistro: t.fechaRegistro,
+                                                estado: t.estado || 'activo',
+                                                observacion: t.observacion || ''
+                                            })),
+                                            productos: raw.productos || []
+                                        };
+                    // eslint-disable-next-line no-console
+                    console.log('[TrackingView] Invoice (transported) preloaded:', this.invoice);
+                    this.hideSearch = true;
+                    this.applyHideHeroBg();
+                    // Evitar auto búsqueda si ya cargamos invoice
+                    return;
+                }
                 this.triggerAutoSearch();
                 this.applyHideHeroBg();
             }
@@ -95,6 +133,9 @@ export class TrackingViewComponent {
             this.router.navigate(['not-found']);
         }
 
+        // eslint-disable-next-line no-console
+        console.log('[TrackingView] Invoice loaded:', invoice);
+
         const section = (this.searchModel as any)?.section;
         // Si se pide 'details' y hay detalles, ir primero a detalles
         if (section === 'details' && invoice?.hasProductDetails) {
@@ -113,6 +154,15 @@ export class TrackingViewComponent {
         if (invoice) {
             this.hideSearch = true;
             this.applyHideHeroBg();
+                        this.compraAdaptada = {
+                            trazabilidad: (invoice.trackingSteps || []).map(s => ({
+                                glosa: s.title?.text,
+                                fechaRegistro: s.date,
+                                estado: s.icon === 'done' ? 'activo' : 'pendiente',
+                                observacion: ''
+                            })),
+                            productos: invoice.orderProducts || []
+                        };
         }
     }
 
@@ -181,5 +231,33 @@ export class TrackingViewComponent {
             }
         }
         return last;
+    }
+
+    private mapTipoDocumentoToCode(tipo: string): string {
+        const t = (tipo || '').toLowerCase();
+        if (t.includes('boleta')) return 'BLV';
+        if (t.includes('factura')) return 'FCV';
+        if (t.includes('nota') && t.includes('venta')) return 'NVV';
+        return 'BLV';
+    }
+
+    private parseDate(fecha: string): Date | undefined {
+        const m = (fecha || '').match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (!m) return undefined;
+        const d = parseInt(m[1],10); const mo = parseInt(m[2],10)-1; const y = parseInt(m[3],10);
+        return new Date(y,mo,d);
+    }
+
+    private normalizeGlosa(glosa: string): string {
+        if (!glosa) return glosa;
+        const g = glosa.trim().toLowerCase();
+        const map: Record<string,string> = {
+          'pedido ingresado':'Pedido ingresado',
+          'pedido pagado':'Pedido pagado',
+          'pedido aprobado':'Pedido pagado',
+          'preparacion de pedido':'Preparación de pedido',
+          'preparación de pedido':'Preparación de pedido'
+        };
+        return map[g] || glosa;
     }
 }

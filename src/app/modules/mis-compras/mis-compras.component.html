@@ -49,15 +49,21 @@
         </span>
       </div>
 
-      <div class="stepper hide-on-mobile">
-        <div class="step"
-             *ngFor="let p of pasos; let i = index"
-             [class.completed]="i <= lastReachedIndex(c)"
-             [class.current]="i === lastReachedIndex(c)">
-          <div class="dot"></div>
-          <div class="label">{{ p }}</div>
+      <div class="hide-on-mobile">
+        <div class="stepper">
+          <div
+            class="step"
+            *ngFor="let p of pasos; let i = index"
+            [class.completed]="lastReachedIndex(c) >= i"
+            [class.current]="lastReachedIndex(c) === i"
+          >
+            <div class="dot"></div>
+            <div class="label">{{ p }}</div>
+          </div>
         </div>
       </div>
+
+      <!-- Timeline detallado removido: solo se mostrará en la pantalla de detalle -->
 
       <div class="estado-movil show-on-mobile">
         <span class="estado-icon"><img src="assets/estado-icon.svg" alt="Estado" /></span>
