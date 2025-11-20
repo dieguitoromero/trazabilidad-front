@@ -4,6 +4,7 @@ import { ADMIN_MOCK_DATA } from './mock-admin-data';
 import { MisComprasService, MisComprasResponseDto } from '../../services/mis-compras.service';
 import { TrackingDataService } from '../../services/tracking-data.service';
 import { environment } from '../../../environments/environment';
+import { normalizeGlosa } from '../../core/helpers/glosa-normalizer';
 
 type Trazabilidad = { glosa: string; fechaRegistro: string; estado: 'activo' | 'finalizado' };
 type Compra = {
@@ -124,11 +125,8 @@ export class MisComprasComponent implements OnInit {
   ];
 
   private normalize(s: string): string {
-    return (s || '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .trim();
+    // Usar helper y llevar a minúsculas para set comparisons
+    return (normalizeGlosa(s) || '').toLowerCase();
   }
 
   pasoActivo(compra: Compra, paso: string): boolean {
