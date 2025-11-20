@@ -7,6 +7,23 @@
         display: flex;
         flex-direction: column;
 
+
+    .steps-row {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0 8px 30px;
+    }
+
+    .steps-row .step-container {
+        flex: 1 1 20%;
+        max-width: 20%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
         .step-container {
             text-align: center;
 
@@ -40,9 +57,23 @@
 
             .step {
 
-                .icon {
-                    width: 23px;
+                .icon.circle {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    background-color: #d9dee6;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    position: relative;
+                    z-index: 2;
+                    box-shadow: 0 0 0 2px #fff inset;
                 }
+                .icon.circle.done {
+                    background-color: #003c69;
+                    color: #fff;
+                }
+                .icon.circle.done img { width: 36px; height: 36px; }
 
                 .step-separator {
                     height: 2px;
@@ -289,14 +320,4 @@
     }
 }
 
-.step .icon.pending {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #d9dee6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    color: #6b7685;
-}
+/* Pending circle unified styling already covered by .icon.circle */

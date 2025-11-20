@@ -4,6 +4,7 @@ import {switchMap, map, catchError} from 'rxjs/operators';
 import { MisComprasService, CompraApiDto } from './mis-compras.service';
 import {InvoiceModel} from '../core/models/invoice.model';
 import {TrackingRepository} from '../repositories/tracking.repository';
+import { normalizeGlosa } from '../core/helpers/glosa-normalizer';
 
 @Injectable()
 export class TrackingService {
@@ -73,7 +74,7 @@ export class TrackingService {
         model.issueDate = dateIssue as any;
         // map pasos: preservar íconos si vienen desde legacy traceability (usar URLs si existen en otra fuente)
         model.trackingSteps = (dto.trazabilidad || []).map(t => ({
-            title: { text: this.normalizeGlosa(t.glosa) },
+            title: { text: (t.glosa || '').trim() }, // mantener original
             date: t.fechaRegistro,
             icon: t.estado === 'finalizado' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending'
         })) as any;
@@ -81,20 +82,7 @@ export class TrackingService {
         return model;
     }
 
-    private normalizeGlosa(glosa: string): string {
-        if (!glosa) return glosa;
-        const g = glosa.trim().toLowerCase();
-        const map: Record<string,string> = {
-            'pedido ingresado':'Pedido Ingresado',
-            'pedido pagado':'Pedido pagado',
-            'pedido aprobado':'Pedido pagado',
-            'preparacion de pedido':'Preparacion de Pedido',
-            'preparación de pedido':'Preparacion de Pedido',
-            'disponible para retiro':'Disponible para retiro',
-            'pedido entregado':'Pedido Entregado'
-        };
-        return map[g] || glosa;
-    }
+    // normalizador local eliminado: se usa helper global cuando se requiera comparar/ordenar.
 
     private mapTipoDocumentoToCode(tipo: string): string {
         const t = (tipo || '').toLowerCase();

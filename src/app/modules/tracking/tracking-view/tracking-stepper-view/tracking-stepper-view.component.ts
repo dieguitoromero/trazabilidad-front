@@ -87,7 +87,6 @@ export class TrackingStepperViewComponent {
         if (index > 0) {
             const prevStepAllowedStatus = this.status[this.steps[index - 1].title.text];
             const isInProgress = this.steps[index - 1].icon.indexOf('in_progress') > 0;
-            
             if (prevStepAllowedStatus && prevStepAllowedStatus[0] === allowedStatus[0]  && allowedStatus.length === prevStepAllowedStatus.length && isInProgress) {
                 return 0;
             }
@@ -98,4 +97,6 @@ export class TrackingStepperViewComponent {
         }).length;
     }
 
+
 }
+

@@ -4,6 +4,7 @@ import {SearchModel} from '../models/search-model';
 import {take} from 'rxjs/operators';
 import {TrackingService} from '../../../services/tracking.service';
 import { TrackingDataService } from '../../../services/tracking-data.service';
+import { normalizeGlosa } from '../../../core/helpers/glosa-normalizer';
 import {ActivatedRoute, Router} from '@angular/router';
 import { TrackingStepModel } from '../../../core/models/tracking-step.model';
 
@@ -163,20 +164,14 @@ export class TrackingViewComponent {
         }
     }
 
-    /** Convierte arreglo de items de trazabilidad crudos en TrackingStepModel[] para el stepper nuevo */
+    /** Convierte arreglo de items de trazabilidad crudos en TrackingStepModel[] usando SIEMPRE la glosa original como título visible */
     private mapTrazabilidadToSteps(trazabilidad: any[]): TrackingStepModel[] {
         if (!trazabilidad || !Array.isArray(trazabilidad)) { return []; }
         return trazabilidad.map((t: any) => {
             const step = new TrackingStepModel();
-            const original = t.glosa;
-            const canonical = this.normalizeGlosa(original);
-            step.title = { text: canonical, color: '', isBold: false } as any;
-            // si la glosa original difiere y es 'Pedido aprobado', mostrarla como descripción
-            if (original && original.trim().toLowerCase() !== canonical.trim().toLowerCase() && original.trim().toLowerCase() === 'pedido aprobado') {
-                step.description = original;
-            } else {
-                step.description = t.observacion || '';
-            }
+            const original = (t.glosa || '').trim();
+            step.title = { text: original, color: '#4d4f57', isBold: true } as any;
+            step.description = t.observacion || '';
             step.date = this.parseFechaRegistro(t.fechaRegistro) as any;
             step.icon = this.computeIconFromEstado(t.estado);
             return step;
@@ -245,14 +240,11 @@ export class TrackingViewComponent {
             return pasosOrden[0];
         }
 
-        const titles = new Set(
-            this.invoice.trackingSteps
-                .map(s => (s.title && s.title.text ? s.title.text.toLowerCase() : ''))
-        );
+            const titles = new Set(this.invoice.trackingSteps.map(s => normalizeGlosa(s.title?.text || '').toLowerCase()));
 
         let last = pasosOrden[0];
         for (const p of pasosOrden) {
-            if (titles.has(p.toLowerCase())) {
+            if (titles.has(normalizeGlosa(p).toLowerCase())) {
                 last = p;
             }
         }
@@ -274,36 +266,23 @@ export class TrackingViewComponent {
         return new Date(y,mo,d);
     }
 
-    private normalizeGlosa(glosa: string): string {
-        if (!glosa) return glosa;
-        const g = glosa.trim().toLowerCase();
-        const map: Record<string,string> = {
-          'pedido ingresado':'Pedido ingresado',
-          'pedido pagado':'Pedido pagado',
-                    // 'Pedido aprobado' mantenemos canonical 'Pedido pagado' pero necesitaremos descripción con original
-                    'pedido aprobado':'Pedido pagado',
-          'preparacion de pedido':'Preparación de pedido',
-          'preparación de pedido':'Preparación de pedido'
-        };
-        return map[g] || glosa;
-    }
+        // normalizador local eliminado: se utiliza helper global normalizeGlosa únicamente para orden/padding.
 
     private formatInvoiceForStepper(invoice: InvoiceModel): void {
         this.invoice = invoice;
         const steps = this.padCanonicalSteps(invoice.trackingSteps || []);
-        // Preservar íconos originales cuando son URLs, normalizar glosa si es necesario
         this.stepperSteps = steps.map(s => {
             const m = new TrackingStepModel();
-            m.title = { text: this.normalizeGlosa(s.title?.text), color: s.title?.color, isBold: s.title?.isBold } as any;
+            m.title = { text: s.title?.text, color: s.title?.color, isBold: s.title?.isBold } as any;
             m.description = s.description;
             m.date = s.date;
-            m.icon = s.icon; // ya debería ser URL o ícono válido
+            m.icon = s.icon;
             m.machinable = s.machinable;
             return m;
         });
         this.compraAdaptada = {
             trazabilidad: steps.map(s => ({
-                glosa: this.normalizeGlosa(s.title?.text),
+                glosa: s.title?.text,
                 fechaRegistro: s.date,
                 estado: s.icon?.indexOf('timeline_complete_icon') >= 0 ? 'finalizado' : (s.icon?.indexOf('pending') >= 0 ? 'pendiente' : 'activo'),
                 observacion: s.description || ''
@@ -319,8 +298,8 @@ export class TrackingViewComponent {
             documentLabel: raw.tipoDocumento,
             issueDate: this.parseDate(raw.fechaCompra),
             trackingSteps: (raw.trazabilidad || []).map((t: any) => ({
-                title: { text: this.normalizeGlosa(t.glosa) },
-                description: (t.glosa && t.glosa.trim().toLowerCase() === 'pedido aprobado' && this.normalizeGlosa(t.glosa).toLowerCase() !== t.glosa.trim().toLowerCase()) ? t.glosa : '',
+                title: { text: (t.glosa || '').trim() },
+                description: t.observacion || '',
                 date: t.fechaRegistro,
                 icon: t.estado === 'finalizado' || t.estado === 'activo' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending'
             })),
@@ -330,7 +309,7 @@ export class TrackingViewComponent {
         this.stepperSteps = this.padCanonicalSteps(this.mapTrazabilidadToSteps(raw.trazabilidad || []));
         this.compraAdaptada = {
             trazabilidad: (raw.trazabilidad || []).map((t: any) => ({
-                glosa: this.normalizeGlosa(t.glosa),
+                glosa: (t.glosa || '').trim(),
                 fechaRegistro: t.fechaRegistro,
                 estado: t.estado || 'activo',
                 observacion: t.observacion || ''
@@ -343,21 +322,20 @@ export class TrackingViewComponent {
         const order = [
             'Pedido ingresado',
             'Pedido pagado',
-            'Preparacion de Pedido',
+            'Preparación de pedido',
             'Disponible para retiro',
-            'Pedido Entregado'
+            'Pedido entregado'
         ];
-        const normalizedExisting = existing.map(s => ({
-            key: (s.title?.text || '').toLowerCase(),
-            step: s
-        }));
         const hasMap = new Map<string, TrackingStepModel>();
-        normalizedExisting.forEach(e => hasMap.set(e.key, e.step));
+        existing.forEach(s => {
+            const key = normalizeGlosa(s.title?.text || '').toLowerCase();
+            if (key) hasMap.set(key, s);
+        });
         const result: TrackingStepModel[] = [];
         order.forEach(label => {
-            const key = label.toLowerCase();
-            if (hasMap.has(key)) {
-                result.push(hasMap.get(key)!);
+            const normalizedKey = normalizeGlosa(label).toLowerCase();
+            if (hasMap.has(normalizedKey)) {
+                result.push(hasMap.get(normalizedKey)!);
             } else {
                 const pending = new TrackingStepModel();
                 pending.title = { text: label, color: '#4d4f57', isBold: true } as any;
