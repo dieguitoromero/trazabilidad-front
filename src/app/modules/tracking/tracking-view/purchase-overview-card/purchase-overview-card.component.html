@@ -1,0 +1,15 @@
+<div class="purchase-overview-card">
+  <div class="header">Resumen de tu compra</div>
+  <div class="content-row">
+    <div class="icon-wrapper">
+      <div class="icon-circle">
+        <img src="https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg" alt="tienda" />
+      </div>
+    </div>
+    <div class="details">
+      <p class="tipo-entrega">{{tipoEntrega || '-'}} </p>
+      <p class="direccion"><strong>{{direccionDisplay()}}</strong></p>
+      <p class="fecha">Retira a partir del {{fechaRetiroDisplay()}}</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,37 @@
+.purchase-overview-card {
+  padding: 30px 60px 40px;
+  background: #fff;
+  box-shadow: 0 3px 20px rgba(0,0,0,0.12);
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+}
+
+.purchase-overview-card .header {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #101820;
+}
+
+.purchase-overview-card .content-row { display: flex; align-items: flex-start; }
+.icon-wrapper { margin-right: 30px; }
+.icon-circle {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: #d9e6fb; display:flex; align-items:center; justify-content:center;
+}
+.icon-circle img { width:48px; height:48px; }
+.details { flex:1; }
+.details p { margin: 0 0 12px; font-size:16px; color:#4d4f57; }
+.details p.direccion strong { font-weight:600; }
+.details p.fecha { font-size:16px; }
+
+@media (max-width: 768px) {
+  .purchase-overview-card { padding: 25px 30px; }
+  .icon-wrapper { margin-right: 20px; }
+  .icon-circle { width:64px; height:64px; }
+  .icon-circle img { width:36px; height:36px; }
+  .purchase-overview-card .header { font-size:20px; margin-bottom:16px; }
+  .details p { font-size:14px; margin-bottom:10px; }
+}

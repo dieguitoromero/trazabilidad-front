@@ -8,12 +8,21 @@
 <div class="box-container" *ngIf="stepperSteps && stepperSteps.length">
   <app-tracking-stepper-view [steps]="stepperSteps" [orderDetails]="invoice?.orderProducts"></app-tracking-stepper-view>
 </div>
-<div class="box-container" *ngIf="compraAdaptada">
+<div class="box-container" *ngIf="stepperSteps && stepperSteps.length">
+  <app-purchase-overview-card
+    [tipoEntrega]="resumenTipoEntrega()"
+    [direccion]="resumenDireccion()"
+    [fechaCompra]="invoice?.issueDate"
+    [isCompletadoTotal]="completedCount() === totalCanonical()"
+    [fechaFinal]="invoice?.pickup?.date">
+  </app-purchase-overview-card>
+</div>
+<!-- <div class="box-container" *ngIf="compraAdaptada">
   <app-purchase-summary
     [tipoEntrega]="resumenTipoEntrega()"
     [direccionEntrega]="resumenDireccion()"
     [fechaRetiro]="resumenFechaRetiro()">
   </app-purchase-summary>
-</div>
+</div> -->
 
 
