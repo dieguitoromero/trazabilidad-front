@@ -32,6 +32,7 @@
             </div>
 
             <div class="step-details d-none d-md-block" *ngIf="!vertical">
+                <div class="alcanzado-text" *ngIf="step.icon !== 'pending'">Punto alcanzado</div>
                 <p>{{step.description}}</p>
                 <span>{{step.date | date: 'shortDate'}} <ng-container *ngIf="step.date">{{step.date | date:'HH:mm'}}</ng-container></span>
             </div>
