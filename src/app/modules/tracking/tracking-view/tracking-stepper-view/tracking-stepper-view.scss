@@ -9,6 +9,10 @@
 
         .step-container {
             text-align: center;
+            flex: 1 1 0; // cada paso ocupa espacio proporcional
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
 
             .step-title {
                 margin: 16px 0;
@@ -41,7 +45,11 @@
             .step {
 
                 .icon {
-                    width: 23px;
+                    width: 36px; // igual tamaño que pendiente
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
 
                 .step-separator {
@@ -77,6 +85,15 @@
                                 background-color: transparent;
                                 border: 0;
                                 margin: 0;
+                            }
+                        }
+                    }
+
+                    // Espaciado adicional entre pasos en modo horizontal (no vertical)
+                    &:not(.vertical) {
+                        .step-container {
+                            .step {
+                                padding: 0 28px; // aumenta separación lateral entre iconos
                             }
                         }
                     }
