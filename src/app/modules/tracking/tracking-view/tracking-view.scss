@@ -110,3 +110,26 @@
     margin-bottom: 8px;
     color: #2b3e63;
 }
+
+// Estilos Resumen de tu compra
+.purchase-summary-card {
+    padding: 20px 0 24px;
+    h3 { font-size: 16px; font-weight: 600; margin: 0 0 16px; }
+    .tipo-entrega-row { display: flex; align-items: flex-start; gap: 16px; }
+    .icon-col { width: 48px; height: 48px; border-radius: 50%; background: #e8f0fe; flex-shrink: 0; position: relative; }
+    .icon-col.tienda { background: #e8f0fe url('/assets/tienda-icon.svg') center/26px 26px no-repeat; }
+    .icon-col.domicilio { background: #e8f0fe url('/assets/domicilio-icon.svg') center/26px 26px no-repeat; }
+    .data-col { flex: 1; }
+    .data-col .tipo { font-weight: 600; font-size: 14px; margin: 0 0 4px; }
+    .data-col .direccion { font-size: 13px; margin: 0 0 6px; font-weight: 600; color: #2b2b2b; }
+    .data-col .fecha-compra { font-size: 12px; margin: 4px 0 0; color: #555; }
+}
+
+@media (max-width: 768px) {
+    .purchase-summary-card { padding: 16px 0 20px; }
+    .purchase-summary-card h3 { margin-bottom: 12px; }
+    .purchase-summary-card .icon-col { width:40px; height:40px; background-size:22px 22px; }
+    .purchase-summary-card .data-col .tipo { font-size:13px; }
+    .purchase-summary-card .data-col .direccion { font-size:12px; }
+    .purchase-summary-card .data-col .fecha-compra { font-size:11px; }
+}

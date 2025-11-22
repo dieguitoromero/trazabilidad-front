@@ -14,6 +14,8 @@ export class InvoiceModel {
     public trackingSteps: TrackingStepModel[];
     public seller: SellerModel;
     public orderProducts: OrderDetailsModel[];
+    public deliveryAddress?: string; // direccionEntrega para despacho o retiro
+    public deliveryType?: string; // tipoEntrega (Retiro en tienda / Despacho a domicilio)
 
     constructor() {
         this.trackingSteps = [];
@@ -44,6 +46,8 @@ export class InvoiceModel {
         m.trackingSteps = TrackingStepModel.mapFromObjs(obj?.traceability?.steps);
         m.seller = SellerModel.mapFromObj(obj.seller);
         m.orderProducts = OrderDetailsModel.MapFromObjs(obj?.DetailsProduct);
+        m.deliveryAddress = obj.direccionEntrega || obj.direccion || undefined;
+        m.deliveryType = obj.tipoEntrega || undefined;
 
 
         return m;

@@ -13,23 +13,15 @@
 </div>
 
 <!-- Card: Resumen de tu compra -->
-<div class="box-container">
+<div class="box-container" *ngIf="invoice">
   <div class="purchase-summary-card">
     <h3>Resumen de tu compra</h3>
     <div class="tipo-entrega-row">
       <div class="icon-col" [ngClass]="{'tienda': resumenTipoEntrega() === 'Retiro en Tienda', 'domicilio': resumenTipoEntrega() !== 'Retiro en Tienda'}"></div>
       <div class="data-col">
         <p class="tipo">{{resumenTipoEntrega()}}</p>
-        <p class="direccion" *ngIf="resumenTipoEntrega() === 'Retiro en Tienda'">{{resumenDireccion()}}</p>
-        <p class="direccion" *ngIf="resumenTipoEntrega() !== 'Retiro en Tienda'">{{resumenDireccion()}}</p>
-        <p class="fecha">
-          <ng-container *ngIf="resumenTipoEntrega() === 'Retiro en Tienda'; else domicilioFecha">
-            Retira a partir del {{resumenFechaRetiro()}}
-          </ng-container>
-          <ng-template #domicilioFecha>
-            Entregado el {{resumenFechaRetiro()}}
-          </ng-template>
-        </p>
+        <p class="direccion" *ngIf="direccionEntrega()">{{direccionEntrega()}}</p>
+        <p class="fecha-compra" *ngIf="invoice.issueDate">Fecha de compra: {{invoice.issueDate | date:'dd-MM-yyyy'}}</p>
       </div>
     </div>
   </div>

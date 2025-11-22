@@ -318,6 +318,8 @@ export class TrackingViewComponent {
             documentType: this.mapTipoDocumentoToCode(raw.tipoDocumento),
             documentLabel: raw.tipoDocumento,
             issueDate: this.parseDate(raw.fechaCompra),
+            deliveryAddress: raw.direccionEntrega || raw.direccion || undefined,
+            deliveryType: raw.tipoEntrega || undefined,
             trackingSteps: (raw.trazabilidad || []).map((t: any) => ({
                 title: { text: this.normalizeGlosa(t.glosa) },
                 description: (t.glosa && t.glosa.trim().toLowerCase() === 'pedido aprobado' && this.normalizeGlosa(t.glosa).toLowerCase() !== t.glosa.trim().toLowerCase()) ? t.glosa : '',
@@ -335,8 +337,12 @@ export class TrackingViewComponent {
                 estado: t.estado || 'activo',
                 observacion: t.observacion || ''
             })),
-            productos: raw.productos || []
+            productos: raw.productos || [],
+            direccionEntrega: raw.direccionEntrega || raw.direccion || ''
         };
+        // Diagnóstico dirección
+        // eslint-disable-next-line no-console
+        console.log('[TrackingView] direccionEntrega raw:', raw.direccionEntrega, 'invoice.deliveryAddress:', (this.invoice as any).deliveryAddress, 'compraAdaptada.direccionEntrega:', this.compraAdaptada.direccionEntrega);
     }
 
     private padCanonicalSteps(existing: TrackingStepModel[]): TrackingStepModel[] {
@@ -377,24 +383,38 @@ export class TrackingViewComponent {
     public totalCanonical(): number { return 5; }
 
     public resumenTipoEntrega(): string | undefined {
-        // Preferir pickup info si existe
-        if (this.invoice?.pickup) {
-            // Asumimos que si hay pickup es retiro en tienda
-            return 'Retiro en Tienda';
+        const tipo = (this.invoice as any)?.deliveryType?.toLowerCase();
+        if (tipo) {
+            if (tipo.includes('retiro')) return 'Retiro en Tienda';
+            if (tipo.includes('despacho') || tipo.includes('domicilio')) return 'Despacho a domicilio';
         }
-        // Si no hay pickup, fallback por tipo de documento u otros flags (simplificado)
+        if (this.invoice?.pickup) return 'Retiro en Tienda';
         return 'Despacho a domicilio';
     }
 
     public resumenDireccion(): string | undefined {
         // Intentar obtener dirección desde pickup (suponiendo propiedades standard)
         const p: any = this.invoice?.pickup as any;
+        if (p?.text) return p.text; // usar texto directo si existe
         if (p) {
-            // Construir dirección legible si existen partes
-            const parts = [p.address, p.commune, p.city, p.region].filter(Boolean);
+            const parts = [p.address, p.commune, p.city, p.region, p.text].filter(Boolean);
             if (parts.length) return parts.join(', ');
         }
+        // Fallback a deliveryAddress directo del JSON
+        const d: any = (this.invoice as any)?.deliveryAddress;
+        if (d) return d;
+        if (this.compraAdaptada?.direccionEntrega) return this.compraAdaptada.direccionEntrega;
         return undefined;
+    }
+
+    public direccionEntrega(): string | undefined {
+        console.log('[TrackingView] resumenDireccion debug:', this.invoice, this.compraAdaptada);
+        const pickupText = ((this.invoice as any)?.pickup?.text || '').trim();
+        if (pickupText) return pickupText;
+        const invDir = ((this.invoice as any)?.deliveryAddress || '').trim();
+        if (invDir) return invDir;
+        const adaptDir = (this.compraAdaptada?.direccionEntrega || '').trim();
+        return adaptDir || undefined;
     }
 
     public resumenFechaRetiro(): string | undefined {
