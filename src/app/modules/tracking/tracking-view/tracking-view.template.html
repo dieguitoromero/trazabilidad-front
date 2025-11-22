@@ -11,12 +11,49 @@
   </div>
   <app-tracking-stepper-view [steps]="stepperSteps" [orderDetails]="invoice?.orderProducts"></app-tracking-stepper-view>
 </div>
-<div class="box-container" *ngIf="compraAdaptada">
-  <app-purchase-summary
-    [tipoEntrega]="resumenTipoEntrega()"
-    [direccionEntrega]="resumenDireccion()"
-    [fechaRetiro]="resumenFechaRetiro()">
-  </app-purchase-summary>
+
+<!-- Card: Resumen de tu compra -->
+<div class="box-container">
+  <div class="purchase-summary-card">
+    <h3>Resumen de tu compra</h3>
+    <div class="tipo-entrega-row">
+      <div class="icon-col" [ngClass]="{'tienda': resumenTipoEntrega() === 'Retiro en Tienda', 'domicilio': resumenTipoEntrega() !== 'Retiro en Tienda'}"></div>
+      <div class="data-col">
+        <p class="tipo">{{resumenTipoEntrega()}}</p>
+        <p class="direccion" *ngIf="resumenTipoEntrega() === 'Retiro en Tienda'">{{resumenDireccion()}}</p>
+        <p class="direccion" *ngIf="resumenTipoEntrega() !== 'Retiro en Tienda'">{{resumenDireccion()}}</p>
+        <p class="fecha">
+          <ng-container *ngIf="resumenTipoEntrega() === 'Retiro en Tienda'; else domicilioFecha">
+            Retira a partir del {{resumenFechaRetiro()}}
+          </ng-container>
+          <ng-template #domicilioFecha>
+            Entregado el {{resumenFechaRetiro()}}
+          </ng-template>
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Card: Resumen de tu pedido -->
+<div class="box-container">
+  <div class="pedido-summary-card">
+    <h3>Resumen de tu pedido</h3>
+    <h4 class="sub">Productos</h4>
+    <div class="productos-list">
+      <div class="producto-item" *ngFor="let prod of invoice?.orderProducts">
+        <div class="img-col">
+          <img [src]="prod.image" alt="producto" />
+        </div>
+        <div class="info-col">
+          <p class="nombre">{{prod.description}}</p>
+          <p class="cantidad">{{prod.quantity === 1 ? '1 unidad' : (prod.quantity + ' unidades')}}</p>
+        </div>
+        <div class="sku-col"><span class="sku">SKU {{prod.code}}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 
