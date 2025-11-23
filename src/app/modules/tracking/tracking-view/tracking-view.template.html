@@ -31,18 +31,24 @@
 <div class="box-container" #orderDetailsView>
   <div class="pedido-summary-card">
     <h3>Resumen de tu pedido</h3>
-    <h4 class="sub">Productos</h4>
+    <h4 class="sub">{{ productSubtitle() }}</h4>
+    <div class="sub-line"></div>
     <div class="productos-wrapper" *ngIf="invoice?.orderProducts?.length">
       <div class="productos-list">
-        <div class="producto-item" *ngFor="let p of invoice?.orderProducts">
-          <div class="img-col">
-            <img class="producto-img" [src]="p.image || 'assets/not-image.jpg'" (error)="onImgError($event)" alt="producto" />
+        <div class="producto-item" *ngFor="let p of invoice?.orderProducts; let i = index">
+          <div class="left-block">
+            <div class="img-col">
+              <img class="producto-img" [src]="p.image || 'assets/not-image.jpg'" (error)="onImgError($event)" alt="producto" />
+            </div>
+            <div class="info-col">
+              <p class="nombre">{{ p.description }}</p>
+              <p class="cantidad">{{ p.quantity === 1 ? '1 UNIDAD' : (p.quantity + ' UNIDADES') }}</p>
+            </div>
           </div>
-          <div class="info-col">
-            <p class="nombre">{{ p.description }}</p>
-            <p class="cantidad">{{ p.quantity === 1 ? '1 UNIDAD' : (p.quantity + ' UNIDADES') }}</p>
+          <div class="right-block" *ngIf="p.code">
+            <span class="sku-inline">SKU {{ p.code }}</span>
           </div>
-          <div class="sku-col" *ngIf="p.code"><span class="sku">SKU {{ p.code }}</span></div>
+          <div class="row-separator" *ngIf="i < ((invoice?.orderProducts?.length || 0) - 1)"></div>
         </div>
       </div>
     </div>

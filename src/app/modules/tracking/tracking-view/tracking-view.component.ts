@@ -456,4 +456,17 @@ export class TrackingViewComponent {
         if (!img) return;
         img.src = 'assets/not-image.jpg';
     }
+
+    public productSubtitle(): string {
+        // Mostrar 'Producto Entregado' si el último paso es entregado y hay productos
+        const has = this.invoice?.orderProducts?.length;
+        if (has) {
+            const last = this.stepperSteps[this.stepperSteps.length - 1];
+            const title = (last?.title?.text || '').toLowerCase();
+            if (title.includes('entregado') && last.icon !== 'pending') {
+                return 'Producto Entregado';
+            }
+        }
+        return 'Productos';
+    }
 }
