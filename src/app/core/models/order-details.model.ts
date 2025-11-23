@@ -10,6 +10,13 @@ export class OrderDetailsModel {
     public description!: string;
     public descriptionUnimed!: string;
     public stateDescription!: string;
+    // Campos raw adicionales soportados
+    public nombre?: string;
+    public descripcion?: string; // raw
+    public sku?: string | number;
+    public unidadMedida?: string;
+    public rawCantidad?: number;
+    public rawCodigo?: string | number;
 
     public static MapFromObj(obj: any): OrderDetailsModel {
         const m = new OrderDetailsModel();
@@ -22,13 +29,21 @@ export class OrderDetailsModel {
         m.lineNumber = obj.lineNumber;
         m.internalNumber = obj.internalNumber;
         m.documentType = obj.documentType;
-        m.quantity = obj.quantity;
+    // quantity: priorizar cantidad si viene de productos raw
+    m.quantity = obj.quantity !== undefined ? obj.quantity : (obj.cantidad !== undefined ? obj.cantidad : undefined);
         m.codeUnimed = obj.codeUnimed;
-        m.image = obj.image;
-        m.description = obj.description;
+    m.image = obj.image || obj.imagen;
+    m.description = obj.description || obj.nombre || obj.descripcion;
         m.descriptionUnimed = obj.descriptionUnimed;
-        m.code = obj.code;
+    m.code = obj.code !== undefined ? obj.code : (obj.codigo !== undefined ? obj.codigo : undefined);
         m.stateDescription = obj.state_description;
+    // raw extras
+    m.nombre = obj.nombre;
+    m.descripcion = obj.descripcion;
+    m.sku = obj.sku;
+    m.unidadMedida = obj.unidadMedida;
+    m.rawCantidad = obj.cantidad;
+    m.rawCodigo = obj.codigo;
 
         return m;
     }

@@ -15,6 +15,7 @@ export interface CompraApiDto {
   esDimensionado: boolean;
   total: number;
   facturasAsociadas?: Array<{ numeroFactura: string; fechaEmision: string; idFactura: number }>; // optional
+  productos?: any[]; // incluir productos crudos para tracking
 }
 
 export interface MisComprasResponseDto {
@@ -124,6 +125,7 @@ export class MisComprasService {
         return (b.idFactura || 0) - (a.idFactura || 0);
       });
 
+      const productos = c.productos || c.items || [];
       return {
         tipoDocumento: c.tipoDocumento || c.documentType || '',
         numeroDocumento: sanitizeNumber(c.numeroDocumento || c.number || ''),
@@ -133,13 +135,14 @@ export class MisComprasService {
         trazabilidad,
         esDimensionado: c.esDimensionado || c.dimensionado || false,
         total: c.total || c.amount || 0,
-        facturasAsociadas: asociadas
+        facturasAsociadas: asociadas,
+        productos
       } as CompraApiDto;
     });
 
   const compras: CompraApiDto[] = comprasRaw.filter((c: CompraApiDto) => (c.numeroDocumento || '').trim().length > 0);
 
-    return {
+    const mapped = {
       usuario: resp.usuario || resp.user || undefined,
       compras,
       total: resp.total || compras.length,
@@ -147,6 +150,9 @@ export class MisComprasService {
       perPage: resp.perPage || compras.length,
       totalPages: resp.totalPages || 1
     };
+    // eslint-disable-next-line no-console
+    console.log('[MisComprasService.mapResponse] compras mapped (productos lengths):', mapped.compras.map(c => (c.productos || []).length));
+    return mapped;
   }
 
   // Se asignará en mapResponse; tipado público para reutilización.

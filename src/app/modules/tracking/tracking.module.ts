@@ -24,6 +24,7 @@ import {TrackingOrderDetailsComponent} from './tracking-view/tracking-order-deta
 import {TrackingDeliveryDetailsComponent} from './tracking-view/tracking-delivery-details/tracking-delivery-details.component';
 import {MatBadgeModule} from '@angular/material/badge';
 import { PurchaseSummaryComponent } from './tracking-view/purchase-summary/purchase-summary.component';
+import { OrderProductsComponent } from './tracking-view/order-products/order-products.component';
 
 @NgModule({
   imports: [
@@ -53,6 +54,7 @@ import { PurchaseSummaryComponent } from './tracking-view/purchase-summary/purch
     TrackingOrderDetailsComponent,
   TrackingDeliveryDetailsComponent,
   PurchaseSummaryComponent,
+  OrderProductsComponent,
   ],
   providers: [
     TrackingService,

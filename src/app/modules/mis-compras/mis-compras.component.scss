@@ -323,3 +323,17 @@
 .page-box.active { background: #f8323e; }
 .page-box:hover:not(.active) { background: #0e2a4a; }
 .page-box:active { transform: scale(.94); }
+
+/* Productos dentro de Mis Compras */
+.productos-wrapper { margin-top: 12px; }
+.productos-title { margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #222; }
+.productos-list { display: flex; flex-direction: column; }
+.producto-item { display: flex; align-items: stretch; padding: 10px 0; border-bottom: 1px solid #e1e1e1; }
+.producto-item:last-child { border-bottom: none; }
+.img-col { width:56px; height:56px; display:flex; align-items:center; justify-content:center; margin-right:14px; }
+.img-col img { max-width:56px; max-height:56px; object-fit:contain; border-radius:4px; background:#fff; box-shadow:0 0 0 1px #eee; }
+.info-col { flex:1; display:flex; flex-direction:column; justify-content:center; }
+.info-col .nombre { margin:0; font-size:13px; line-height:17px; font-weight:500; color:#222; }
+.info-col .cantidad { margin:4px 0 0 0; font-size:10px; line-height:13px; letter-spacing:0.5px; color:#6a6a6a; font-weight:600; text-transform:uppercase; }
+.sku-col { min-width:80px; display:flex; align-items:center; justify-content:flex-end; font-size:10px; letter-spacing:0.5px; color:#4d4f57; }
+.sku { white-space:nowrap; }

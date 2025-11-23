@@ -45,7 +45,13 @@ export class InvoiceModel {
         m.pickup = PickupModel.mapFromObj(obj.pickup);
         m.trackingSteps = TrackingStepModel.mapFromObjs(obj?.traceability?.steps);
         m.seller = SellerModel.mapFromObj(obj.seller);
-        m.orderProducts = OrderDetailsModel.MapFromObjs(obj?.DetailsProduct);
+        // Priorizar arreglo 'productos' si viene del servicio de documentos; fallback a DetailsProduct legacy
+        const rawProductos = Array.isArray(obj?.productos) ? obj.productos : [];
+        if (rawProductos.length > 0) {
+            m.orderProducts = OrderDetailsModel.MapFromObjs(rawProductos);
+        } else {
+            m.orderProducts = OrderDetailsModel.MapFromObjs(obj?.DetailsProduct);
+        }
         m.deliveryAddress = obj.direccionEntrega || obj.direccion || undefined;
         m.deliveryType = obj.tipoEntrega || undefined;
 

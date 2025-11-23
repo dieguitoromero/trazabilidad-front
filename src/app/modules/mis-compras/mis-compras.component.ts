@@ -17,6 +17,7 @@ type Compra = {
   esDimensionado: boolean;
   total: number;
   facturasAsociadas?: Array<{ numeroFactura: string; fechaEmision: string; idFactura: number }>;
+  productos?: any[]; // agregado para mostrar lista de productos
 };
 
 @Component({
@@ -153,10 +154,22 @@ export class MisComprasComponent implements OnInit {
       // Loguear la respuesta completa en consola para inspección
       // eslint-disable-next-line no-console
       console.log('[MisComprasComponent] respuesta buscarDocumento:', resp);
+      // Log productos si existen
+      if (encontrado && Array.isArray(encontrado.productos)) {
+        // eslint-disable-next-line no-console
+        console.log('[MisComprasComponent] productos encontrados length:', encontrado.productos.length);
+        if (encontrado.productos.length > 0) {
+          // eslint-disable-next-line no-console
+          console.log('[MisComprasComponent] primer producto:', encontrado.productos[0]);
+        }
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('[MisComprasComponent] sin productos en la compra encontrada');
+      }
       // Guardar payload para que Tracking lo consuma sin re-llamar
       this.trackingDataService.setCompraPayload(resp);
       // Simular carga de invoice completo legacy si se requiere para tracking-stepper-view
-      const legacyInvoice = {
+        const legacyInvoice = {
         number_printed: folioDigits.toString().padStart(10,'0'),
         type_document: tipo,
         label_document: c.tipoDocumento,
@@ -185,7 +198,18 @@ export class MisComprasComponent implements OnInit {
           icon_phone: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg',
           icon_mail: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg'
         },
-        DetailsProduct: []
+          // Pasar productos raw si la búsqueda de documento los trajo
+          productos: (encontrado?.productos || []).map(p => ({
+            cantidad: p.cantidad,
+            codigo: p.codigo,
+            descripcion: p.descripcion,
+            estado: p.estado,
+            imagen: p.imagen,
+            nombre: p.nombre,
+            sku: p.sku,
+            unidadMedida: p.unidadMedida
+          })),
+          DetailsProduct: []
       };
       this.trackingDataService.setInvoicePayload(legacyInvoice);
       // Forzar uso del flujo de documentos (api='doc')

@@ -308,11 +308,33 @@ export class TrackingViewComponent {
                 estado: s.icon?.indexOf('timeline_complete_icon') >= 0 ? 'finalizado' : (s.icon?.indexOf('pending') >= 0 ? 'pendiente' : 'activo'),
                 observacion: s.description || ''
             })),
-            productos: invoice.orderProducts || []
+            productos: invoice.orderProducts ? [...invoice.orderProducts] : []
         };
     }
 
     private formatCompraDtoForStepper(raw: any): void {
+    const mappedProductos = Array.isArray(raw.productos) ? raw.productos.map((p: any) => ({
+            // Adaptar a estructura que OrderDetailsModel puede mapear sin perder datos
+            order: p.order,
+            lineNumber: p.lineNumber,
+            internalNumber: p.internalNumber,
+            documentType: p.documentType,
+            quantity: p.cantidad !== undefined ? p.cantidad : p.quantity,
+            codeUnimed: p.codeUnimed,
+            image: p.imagen || p.image,
+            description: p.nombre || p.description || p.descripcion,
+            descriptionUnimed: p.descriptionUnimed,
+            code: p.codigo !== undefined ? p.codigo : p.code,
+            state_description: p.stateDescription,
+            // extras para OrderDetailsModel extended
+            nombre: p.nombre,
+            descripcion: p.descripcion,
+            sku: p.sku,
+            unidadMedida: p.unidadMedida,
+            cantidad: p.cantidad,
+            codigo: p.codigo
+        })) : [];
+
         this.invoice = {
             printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i,'').replace(/^0+/, ''),
             documentType: this.mapTipoDocumentoToCode(raw.tipoDocumento),
@@ -326,8 +348,8 @@ export class TrackingViewComponent {
                 date: t.fechaRegistro,
                 icon: t.estado === 'finalizado' || t.estado === 'activo' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending'
             })),
-            orderProducts: raw.productos || [],
-            hasProductDetails: (raw.productos || []).length > 0
+            orderProducts: mappedProductos,
+            hasProductDetails: mappedProductos.length > 0
         } as any;
         this.stepperSteps = this.padCanonicalSteps(this.mapTrazabilidadToSteps(raw.trazabilidad || []));
         this.compraAdaptada = {
@@ -337,7 +359,7 @@ export class TrackingViewComponent {
                 estado: t.estado || 'activo',
                 observacion: t.observacion || ''
             })),
-            productos: raw.productos || [],
+            productos: mappedProductos,
             direccionEntrega: raw.direccionEntrega || raw.direccion || ''
         };
         // Diagnóstico dirección

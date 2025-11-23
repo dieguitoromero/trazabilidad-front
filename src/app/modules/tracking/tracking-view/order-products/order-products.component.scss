@@ -1,0 +1,11 @@
+.productos-list { display: flex; flex-direction: column; }
+.producto-item { display: flex; align-items: stretch; padding:12px 0; border-bottom:1px solid #d9d9d9; }
+.producto-item:last-child { border-bottom:none; }
+.img-col { width:64px; height:64px; display:flex; align-items:center; justify-content:center; margin-right:16px; }
+.img-col img { max-width:64px; max-height:64px; object-fit:contain; border-radius:4px; background:#fff; box-shadow:0 0 0 1px #eee; }
+.info-col { flex:1; display:flex; flex-direction:column; justify-content:center; }
+.info-col .nombre { margin:0; font-size:14px; line-height:18px; font-weight:500; color:#222; }
+.info-col .cantidad { margin:4px 0 0 0; font-size:11px; line-height:14px; letter-spacing:0.5px; color:#6a6a6a; font-weight:600; text-transform:uppercase; }
+.sku-col { min-width:90px; display:flex; align-items:center; justify-content:flex-end; font-size:11px; letter-spacing:0.5px; color:#4d4f57; }
+.sku { white-space:nowrap; }
+.sin-productos { padding:12px 0; font-size:13px; color:#777; font-style:italic; }

@@ -1,0 +1,15 @@
+<div class="productos-list" *ngIf="productos?.length; else sinProductos">
+  <div class="producto-item" *ngFor="let p of productos">
+    <div class="img-col">
+      <img [src]="img(p)" alt="producto" />
+    </div>
+    <div class="info-col">
+      <p class="nombre">{{ nombre(p) }}</p>
+      <p class="cantidad">{{ cantidad(p) }}</p>
+    </div>
+    <div class="sku-col" *ngIf="sku(p)"><span class="sku">SKU {{ sku(p) }}</span></div>
+  </div>
+</div>
+<ng-template #sinProductos>
+  <div class="sin-productos">No hay productos para mostrar.</div>
+</ng-template>

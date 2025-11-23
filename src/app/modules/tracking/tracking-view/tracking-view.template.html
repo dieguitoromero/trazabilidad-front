@@ -28,20 +28,22 @@
 </div>
 
 <!-- Card: Resumen de tu pedido -->
-<div class="box-container">
+<div class="box-container" #orderDetailsView>
   <div class="pedido-summary-card">
     <h3>Resumen de tu pedido</h3>
     <h4 class="sub">Productos</h4>
-    <div class="productos-list">
-      <div class="producto-item" *ngFor="let prod of invoice?.orderProducts">
-        <div class="img-col">
-          <img [src]="prod.image" alt="producto" />
+    <div class="productos-wrapper" *ngIf="invoice?.orderProducts?.length">
+      <div class="productos-list">
+  <div class="producto-item" *ngFor="let p of invoice?.orderProducts">
+          <div class="img-col" *ngIf="p.image">
+            <img [src]="p.image" alt="producto" />
+          </div>
+          <div class="info-col">
+            <p class="nombre">{{ p.description }}</p>
+            <p class="cantidad">{{ p.quantity === 1 ? '1 UNIDAD' : (p.quantity + ' UNIDADES') }}</p>
+          </div>
+          <div class="sku-col" *ngIf="p.code"><span class="sku">SKU {{ p.code }}</span></div>
         </div>
-        <div class="info-col">
-          <p class="nombre">{{prod.description}}</p>
-          <p class="cantidad">{{prod.quantity === 1 ? '1 unidad' : (prod.quantity + ' unidades')}}</p>
-        </div>
-        <div class="sku-col"><span class="sku">SKU {{prod.code}}</span></div>
       </div>
     </div>
   </div>
