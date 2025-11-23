@@ -133,3 +133,28 @@
     .purchase-summary-card .data-col .direccion { font-size:12px; }
     .purchase-summary-card .data-col .fecha-compra { font-size:11px; }
 }
+
+// Estilos productos pedido
+.pedido-summary-card {
+    padding: 20px 0 24px;
+    h3 { font-size:16px; font-weight:600; margin:0 0 12px; }
+    .sub { font-size:14px; font-weight:600; margin:0 0 12px; }
+    .productos-wrapper { margin-top: 4px; }
+    .productos-list { display:flex; flex-direction:column; gap:16px; }
+    .producto-item { display:flex; align-items:flex-start; gap:12px; }
+    .producto-img { width:56px; height:56px; object-fit:cover; border:1px solid #e0e0e0; border-radius:4px; background:#fafafa; }
+    .img-col { flex-shrink:0; }
+    .info-col { flex:1; }
+    .info-col .nombre { font-size:13px; font-weight:600; margin:0 0 6px; line-height:1.25; color:#2b2b2b; }
+    .info-col .cantidad { font-size:12px; margin:0 0 4px; font-weight:600; color:#0a3a6b; }
+    .sku-col { align-self:flex-start; }
+    .sku { display:inline-block; font-size:11px; font-weight:600; background:#eef3fb; color:#0a3a6b; padding:4px 8px; border-radius:4px; }
+}
+
+@media (max-width: 768px) {
+    .pedido-summary-card { padding:16px 0 20px; }
+    .pedido-summary-card .producto-img { width:48px; height:48px; }
+    .pedido-summary-card .info-col .nombre { font-size:12px; }
+    .pedido-summary-card .info-col .cantidad { font-size:11px; }
+    .pedido-summary-card .sku { font-size:10px; }
+}

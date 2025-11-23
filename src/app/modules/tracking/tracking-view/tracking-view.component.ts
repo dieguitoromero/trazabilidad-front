@@ -321,7 +321,7 @@ export class TrackingViewComponent {
             documentType: p.documentType,
             quantity: p.cantidad !== undefined ? p.cantidad : p.quantity,
             codeUnimed: p.codeUnimed,
-            image: p.imagen || p.image,
+            image: p.imagen || p.image || 'assets/not-image.jpg',
             description: p.nombre || p.description || p.descripcion,
             descriptionUnimed: p.descriptionUnimed,
             code: p.codigo !== undefined ? p.codigo : p.code,
@@ -449,5 +449,11 @@ export class TrackingViewComponent {
             return `${dd}-${mm}-${yyyy}`;
         }
         return undefined;
+    }
+
+    public onImgError(ev: Event): void {
+        const img = ev.target as HTMLImageElement;
+        if (!img) return;
+        img.src = 'assets/not-image.jpg';
     }
 }

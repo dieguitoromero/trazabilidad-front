@@ -34,9 +34,9 @@
     <h4 class="sub">Productos</h4>
     <div class="productos-wrapper" *ngIf="invoice?.orderProducts?.length">
       <div class="productos-list">
-  <div class="producto-item" *ngFor="let p of invoice?.orderProducts">
-          <div class="img-col" *ngIf="p.image">
-            <img [src]="p.image" alt="producto" />
+        <div class="producto-item" *ngFor="let p of invoice?.orderProducts">
+          <div class="img-col">
+            <img class="producto-img" [src]="p.image || 'assets/not-image.jpg'" (error)="onImgError($event)" alt="producto" />
           </div>
           <div class="info-col">
             <p class="nombre">{{ p.description }}</p>
