@@ -110,4 +110,15 @@ export class TrackingStepperViewComponent implements OnChanges {
         }).length;
     }
 
+    // Cantidad total de productos
+    public productCount(): number {
+        return this.orderDetails ? this.orderDetails.length : 0;
+    }
+
+    // Mostrar badge solo en paso con título 'Pedido Entregado' (independiente del estado del icono)
+    public showDeliveredBadge(step: TrackingStepModel): boolean {
+        const title = (step.title?.text || '').toLowerCase();
+        return title === 'pedido entregado' && this.productCount() > 0;
+    }
+
 }

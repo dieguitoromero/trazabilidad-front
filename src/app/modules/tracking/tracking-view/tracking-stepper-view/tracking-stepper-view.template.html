@@ -20,12 +20,15 @@
                 <div class="step-separator from align-self-center flex-grow-1"
                      *ngIf="i > 0 || !vertical"
                      [ngClass]="{ 'beginning': i <= 0, 'd-none d-md-block': (i == 0 && !vertical)}"></div>
-                                <ng-container *ngIf="step.icon !== 'pending'; else pendingIcon">
-                                    <img class="icon" [src]="step.icon" alt="step icon" />
-                                </ng-container>
-                                <ng-template #pendingIcon>
-                                    <div class="icon pending"></div>
-                                </ng-template>
+                                <div class="icon-wrapper">
+                                    <ng-container *ngIf="step.icon !== 'pending'; else pendingIcon">
+                                        <img class="icon" [src]="step.icon" alt="step icon" />
+                                    </ng-container>
+                                    <ng-template #pendingIcon>
+                                        <div class="icon pending"></div>
+                                    </ng-template>
+                                    <span class="product-count-badge" *ngIf="showDeliveredBadge(step)">{{ productCount() }}</span>
+                                </div>
                 <div class="step-separator to align-self-center flex-grow-1"
                      *ngIf="i < (steps ? steps.length - 1 : 0) || !vertical"
                      [ngClass]="{ 'end': i >= (steps ? steps.length - 1 : 0), 'd-none d-md-block': !vertical && i >= (steps ? steps.length - 1 : 0)}"></div>

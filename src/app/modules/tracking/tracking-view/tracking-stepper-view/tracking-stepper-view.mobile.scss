@@ -160,8 +160,7 @@
                 .step-container:last-child .icon {
                     position: relative;
                 }
-                .step-container:last-child .icon:after {
-                    content: '3';
+                .product-count-badge {
                     position: absolute;
                     top: -6px;
                     right: -6px;
