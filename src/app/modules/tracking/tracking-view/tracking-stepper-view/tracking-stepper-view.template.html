@@ -12,7 +12,7 @@
                    matBadgeColor="warn"
                    [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0">{{step.title.text}}</p>
                 <p class="sub-title" [ngClass]="{'d-block d-md-none': !vertical}">{{step.description}}</p>
-                <span class="date" [ngClass]="{'d-block d-md-none': !vertical}">{{step.date | date: 'shortDate'}} <ng-container *ngIf="step.date">{{step.date | date:'HH:mm'}}</ng-container></span>
+                            <span class="date" [ngClass]="{'d-block d-md-none': !vertical}">{{ step.date ? (step.date | date: 'dd-MM-yyyy') : '-' }}</span>
             </div>
 
             <div class="step d-block order-0"
@@ -32,9 +32,9 @@
             </div>
 
             <div class="step-details d-none d-md-block" *ngIf="!vertical">
-                <div class="alcanzado-text" *ngIf="step.icon !== 'pending'">Punto alcanzado</div>
-                <p>{{step.description}}</p>
-                <span>{{step.date | date: 'shortDate'}} <ng-container *ngIf="step.date">{{step.date | date:'HH:mm'}}</ng-container></span>
+                <div class="alcanzado-text" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</div>
+                <p>{{ step.description }}</p>
+                <span>{{ step.date ? (step.date | date: 'dd-MM-yyyy') : '-' }}</span>
             </div>
         </div>
     </ng-container>

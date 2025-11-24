@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, OnChanges, SimpleChanges} from '@angular/core';
 import {TrackingStepModel} from '../../../../core/models/tracking-step.model';
 import {OrderDetailsModel} from '../../../../core/models/order-details.model';
 import {TrackingStepTitleModel} from '../../../../core/models/tracking-step-title.model';
@@ -8,10 +8,22 @@ import {TrackingStepTitleModel} from '../../../../core/models/tracking-step-titl
     templateUrl: './tracking-stepper-view.template.html',
     styleUrls: ['./tracking-stepper-view.scss', 'tracking-stepper-view.mobile.scss']
 })
-export class TrackingStepperViewComponent {
+export class TrackingStepperViewComponent implements OnChanges {
     @Input() steps: TrackingStepModel[] | undefined = [];
     @Input() orderDetails: OrderDetailsModel[] | undefined;
     @Input() vertical = false;
+    @Input() rawData: any; // objeto completo del servicio para impresión única
+    private hasLogged = false;
+
+    constructor() {}
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (!this.hasLogged && (changes['steps'] || changes['rawData'])) {
+            // eslint-disable-next-line no-console
+            console.log('IMPRESIÓN DEL SERVICIO:', this.rawData || { steps: this.steps });
+            this.hasLogged = true;
+        }
+    }
 
     private status: any = {
         'Pedido Ingresado': ['Pendiente', 'Pendiente de despacho'],

@@ -163,20 +163,17 @@ export class TrackingViewComponent {
         }
     }
 
-    /** Convierte arreglo de items de trazabilidad crudos en TrackingStepModel[] para el stepper nuevo */
+    /** Filtra y convierte los primeros 5 items con etapa === 'CLIENTE' */
     private mapTrazabilidadToSteps(trazabilidad: any[]): TrackingStepModel[] {
         if (!trazabilidad || !Array.isArray(trazabilidad)) { return []; }
-        return trazabilidad.map((t: any) => {
+        const clienteItems = trazabilidad
+            .filter((t: any) => (t.etapa || '').toUpperCase() === 'CLIENTE')
+            .sort((a: any, b: any) => (a.orden || 0) - (b.orden || 0))
+            .slice(0, 5);
+        return clienteItems.map((t: any) => {
             const step = new TrackingStepModel();
-            const original = t.glosa;
-            const canonical = this.normalizeGlosa(original);
-            step.title = { text: canonical, color: '', isBold: false } as any;
-            // si la glosa original difiere y es 'Pedido aprobado', mostrarla como descripción
-            if (original && original.trim().toLowerCase() !== canonical.trim().toLowerCase() && original.trim().toLowerCase() === 'pedido aprobado') {
-                step.description = original;
-            } else {
-                step.description = t.observacion || '';
-            }
+            step.title = { text: (t.glosa || '').trim(), color: '', isBold: false } as any;
+            step.description = t.observacion || '';
             step.date = this.parseFechaRegistro(t.fechaRegistro) as any;
             step.icon = this.computeIconFromEstado(t.estado);
             return step;

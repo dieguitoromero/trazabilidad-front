@@ -5,13 +5,24 @@
         .stepper-view-container {
             &.mobile-vertical {
                 box-shadow: none;
+                padding: 4px 0 12px 0;
+                    position: relative;
+                    &:before {
+                        content: '';
+                        position: absolute;
+                        top: 12px;
+                        bottom: 12px;
+                        left: 42px; // recalculado: icon margin-left 24px + radius 18px
+                        width: 2px;
+                        background: #003c69; // línea principal
+                    }
 
                 .step-container {
 
                     .step-title {
                         text-align: left;
-                        margin: 0 0 0 15px;
-                        padding: 31px 0 0 0;
+                        margin: 0; // se alinea mediante flex padre
+                        padding: 0;
                         overflow-x: hidden;
                         min-width: 160px;
 
@@ -42,6 +53,16 @@
                     }
 
                     .step {
+                        position: relative;
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        padding: 12px 0;
+                        .icon {
+                            margin-left: 24px; // espacio del borde + línea
+                            position: relative;
+                            z-index: 2;
+                        }
                         // &.beginning {
                         //     margin-top: 10px;
                         // }
@@ -123,6 +144,37 @@
                     &.end {
                         border-radius: 0 0 5px 5px;
                     }
+                }
+
+                // Alinear la columna visual como en screenshot
+                .step-container .step.beginning .step-separator.from { margin-top: 0; }
+                // Ocultar separators individuales en mobile, usamos la línea continua
+                .step-container .step .step-separator { display: none; }
+                .step-container .step .icon { margin-left: 12px; }
+                .step-container { display: flex; flex-direction: row; align-items: stretch; }
+                .step-container .step-title { margin-left: 8px; display: flex; flex-direction: column; justify-content: center; }
+                .step-container .step .icon { margin-left: 24px; }
+                .step-container .step-title .sub-title { line-height: 1.25; }
+
+                // Badge en último paso
+                .step-container:last-child .icon {
+                    position: relative;
+                }
+                .step-container:last-child .icon:after {
+                    content: '3';
+                    position: absolute;
+                    top: -6px;
+                    right: -6px;
+                    background: #d32f2f;
+                    color: #fff;
+                    font-size: 11px;
+                    line-height: 16px;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 8px;
+                    text-align: center;
+                    font-weight: 600;
+                    box-shadow: 0 0 0 2px #fff;
                 }
             }
         }
