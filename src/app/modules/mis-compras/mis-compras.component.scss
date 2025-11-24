@@ -324,6 +324,36 @@
 .page-box:hover:not(.active) { background: #0e2a4a; }
 .page-box:active { transform: scale(.94); }
 
+/* Pager condensado móvil */
+.mobile-condensed-pager {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 0;
+}
+.mobile-condensed-pager .pager-node {
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  background: #d9dee6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4d4f57;
+  cursor: pointer;
+  transition: all .25s;
+}
+.mobile-condensed-pager .pager-node.neighbor { background: #003c69; color: #fff; }
+.mobile-condensed-pager .pager-node.active { background: #d32f2f; color: #fff; }
+
+@media (max-width: 640px) {
+  .desktop-only { display: none !important; }
+  .mobile-condensed-pager { display: flex; }
+}
+
 /* Productos dentro de Mis Compras */
 .productos-wrapper { margin-top: 12px; }
 .productos-title { margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #222; }

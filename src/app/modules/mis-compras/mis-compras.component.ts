@@ -35,6 +35,8 @@ export class MisComprasComponent implements OnInit {
   perPage = environment.limitDefault;
   totalPages = 1;
   private asociadasOpen = new Set<string>();
+  // Pager condensado móvil
+  readonly maxPagerNodes = 5;
 
   loading = false;
   error = false;
@@ -110,6 +112,34 @@ export class MisComprasComponent implements OnInit {
     // Usar totalPages entregado por la API directamente
     const total = Math.max(1, this.totalPages);
     return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  // Índice activo (page actual en base 0)
+  private activeIndex(): number { return this.page - 1; }
+
+  // Lógica pager condensado: siempre máximo 5 páginas mostradas si total >5
+  get condensedPager(): number[] {
+    const total = this.totalPages;
+    if (total <= this.maxPagerNodes) return this.pages; // muestra todos si <=5
+    const current = this.page; // 1-based
+    const last = total;
+    // Casos:
+    // 1) Si current <=4 -> [1,2,3,4,last]
+    if (current <= 4) return [1,2,3,4,last];
+    // 2) Si current >= last-3 -> [1,last-3,last-2,last-1,last]
+    if (current >= last - 3) return [1,last-3,last-2,last-1,last];
+    // 3) Ventana intermedia -> [1,current-1,current,current+1,last]
+    return [1,current-1,current,current+1,last];
+  }
+
+  isPagerActive(p: number): boolean { return p === this.page; }
+  isPagerNeighbor(p: number): boolean {
+    // vecino solo cuando está inmediatamente antes o después del activo en la lista mostrada (excepto primero y último que no se pintan como vecinos en extremos)
+    if (p === this.page) return false;
+    const list = this.condensedPager;
+    const idx = list.indexOf(p);
+    const activeIdx = list.indexOf(this.page);
+    return Math.abs(idx - activeIdx) === 1;
   }
 
   get hasNoResults(): boolean {

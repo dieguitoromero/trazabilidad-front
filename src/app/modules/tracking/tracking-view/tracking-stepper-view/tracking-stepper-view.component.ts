@@ -17,6 +17,7 @@ export class TrackingStepperViewComponent implements OnChanges {
 
     constructor() {}
 
+
     ngOnChanges(changes: SimpleChanges): void {
         if (!this.hasLogged && (changes['steps'] || changes['rawData'])) {
             // eslint-disable-next-line no-console
@@ -120,5 +121,6 @@ export class TrackingStepperViewComponent implements OnChanges {
         const title = (step.title?.text || '').toLowerCase();
         return title === 'pedido entregado' && this.productCount() > 0;
     }
+
 
 }

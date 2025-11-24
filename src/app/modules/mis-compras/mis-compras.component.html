@@ -89,7 +89,7 @@
     </div>
   </div>
 
-  <div class="pagination-row" *ngIf="!hasNoResults && totalPages > 1">
+  <div class="pagination-row desktop-only" *ngIf="!hasNoResults && totalPages > 1">
     <button
       class="page-box"
       *ngFor="let p of pages"
@@ -97,5 +97,16 @@
       (click)="goToPage(p)">
       {{ p }}
     </button>
+  </div>
+
+  <!-- Pager condensado móvil -->
+  <div class="mobile-condensed-pager" *ngIf="!hasNoResults && totalPages > 1">
+    <div class="pager-node"
+         *ngFor="let p of condensedPager"
+         [class.active]="isPagerActive(p)"
+         [class.neighbor]="isPagerNeighbor(p)"
+         (click)="goToPage(p)">
+      <span>{{ p }}</span>
+    </div>
   </div>
 </div>

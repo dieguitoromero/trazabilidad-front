@@ -175,6 +175,37 @@
                     font-weight: 600;
                     box-shadow: 0 0 0 2px #fff;
                 }
+                // Pager condensado
+                .condensed-pager {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 10px;
+                    margin-top: 8px;
+                    padding: 4px 0 0;
+                }
+                .condensed-pager .pager-node {
+                    width: 26px;
+                    height: 26px;
+                    border-radius: 13px;
+                    background: #d9dee6;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: #4d4f57;
+                    cursor: pointer;
+                    transition: all .25s;
+                }
+                .condensed-pager .pager-node.neighbor {
+                    background: #003c69;
+                    color: #fff;
+                }
+                .condensed-pager .pager-node.active {
+                    background: #d32f2f;
+                    color: #fff;
+                }
             }
         }
     }
