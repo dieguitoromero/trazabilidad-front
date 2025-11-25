@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.json",
-    "start:legacy": "NODE_OPTIONS=--openssl-legacy-provider ng serve --proxy-config proxy.conf.json",
+  "start:legacy": "NODE_OPTIONS=--openssl-legacy-provider ng serve --proxy-config proxy.conf.json --poll=1000",
     "build": "ng build",
     "build:legacy": "NODE_OPTIONS=--openssl-legacy-provider ng build",
     "test": "ng test",

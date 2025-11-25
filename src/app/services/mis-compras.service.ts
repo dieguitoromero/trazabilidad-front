@@ -151,7 +151,6 @@ export class MisComprasService {
       totalPages: resp.totalPages || 1
     };
     // eslint-disable-next-line no-console
-    console.log('[MisComprasService.mapResponse] compras mapped (productos lengths):', mapped.compras.map(c => (c.productos || []).length));
     return mapped;
   }
 

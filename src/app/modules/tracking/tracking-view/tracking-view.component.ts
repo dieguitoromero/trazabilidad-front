@@ -33,7 +33,7 @@ export class TrackingViewComponent {
                 private router: Router,
                 private activeRoute: ActivatedRoute,
                 private trackingData: TrackingDataService) {
-
+                    console.log("este es el constructor de TrackingViewComponent1");
         this.activeRoute.params.subscribe((params) => {
             if (params.invoiceId || params.invoiceType) {
                 this.hideSearch = true;
@@ -61,7 +61,6 @@ export class TrackingViewComponent {
                     if (mapped) {
                         this.formatInvoiceForStepper(mapped);
                         // eslint-disable-next-line no-console
-                        console.log('[TrackingView] Invoice (legacy transport) preloaded:', this.invoice);
                         this.hideSearch = true;
                         this.applyHideHeroBg();
                         return;
@@ -72,7 +71,6 @@ export class TrackingViewComponent {
                     const raw = transport.compras[0];
                     this.formatCompraDtoForStepper(raw);
                     // eslint-disable-next-line no-console
-                    console.log('[TrackingView] Invoice (transported) preloaded:', this.invoice);
                     this.hideSearch = true;
                     this.applyHideHeroBg();
                     // Evitar auto búsqueda si ya cargamos invoice
@@ -127,7 +125,6 @@ export class TrackingViewComponent {
         }
 
         // eslint-disable-next-line no-console
-        console.log('[TrackingView] Invoice loaded:', invoice);
 
         const section = (this.searchModel as any)?.section;
         // Si se pide 'details' y hay detalles, ir primero a detalles
@@ -361,7 +358,6 @@ export class TrackingViewComponent {
         };
         // Diagnóstico dirección
         // eslint-disable-next-line no-console
-        console.log('[TrackingView] direccionEntrega raw:', raw.direccionEntrega, 'invoice.deliveryAddress:', (this.invoice as any).deliveryAddress, 'compraAdaptada.direccionEntrega:', this.compraAdaptada.direccionEntrega);
     }
 
     private padCanonicalSteps(existing: TrackingStepModel[]): TrackingStepModel[] {
@@ -427,7 +423,6 @@ export class TrackingViewComponent {
     }
 
     public direccionEntrega(): string | undefined {
-        console.log('[TrackingView] resumenDireccion debug:', this.invoice, this.compraAdaptada);
         const pickupText = ((this.invoice as any)?.pickup?.text || '').trim();
         if (pickupText) return pickupText;
         const invDir = ((this.invoice as any)?.deliveryAddress || '').trim();

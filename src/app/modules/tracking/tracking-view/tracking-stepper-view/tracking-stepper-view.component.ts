@@ -21,7 +21,6 @@ export class TrackingStepperViewComponent implements OnChanges {
     ngOnChanges(changes: SimpleChanges): void {
         if (!this.hasLogged && (changes['steps'] || changes['rawData'])) {
             // eslint-disable-next-line no-console
-            console.log('IMPRESIÓN DEL SERVICIO:', this.rawData || { steps: this.steps });
             this.hasLogged = true;
         }
     }

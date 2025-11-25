@@ -183,18 +183,14 @@ export class MisComprasComponent implements OnInit {
       const folioDigits = this.tryParseFolio(folioRaw);
       // Loguear la respuesta completa en consola para inspección
       // eslint-disable-next-line no-console
-      console.log('[MisComprasComponent] respuesta buscarDocumento:', resp);
       // Log productos si existen
       if (encontrado && Array.isArray(encontrado.productos)) {
         // eslint-disable-next-line no-console
-        console.log('[MisComprasComponent] productos encontrados length:', encontrado.productos.length);
         if (encontrado.productos.length > 0) {
           // eslint-disable-next-line no-console
-          console.log('[MisComprasComponent] primer producto:', encontrado.productos[0]);
         }
       } else {
         // eslint-disable-next-line no-console
-        console.log('[MisComprasComponent] sin productos en la compra encontrada');
       }
       // Guardar payload para que Tracking lo consuma sin re-llamar
       this.trackingDataService.setCompraPayload(resp);
