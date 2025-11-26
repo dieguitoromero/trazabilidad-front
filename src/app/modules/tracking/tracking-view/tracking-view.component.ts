@@ -471,6 +471,95 @@ export class TrackingViewComponent {
         return 'Productos';
     }
 
+    // Steps a mostrar: usa los mapeados desde compra (si existen) o los locales
+    public get displaySteps(): TrackingStepModel[] {
+        if (this.stepperSteps && this.stepperSteps.length > 0) return this.stepperSteps;
+        const t = (this.compraAdaptada?.trazabilidad || [])
+          .filter((x: any) => String(x.etapa || '').trim().toUpperCase() === 'CLIENTE')
+          .sort((a: any, b: any) => (a.orden || 0) - (b.orden || 0))
+          .slice(0, 5);
+        return t.map((x: any) => {
+            const s = new TrackingStepModel();
+            s.title = { text: x.glosa, color: '', isBold: false } as any;
+            s.description = x.observacion || '';
+            s.date = this.parseFechaRegistro(x.fechaRegistro) as any;
+            s.icon = this.computeIconFromEstado(x.estado);
+            return s;
+        });
+    }
+
+    // ---- Inlined stepper helpers ----
+    private statusMap: any = {
+        'Pedido Ingresado': ['Pendiente', 'Pendiente de despacho'],
+        'Pedido Aprobado': [],
+        'Pedido pagado': ['Pendiente', 'Pendiente de despacho'],
+        'Preparacion de Pedido': ['Pendiente'],
+        'Pendiente de Envío': ['Pendiente de despacho'],
+        'Pedido en Ruta': ['En Ruta'],
+        'Disponible para retiro': ['Producto Listo para Retiro'],
+        'Pedido Entregado': ['Entregado', 'Producto Entregado']
+    };
+
+    public isStepCompleted(step: TrackingStepModel): boolean {
+        return step.icon.indexOf('pending') < 0;
+    }
+
+    public isLastStepCompleted(index: number): boolean {
+        const steps = this.displaySteps;
+        if (steps) {
+            if (steps[index + 1] !== undefined) {
+                const currentIsDone = steps[index].icon.indexOf('pending') < 0;
+                const nextIsPending = steps[index + 1].icon.indexOf('pending') >= 0;
+                return currentIsDone && nextIsPending;
+            } else if (index === steps.length - 1) {
+                return true;
+            } else {
+                return steps[index].icon.indexOf('pending') < 0;
+            }
+        }
+        return false;
+    }
+
+    public isStepInProgress(step: TrackingStepModel, index: number): boolean {
+        const nextStepsItems = this.displaySteps.slice(index + 1);
+        const itemsNextSteps = nextStepsItems.filter(s => this.numberOfItemsOnStatus(s.title as any, this.displaySteps.indexOf(s)) > 0).length;
+        const currentIsDone = step.icon.indexOf('pending') < 0;
+        if (currentIsDone && this.isLastStepCompleted(index) && itemsNextSteps <= 0) {
+            return false;
+        }
+        return itemsNextSteps > 0 || this.numberOfItemsOnStatus(step.title as any, index) > 0;
+    }
+
+    public numberOfItemsOnStatus(stepTitle: any, index: number): number {
+        const orderDetails = this.invoice?.orderProducts || [];
+        const steps = this.displaySteps;
+        if (!orderDetails || orderDetails.length === 0 || !steps) {
+            return 0;
+        }
+        const isLastCompleted = this.isLastStepCompleted(index);
+        if (!isLastCompleted && steps[index].icon.indexOf('pending') < 0) {
+            return 0;
+        }
+        const allowedStatus = this.statusMap[stepTitle.text];
+        if (!allowedStatus) return 0;
+        if (index > 0) {
+            const prevStepAllowedStatus = this.statusMap[steps[index - 1].title.text];
+            if (prevStepAllowedStatus && prevStepAllowedStatus[0] === allowedStatus[0] && allowedStatus.length === prevStepAllowedStatus.length && steps[index - 1].icon.indexOf('in_progress') > 0) {
+                return 0;
+            }
+        }
+        return orderDetails.filter(p => allowedStatus.indexOf((p as any).stateDescription) >= 0).length;
+    }
+
+    public productCount(): number {
+        return this.invoice?.orderProducts ? this.invoice.orderProducts.length : 0;
+    }
+
+    public showDeliveredBadge(step: TrackingStepModel): boolean {
+        const title = (step.title?.text || '').toLowerCase();
+        return title === 'pedido entregado' && this.productCount() > 0;
+    }
+
     public purchaseSummaryTitle(): string {
         // Construir: "Resumen de tu compra - {label} {numeroSinCeros}"
         const base = 'Resumen de tu compra';

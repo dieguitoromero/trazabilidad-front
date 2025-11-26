@@ -5,11 +5,53 @@
     </button>
 </div>
 
-<div class="box-container" *ngIf="stepperSteps && stepperSteps.length">
+<div class="box-container" *ngIf="displaySteps.length">
   <div class="stepper-progress" *ngIf="completedCount() > 0">
-    {{completedCount()}} de {{totalCanonical()}} pasos
+    {{completedCount()}} de {{displaySteps.length}} pasos
   </div>
-  <app-tracking-stepper-view [steps]="stepperSteps" [orderDetails]="invoice?.orderProducts" [rawData]="invoice"></app-tracking-stepper-view>
+  <div class="d-flex stepper-view-container mobile-vertical flex-column "
+       [ngClass]="{'justify-content-md-center flex-md-row': true, 'vertical': false}">
+    <div class="fadingEffect" *ngIf="displaySteps && displaySteps.length > 0"></div>
+    <ng-container *ngFor="let step of displaySteps; let i = index;">
+      <div class="step-container d-flex" [ngClass]="{'d-md-block': true}">
+        <div class="step-title order-1"
+             [ngClass]="{'order-2': false, 'beginning': i <= 0, 'order-md-0': true}"
+             [ngStyle]="{ 'color': step.title.color }">
+          <p class="title"
+             [matBadge]="numberOfItemsOnStatus(step.title, i)"
+             matBadgeOverlap="false"
+             matBadgeColor="warn"
+             [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0">{{step.title.text}}</p>
+          <p class="sub-title d-block d-md-none">{{step.description}}</p>
+          <span class="date d-block d-md-none">{{ step.date ? (step.date | date: 'dd-MM-yyyy') : '-' }}</span>
+        </div>
+
+        <div class="step d-block order-0"
+             [ngClass]="{'order-1': false, 'beginning': i <= 0, 'd-md-flex order-md-1': true,'in-progress': isStepInProgress(step, i), 'completed': isStepCompleted(step), 'last': isLastStepCompleted(i)}">
+          <div class="step-separator from align-self-center flex-grow-1"
+               *ngIf="i > 0 || true"
+               [ngClass]="{ 'beginning': i <= 0, 'd-none d-md-block': (i == 0)}"></div>
+          <div class="icon-wrapper">
+            <ng-container *ngIf="step.icon !== 'pending'; else pendingIcon">
+              <img class="icon" [src]="step.icon" alt="step icon" />
+            </ng-container>
+            <ng-template #pendingIcon>
+              <div class="icon pending"></div>
+            </ng-template>
+            <span class="product-count-badge" *ngIf="showDeliveredBadge(step)">{{ productCount() }}</span>
+          </div>
+          <div class="step-separator to align-self-center flex-grow-1"
+               *ngIf="i < (displaySteps ? displaySteps.length - 1 : 0) || true"
+               [ngClass]="{ 'end': i >= (displaySteps ? displaySteps.length - 1 : 0), 'd-none d-md-block': i >= (displaySteps ? displaySteps.length - 1 : 0)}"></div>
+        </div>
+
+        <div class="step-details d-none d-md-block">
+          <div class="alcanzado-text" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</div>
+          <span class="date-observacion">{{ step.description || '-' }}</span>
+        </div>
+      </div>
+    </ng-container>
+  </div>
 </div>
 
 <!-- Card: Resumen de tu compra -->
