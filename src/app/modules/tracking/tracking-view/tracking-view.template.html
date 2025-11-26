@@ -15,7 +15,7 @@
 <!-- Card: Resumen de tu compra -->
 <div class="box-container" *ngIf="invoice">
   <div class="purchase-summary-card">
-    <h3>Resumen de tu compra</h3>
+    <h3>{{ purchaseSummaryTitle() }}</h3>
     <div class="tipo-entrega-row">
       <div class="icon-col" [ngClass]="{'tienda': resumenTipoEntrega() === 'Retiro en Tienda', 'domicilio': resumenTipoEntrega() !== 'Retiro en Tienda'}"></div>
       <div class="data-col">

@@ -470,4 +470,22 @@ export class TrackingViewComponent {
         }
         return 'Productos';
     }
+
+    public purchaseSummaryTitle(): string {
+        // Construir: "Resumen de tu compra - {label} {numeroSinCeros}"
+        const base = 'Resumen de tu compra';
+        const label = (this.invoice?.documentLabel || '').trim();
+        let num = (this.invoice?.printedNumber || '').toString();
+        // remover todos los caracteres no numéricos y ceros a la izquierda
+        const digits = num.replace(/\D+/g, '');
+        if (digits.length > 0) {
+            // quitar ceros a la izquierda
+            num = digits.replace(/^0+/, '') || '0';
+        } else {
+            // si no hay dígitos, usar tal cual quitando prefijos tipo 'N°' y espacios
+            num = (this.invoice?.printedNumber || '').toString().replace(/^N[°º]?\s*/i, '').trim();
+        }
+        const parts = [label, num].filter(p => (p || '').length > 0);
+        return parts.length ? `${base} - ${parts.join(' ')}` : base;
+    }
 }

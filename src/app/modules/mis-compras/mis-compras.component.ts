@@ -176,84 +176,9 @@ export class MisComprasComponent implements OnInit {
   verDetalle(c: Compra): void {
     const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
     const rut = environment.clienteId;
-    // Primero hacer búsqueda específica para asegurar consistencia con nueva URL requerida
+    // Búsqueda y navegación unificada
     this.misComprasService.buscarDocumento(rut, c.numeroDocumento, 1).subscribe(resp => {
-      const encontrado = resp.compras?.[0];
-      const folioRaw = encontrado?.numeroDocumento || c.numeroDocumento;
-      const folioDigits = this.tryParseFolio(folioRaw);
-      // Loguear la respuesta completa en consola para inspección
-      // eslint-disable-next-line no-console
-      // Log productos si existen
-      if (encontrado && Array.isArray(encontrado.productos)) {
-        // eslint-disable-next-line no-console
-        if (encontrado.productos.length > 0) {
-          // eslint-disable-next-line no-console
-        }
-      } else {
-        // eslint-disable-next-line no-console
-      }
-      // Guardar payload para que Tracking lo consuma sin re-llamar
-      this.trackingDataService.setCompraPayload(resp);
-      // Simular carga de invoice completo legacy si se requiere para tracking-stepper-view
-        const legacyInvoice = {
-        number_printed: folioDigits.toString().padStart(10,'0'),
-        type_document: tipo,
-        label_document: c.tipoDocumento,
-        total: c.total,
-        date_issue: new Date().toISOString(),
-        id_pay: 0,
-        pickup: {
-          title: c.tipoEntrega && c.tipoEntrega.toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho',
-          text: c.direccionEntrega || '',
-          title_date: 'Retira a partir del ',
-          date: new Date().toISOString(),
-          icon: 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
-        },
-        traceability: {
-          steps: (c.trazabilidad || []).map(t => ({
-            title: { text: t.glosa, color: '#4d4f57', isBold: true },
-            description: '',
-            date: t.fechaRegistro,
-            icon: t.estado === 'finalizado' || t.estado === 'activo' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending',
-            machinable: null
-          }))
-        },
-        seller: {
-          title: 'Vendedor', name: '', mail: '', phone: '',
-          icon_principal: 'https://dvimperial.blob.core.windows.net/traceability/contact_icon.svg',
-          icon_phone: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg',
-          icon_mail: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg'
-        },
-          // Pasar productos raw si la búsqueda de documento los trajo
-          productos: (encontrado?.productos || []).map(p => ({
-            cantidad: p.cantidad,
-            codigo: p.codigo,
-            descripcion: p.descripcion,
-            estado: p.estado,
-            imagen: p.imagen,
-            nombre: p.nombre,
-            sku: p.sku,
-            unidadMedida: p.unidadMedida
-          })),
-          DetailsProduct: []
-      };
-      this.trackingDataService.setInvoicePayload(legacyInvoice);
-      // Forzar uso del flujo de documentos (api='doc')
-      const api = 'doc';
-      this.router.navigate(['/tracking'], {
-        queryParams: {
-          folioDocumento: folioDigits,
-          tipoDocumento: tipo,
-          api,
-          section: 'details',
-          page: this.page,
-          perPage: this.perPage
-        },
-        queryParamsHandling: 'merge',
-        state: {
-          compraBuscarDocumentoResp: resp
-        }
-      });
+      this.handleBuscarDocumentoResponse(resp, tipo, c.numeroDocumento, c);
     });
   }
 
@@ -282,17 +207,83 @@ export class MisComprasComponent implements OnInit {
   }
 
   verDetalleFactura(numeroFactura: string): void {
-    const folio = this.tryParseFolio(numeroFactura);
+    const rut = environment.clienteId;
+    // Forzar búsqueda igual que documento principal para transportar respuesta y productos
+    this.misComprasService.buscarDocumento(rut, numeroFactura, 1).subscribe(resp => {
+      // Priorizar tipo desde respuesta si existe, fallback FCV
+      const encontrado = resp.compras?.[0];
+      const tipo = this.mapTipoDocumentoToCode(encontrado?.tipoDocumento || 'factura');
+      this.handleBuscarDocumentoResponse(resp, tipo, numeroFactura, encontrado as any);
+    });
+  }
+
+  /**
+   * Construye legacyInvoice, setea payloads y navega al tracking con state para que el constructor los imprima.
+   * Compra puede venir del listado original o de la respuesta buscarDocumento (encontrado).
+   */
+  private handleBuscarDocumentoResponse(resp: MisComprasResponseDto, tipoDocumentoCode: string, numeroOriginal: string, compraContext: Compra | undefined): void {
+    const encontrado = resp.compras?.[0];
+    // Folio: preferir encontrado.numeroDocumento si existe
+    const folioRaw = encontrado?.numeroDocumento || numeroOriginal;
+    const folioDigits = this.tryParseFolio(folioRaw);
+    // Guardar payload bruto para Tracking
+    this.trackingDataService.setCompraPayload(resp);
+    const c = compraContext || (encontrado as any as Compra);
+    // Construcción invoice legacy genérica tomando datos disponibles
+    const legacyInvoice = {
+      number_printed: folioDigits.toString().padStart(10,'0'),
+      type_document: tipoDocumentoCode,
+      label_document: c?.tipoDocumento || encontrado?.tipoDocumento || '',
+      total: c?.total || encontrado?.total || 0,
+      date_issue: new Date().toISOString(),
+      id_pay: 0,
+      pickup: {
+        title: (c?.tipoEntrega || encontrado?.tipoEntrega || '').toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho',
+        text: c?.direccionEntrega || encontrado?.direccionEntrega || '',
+        title_date: 'Retira a partir del ',
+        date: new Date().toISOString(),
+        icon: 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
+      },
+      traceability: {
+        steps: ((c?.trazabilidad || encontrado?.trazabilidad) || []).map(t => ({
+          title: { text: t.glosa, color: '#4d4f57', isBold: true },
+          description: '',
+          date: t.fechaRegistro,
+          icon: t.estado === 'finalizado' || t.estado === 'activo' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending',
+          machinable: null
+        }))
+      },
+      seller: {
+        title: 'Vendedor', name: '', mail: '', phone: '',
+        icon_principal: 'https://dvimperial.blob.core.windows.net/traceability/contact_icon.svg',
+        icon_phone: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg',
+        icon_mail: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg'
+      },
+      productos: (encontrado?.productos || c?.productos || []).map(p => ({
+        cantidad: p.cantidad,
+        codigo: p.codigo,
+        descripcion: p.descripcion,
+        estado: p.estado,
+        imagen: p.imagen,
+        nombre: p.nombre,
+        sku: p.sku,
+        unidadMedida: p.unidadMedida
+      })),
+      DetailsProduct: []
+    };
+    this.trackingDataService.setInvoicePayload(legacyInvoice);
+    const api = 'doc';
     this.router.navigate(['/tracking'], {
       queryParams: {
-        folioDocumento: folio,
-        tipoDocumento: 'FCV',
-        api: 'doc',
+        folioDocumento: folioDigits,
+        tipoDocumento: tipoDocumentoCode,
+        api,
         section: 'details',
         page: this.page,
         perPage: this.perPage
       },
-      queryParamsHandling: 'merge'
+      queryParamsHandling: 'merge',
+      state: { compraBuscarDocumentoResp: resp }
     });
   }
 
