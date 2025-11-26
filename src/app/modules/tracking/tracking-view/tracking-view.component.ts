@@ -33,7 +33,16 @@ export class TrackingViewComponent {
                 private router: Router,
                 private activeRoute: ActivatedRoute,
                 private trackingData: TrackingDataService) {
-                    console.log("este es el constructor de TrackingViewComponent1");
+        const nav = this.router.getCurrentNavigation();
+        const state = nav && nav.extras && nav.extras.state ? nav.extras.state : undefined;
+    const buscarResp = state && (state as any).compraBuscarDocumentoResp ? (state as any).compraBuscarDocumentoResp : undefined;
+        try {
+            // eslint-disable-next-line no-console
+            console.log('este es el constructor de TrackingViewComponent1', buscarResp && buscarResp.compras ? JSON.stringify({ compras: buscarResp.compras, total: buscarResp.total, page: buscarResp.page, perPage: buscarResp.perPage, totalPages: buscarResp.totalPages }, null, 2) : 'sin respuesta transportada');
+        } catch {
+            // eslint-disable-next-line no-console
+            console.log('este es el constructor de TrackingViewComponent1', 'error serializando respuesta');
+        }
         this.activeRoute.params.subscribe((params) => {
             if (params.invoiceId || params.invoiceType) {
                 this.hideSearch = true;

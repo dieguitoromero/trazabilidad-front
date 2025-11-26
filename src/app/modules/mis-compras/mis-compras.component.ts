@@ -249,7 +249,10 @@ export class MisComprasComponent implements OnInit {
           page: this.page,
           perPage: this.perPage
         },
-        queryParamsHandling: 'merge'
+        queryParamsHandling: 'merge',
+        state: {
+          compraBuscarDocumentoResp: resp
+        }
       });
     });
   }
