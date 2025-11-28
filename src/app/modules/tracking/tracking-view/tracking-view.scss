@@ -1,3 +1,7 @@
+$stepper-blue: #0b4c8f;
+$stepper-green: #29b366;
+$stepper-gray: #c5ced8;
+
 :host {
     .tracking-back-row {
         display: flex;
@@ -198,27 +202,37 @@
                 }
 
                 .step-separator {
-                    height: 2px;
-                    background-color: #c5ced8;
+                    position: relative;
+                    height: 4px;
+                    background-color: $stepper-gray;
+                    border-radius: 999px;
+                    overflow: hidden;
 
                     &.beginning {
-                        border-radius: 5px 0 0 5px;
-                        background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 44%, rgba(197, 206, 216, 1) 82%);
+                        border-radius: 999px 0 0 999px;
                     }
 
                     &.end {
-                        border-radius: 0 5px 5px 0;
-                        background: linear-gradient(90deg, rgba(197, 206, 216, 1) 0%, rgba(255, 255, 255, 1) 44%, rgba(255, 255, 255, 1) 82%);
+                        border-radius: 0 999px 999px 0;
+                    }
+
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        inset: 0;
+                        background: transparent;
                     }
                 }
 
                 &.in-progress {
                     .step-separator {
-                        &.to:not(.end), &.from {
-                            border-top: 4px dotted #00aa00;
-                            background-color: transparent !important;
-                            border-radius: 0;
-                            margin: 0 2px;
+                        background-color: transparent;
+
+                        &::after {
+                            background-image: radial-gradient(circle, $stepper-green 40%, transparent 42%);
+                            background-size: 14px 6px;
+                            background-repeat: repeat-x;
+                            background-position: center;
                         }
                     }
 
@@ -226,52 +240,48 @@
                         .step-separator {
                             &.to {
                                 background-color: transparent;
-                                border: 0;
-                                margin: 0;
+
+                                &::after {
+                                    background-image: none;
+                                }
                             }
                         }
                     }
 
-                    &:not(.vertical) {
-                        .step-container {
-                            .step {
-                                padding: 0 28px;
-                            }
-                        }
-                    }
                 }
 
                 &.completed {
                     .step-separator {
-                        background-color: #003c69;
-
-                        &.beginning {
-                            border-radius: 5px 0 0 5px;
-                            background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 44%, #003c69 82%);
-                        }
-
-                        &.end {
-                            border-radius: 0 5px 5px 0;
-                            background: linear-gradient(90deg, #003c69 0%, rgba(255, 255, 255, 1) 44%, rgba(255, 255, 255, 1) 82%);
+                        background-color: $stepper-blue;
+                        &::after {
+                            background-image: none;
                         }
                     }
 
                     &.in-progress {
                         .step-separator {
                             &.from {
-                                background-color: #003c69 !important;
+                                background-color: $stepper-blue !important;
                                 border: 0;
                                 margin: 0 auto;
+                                &::after {
+                                    background-image: none;
+                                }
                             }
                         }
 
                         &.last {
                             .step-separator {
                                 &.to:not(.end) {
-                                    border-top: 4px dotted #00aa00;
                                     background-color: transparent !important;
                                     border-radius: 0;
                                     margin: 0 2px;
+                                    &::after {
+                                        background-image: radial-gradient(circle, $stepper-green 40%, transparent 42%);
+                                        background-size: 14px 6px;
+                                        background-repeat: repeat-x;
+                                        background-position: center;
+                                    }
                                 }
                             }
                         }
@@ -281,7 +291,10 @@
                 &.last {
                     .step-separator {
                         &.to {
-                            background-color: #c5ced8;
+                            background-color: $stepper-gray;
+                            &::after {
+                                background-image: none;
+                            }
                         }
                     }
                 }
@@ -356,7 +369,7 @@
         background: white;
         animation: showHide 1s ease-in alternate infinite;
         animation-iteration-count: 1;
-        background: linear-gradient(to right, transparent 0%, white 10%)
+        background: linear-gradient(to right, transparent 0%, white 10%);
     }
 }
 

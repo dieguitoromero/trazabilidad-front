@@ -233,10 +233,11 @@ export class MisComprasComponent implements OnInit {
     const entries = this.sortTrazabilidad(Array.isArray(compra?.trazabilidad) ? [...compra.trazabilidad] : []);
     return this.canonicalPasos.map((label) => {
       const canonicalKey = this.normalize(label);
-      const match = entries.find(t => this.normalize(t.etapa || '') === canonicalKey);
+      const match = this.findCanonicalMatch(entries, canonicalKey);
       if (match) {
+        const labelSource = (match.etapa || match.glosa || label).trim();
         return {
-          label: (match.etapa || label).trim(),
+          label: labelSource,
           estado: match.estado || '',
           fecha: match.fechaRegistro,
           observacion: match.observacion,
@@ -253,13 +254,25 @@ export class MisComprasComponent implements OnInit {
     });
   }
 
+  private findCanonicalMatch(entries: Trazabilidad[], canonicalKey: string): Trazabilidad | undefined {
+    return entries.find(t => this.matchesCanonicalEntry(t, canonicalKey));
+  }
+
+  private matchesCanonicalEntry(entry: Trazabilidad | undefined, canonicalKey: string): boolean {
+    if (!entry) { return false; }
+    const etapaKey = this.normalize(entry.etapa || '');
+    if (etapaKey === canonicalKey) { return true; }
+    const glosaKey = this.normalize(entry.glosa || '');
+    return glosaKey === canonicalKey;
+  }
+
   private legacyTraceabilitySteps(trazabilidad: Trazabilidad[]): any[] {
     const entries = this.sortTrazabilidad(Array.isArray(trazabilidad) ? [...trazabilidad] : []);
     return this.canonicalPasos.map((label) => {
       const canonicalKey = this.normalize(label);
-      const match = entries.find(t => this.normalize(t.etapa || '') === canonicalKey);
+      const match = this.findCanonicalMatch(entries, canonicalKey);
       const hasMatch = !!match;
-      const etapaLabel = (match?.etapa || label).trim();
+      const etapaLabel = (match?.etapa || match?.glosa || label).trim();
       return {
         title: { text: etapaLabel, color: '#4d4f57', isBold: true },
         description: hasMatch ? (match?.observacion || '') : '',

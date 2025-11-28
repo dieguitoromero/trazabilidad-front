@@ -359,9 +359,11 @@ export class TrackingViewComponent {
             ? normalizedInvoice.orderProducts
             : normalizedInvoice.productos;
         normalizedInvoice.orderProducts = this.mapOrderProducts(rawProducts);
+        normalizedInvoice.deliveryType = normalizedInvoice.deliveryType || normalizedInvoice.tipoEntrega || normalizedInvoice.delivery_type;
+        normalizedInvoice.deliveryAddress = normalizedInvoice.deliveryAddress || normalizedInvoice.direccionEntrega || normalizedInvoice.direccion || normalizedInvoice.delivery_address;
 
-        this.invoice = normalizedInvoice;
-        const steps = this.padCanonicalSteps((normalizedInvoice as any).trackingSteps || []);
+        const sourceSteps = this.resolveInvoiceTrackingSteps(normalizedInvoice);
+        const steps = this.padCanonicalSteps(sourceSteps);
         // Preservar íconos originales cuando son URLs, normalizar glosa si es necesario
         const normalizedSteps = steps.map(s => {
             const m = new TrackingStepModel();
@@ -372,9 +374,10 @@ export class TrackingViewComponent {
             m.machinable = s.machinable;
             return m;
         });
-        if (!this.stepperSteps.length) {
-            this.stepperSteps = normalizedSteps;
-        }
+
+        normalizedInvoice.trackingSteps = normalizedSteps.map(step => ({ ...step }));
+        this.stepperSteps = normalizedSteps;
+        this.invoice = normalizedInvoice;
         this.compraAdaptada = {
             trazabilidad: steps.map((s, idx) => ({
                 etapa: (s as any).rawEtapa || s.title?.text,
@@ -386,6 +389,22 @@ export class TrackingViewComponent {
             })),
             productos: normalizedInvoice.orderProducts ? [...normalizedInvoice.orderProducts] : []
         };
+    }
+
+    private resolveInvoiceTrackingSteps(invoice: any): TrackingStepModel[] {
+        const normalizedSteps = Array.isArray(invoice?.trackingSteps) ? invoice.trackingSteps : [];
+        if (normalizedSteps.length) {
+            return TrackingStepModel.mapFromObjs(normalizedSteps);
+        }
+        const legacyTraceability = invoice?.traceability?.steps;
+        if (Array.isArray(legacyTraceability) && legacyTraceability.length) {
+            return TrackingStepModel.mapFromObjs(legacyTraceability);
+        }
+        const rawTrazabilidad = invoice?.trazabilidad;
+        if (Array.isArray(rawTrazabilidad) && rawTrazabilidad.length) {
+            return this.mapTrazabilidadToSteps(rawTrazabilidad);
+        }
+        return [];
     }
 
     private formatCompraDtoForStepper(raw: any): void {
