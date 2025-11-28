@@ -24,12 +24,14 @@ export class TrackingViewComponent {
     private autoSearched = false;
     private readonly canonicalEtapas = [
         { key: 'pedido ingresado', label: 'Pedido Ingresado' },
-        { key: 'pedido pagado', label: 'Pedido pagado' },
+        { key: 'pedido aprobado', label: 'Pedido Aprobado', aliases: ['pedido pagado'] },
         { key: 'preparacion de pedido', label: 'Preparación de Pedido' },
         { key: 'disponible para retiro', label: 'Disponible para retiro' },
         { key: 'pedido entregado', label: 'Pedido Entregado' }
     ];
     private readonly maxTraceabilitySteps = this.canonicalEtapas.length;
+    private readonly timelineCompleteIcon = 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg';
+    private readonly etapaAliasMap = this.buildEtapaAliasMap();
 
     @ViewChild('trackingStepperView')
     public trackingStepperView: ElementRef | undefined;
@@ -181,7 +183,7 @@ export class TrackingViewComponent {
     private mapTrazabilidadToSteps(trazabilidad: any[]): TrackingStepModel[] {
         const items = Array.isArray(trazabilidad) ? trazabilidad : [];
         return this.canonicalEtapas.map((canonical, index) => {
-            const match = this.findEtapaMatch(items, canonical.key);
+            const match = this.findEtapaMatch(items, canonical);
             const titleText = this.resolveTitleFromMatch(match, canonical.label);
             const step = new TrackingStepModel();
             step.title = { text: titleText, color: '', isBold: false } as any;
@@ -205,12 +207,10 @@ export class TrackingViewComponent {
     }
 
     private composeStepDescription(glosa: string | undefined, observacion: string | undefined): string {
-        const parts: string[] = [];
-        const trimmedGlosa = (glosa || '').trim();
         const trimmedObs = (observacion || '').trim();
-        if (trimmedGlosa) { parts.push(trimmedGlosa); }
-        if (trimmedObs) { parts.push(trimmedObs); }
-        return parts.join(' • ');
+        if (trimmedObs) { return trimmedObs; }
+        const trimmedGlosa = (glosa || '').trim();
+        return trimmedGlosa;
     }
 
     private resolveTitleFromMatch(match: any, fallback: string): string {
@@ -218,29 +218,42 @@ export class TrackingViewComponent {
         return etapa || fallback;
     }
 
-    private findEtapaMatch(entries: any[], canonicalKey: string): any | undefined {
+    private findEtapaMatch(entries: any[], canonical: { key: string; aliases?: string[] }): any | undefined {
+        const accepted = [canonical.key, ...(canonical.aliases || [])];
         return entries.find((t: any) => {
             const etapaNorm = this.normalizeEtapaLabel(t?.etapa);
             const glosaNorm = this.normalizeEtapaLabel(t?.glosa);
-            return etapaNorm === canonicalKey || glosaNorm === canonicalKey;
+            return accepted.includes(etapaNorm) || accepted.includes(glosaNorm);
         });
     }
 
     private normalizeEtapaLabel(value: string | undefined): string {
         if (!value) { return ''; }
-        return value
+        const normalized = value
             .toString()
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .trim();
+        return this.etapaAliasMap[normalized] || normalized;
+    }
+
+    private buildEtapaAliasMap(): Record<string,string> {
+        const map: Record<string,string> = {};
+        this.canonicalEtapas.forEach(canonical => {
+            map[canonical.key] = canonical.key;
+            (canonical.aliases || []).forEach(alias => {
+                map[alias] = canonical.key;
+            });
+        });
+        return map;
     }
 
     private computeIconFromEstado(estado: string | undefined): string {
         const e = (estado || '').toLowerCase();
         if (!e) return 'pending';
         const doneStates = ['activo','finalizado','completado','entregado'];
-        return doneStates.some(ds => e.indexOf(ds) >= 0) ? 'done' : 'pending';
+        return doneStates.some(ds => e.indexOf(ds) >= 0) ? this.timelineCompleteIcon : 'pending';
     }
 
     private parseFechaRegistro(raw: string): Date | undefined {
@@ -287,11 +300,11 @@ export class TrackingViewComponent {
 
     public statusActual(): string {
         const pasosOrden = [
-            'Pedido ingresado',
-            'Pedido pagado',
-            'Preparación de pedido',
+            'Pedido Ingresado',
+            'Pedido Aprobado',
+            'Preparación de Pedido',
             'Disponible para retiro',
-            'Pedido entregado'
+            'Pedido Entregado'
         ];
 
         if (!this.invoice || !this.invoice.trackingSteps || this.invoice.trackingSteps.length === 0) {
@@ -330,30 +343,38 @@ export class TrackingViewComponent {
     private normalizeGlosa(glosa: string): string {
         if (!glosa) return glosa;
         const g = glosa.trim().toLowerCase();
-        const map: Record<string,string> = {
-          'pedido ingresado':'Pedido ingresado',
-          'pedido pagado':'Pedido pagado',
-                    // 'Pedido aprobado' mantenemos canonical 'Pedido pagado' pero necesitaremos descripción con original
-                    'pedido aprobado':'Pedido pagado',
-          'preparacion de pedido':'Preparación de pedido',
-          'preparación de pedido':'Preparación de pedido'
-        };
+                const map: Record<string,string> = {
+                    'pedido ingresado':'Pedido Ingresado',
+                    'pedido pagado':'Pedido Aprobado',
+                    'pedido aprobado':'Pedido Aprobado',
+                    'preparacion de pedido':'Preparación de Pedido',
+                    'preparación de pedido':'Preparación de Pedido'
+                };
         return map[g] || glosa;
     }
 
     private formatInvoiceForStepper(invoice: any): void {
-        this.invoice = invoice;
-        const steps = this.padCanonicalSteps((invoice as any).trackingSteps || []);
+        const normalizedInvoice: any = { ...invoice };
+        const rawProducts = (normalizedInvoice.orderProducts && normalizedInvoice.orderProducts.length)
+            ? normalizedInvoice.orderProducts
+            : normalizedInvoice.productos;
+        normalizedInvoice.orderProducts = this.mapOrderProducts(rawProducts);
+
+        this.invoice = normalizedInvoice;
+        const steps = this.padCanonicalSteps((normalizedInvoice as any).trackingSteps || []);
         // Preservar íconos originales cuando son URLs, normalizar glosa si es necesario
-        this.stepperSteps = steps.map(s => {
+        const normalizedSteps = steps.map(s => {
             const m = new TrackingStepModel();
             m.title = { text: this.normalizeGlosa(s.title?.text), color: s.title?.color, isBold: s.title?.isBold } as any;
-            m.description = s.description;
+            m.description = s.description || '';
             m.date = s.date;
-            m.icon = s.icon; // ya debería ser URL o ícono válido
+            m.icon = s.icon === 'done' ? this.timelineCompleteIcon : (s.icon || 'pending');
             m.machinable = s.machinable;
             return m;
         });
+        if (!this.stepperSteps.length) {
+            this.stepperSteps = normalizedSteps;
+        }
         this.compraAdaptada = {
             trazabilidad: steps.map((s, idx) => ({
                 etapa: (s as any).rawEtapa || s.title?.text,
@@ -363,32 +384,15 @@ export class TrackingViewComponent {
                 observacion: s.description || '',
                 orden: idx
             })),
-            productos: (invoice as any).orderProducts ? [...(invoice as any).orderProducts] : []
+            productos: normalizedInvoice.orderProducts ? [...normalizedInvoice.orderProducts] : []
         };
     }
 
     private formatCompraDtoForStepper(raw: any): void {
-    const mappedProductos = Array.isArray(raw.productos) ? raw.productos.map((p: any) => ({
-            // Adaptar a estructura que OrderDetailsModel puede mapear sin perder datos
-            order: p.order,
-            lineNumber: p.lineNumber,
-            internalNumber: p.internalNumber,
-            documentType: p.documentType,
-            quantity: p.cantidad !== undefined ? p.cantidad : p.quantity,
-            codeUnimed: p.codeUnimed,
-            image: p.imagen || p.image || 'assets/not-image.jpg',
-            description: p.nombre || p.description || p.descripcion,
-            descriptionUnimed: p.descriptionUnimed,
-            code: p.codigo !== undefined ? p.codigo : p.code,
-            state_description: p.stateDescription,
-            // extras para OrderDetailsModel extended
-            nombre: p.nombre,
-            descripcion: p.descripcion,
-            sku: p.sku,
-            unidadMedida: p.unidadMedida,
-            cantidad: p.cantidad,
-            codigo: p.codigo
-        })) : [];
+        const mappedProductos = this.mapOrderProducts(raw.productos || raw.orderProducts);
+
+        const canonicalSteps = this.mapTrazabilidadToSteps(raw.trazabilidad || []);
+        const paddedSteps = this.padCanonicalSteps(canonicalSteps);
 
         this.invoice = {
             printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i,'').replace(/^0+/, ''),
@@ -397,16 +401,11 @@ export class TrackingViewComponent {
             issueDate: this.parseDate(raw.fechaCompra),
             deliveryAddress: raw.direccionEntrega || raw.direccion || undefined,
             deliveryType: raw.tipoEntrega || undefined,
-            trackingSteps: (raw.trazabilidad || []).map((t: any) => ({
-                title: { text: this.normalizeGlosa(t.glosa) },
-                description: (t.glosa && t.glosa.trim().toLowerCase() === 'pedido aprobado' && this.normalizeGlosa(t.glosa).toLowerCase() !== t.glosa.trim().toLowerCase()) ? t.glosa : '',
-                date: t.fechaRegistro,
-                icon: t.estado === 'finalizado' || t.estado === 'activo' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending'
-            })),
+            trackingSteps: paddedSteps.map(step => ({ ...step })),
             orderProducts: mappedProductos,
             hasProductDetails: mappedProductos.length > 0
         } as any;
-        this.stepperSteps = this.padCanonicalSteps(this.mapTrazabilidadToSteps(raw.trazabilidad || []));
+        this.stepperSteps = paddedSteps;
         this.compraAdaptada = {
             trazabilidad: (raw.trazabilidad || []).map((t: any) => ({
                 etapa: t.etapa,
@@ -424,22 +423,16 @@ export class TrackingViewComponent {
     }
 
     private padCanonicalSteps(existing: TrackingStepModel[]): TrackingStepModel[] {
-        const order = [
-            'Pedido ingresado',
-            'Pedido pagado',
-            'Preparacion de Pedido',
-            'Disponible para retiro',
-            'Pedido Entregado'
-        ];
+        const order = this.canonicalEtapas.map(c => c.label);
         const normalizedExisting = existing.map(s => ({
-            key: ((((s as any).canonicalKey) || (s.title?.text || '')).toLowerCase()),
+            key: this.normalizeEtapaLabel((((s as any).canonicalKey) || (s.title?.text || ''))),
             step: s
         }));
         const hasMap = new Map<string, TrackingStepModel>();
         normalizedExisting.forEach(e => hasMap.set(e.key, e.step));
         const result: TrackingStepModel[] = [];
         order.forEach(label => {
-            const key = label.toLowerCase();
+            const key = this.normalizeEtapaLabel(label);
             if (hasMap.has(key)) {
                 result.push(hasMap.get(key)!);
             } else {
@@ -452,6 +445,30 @@ export class TrackingViewComponent {
             }
         });
         return result;
+    }
+
+    private mapOrderProducts(rawProducts: any): any[] {
+        const items = Array.isArray(rawProducts) ? rawProducts : [];
+        return items.map((p: any) => ({
+            order: p.order,
+            lineNumber: p.lineNumber,
+            internalNumber: p.internalNumber,
+            documentType: p.documentType,
+            quantity: p.quantity !== undefined ? p.quantity : p.cantidad,
+            codeUnimed: p.codeUnimed,
+            image: p.image || p.imagen || 'assets/not-image.jpg',
+            description: p.description || p.nombre || p.descripcion,
+            descriptionUnimed: p.descriptionUnimed,
+            code: p.code !== undefined ? p.code : p.codigo,
+            stateDescription: p.stateDescription || p.estado,
+            state_description: p.state_description || p.stateDescription || p.estado,
+            nombre: p.nombre,
+            descripcion: p.descripcion,
+            sku: p.sku,
+            unidadMedida: p.unidadMedida,
+            cantidad: p.cantidad,
+            codigo: p.codigo
+        }));
     }
 
     public completedCount(): number {
@@ -536,6 +553,7 @@ export class TrackingViewComponent {
         'Pedido Ingresado': ['Pendiente', 'Pendiente de despacho'],
         'Pedido Aprobado': [],
         'Pedido pagado': ['Pendiente', 'Pendiente de despacho'],
+        'Preparación de Pedido': ['Pendiente'],
         'Preparacion de Pedido': ['Pendiente'],
         'Pendiente de Envío': ['Pendiente de despacho'],
         'Pedido en Ruta': ['En Ruta'],
@@ -579,6 +597,10 @@ export class TrackingViewComponent {
         if (!orderDetails || orderDetails.length === 0 || !steps) {
             return 0;
         }
+        const isDeliveredStep = index === steps.length - 1 && this.normalizeEtapaLabel(stepTitle?.text) === 'pedido entregado';
+        if (!isDeliveredStep) {
+            return 0;
+        }
         const isLastCompleted = this.isLastStepCompleted(index);
         if (!isLastCompleted && steps[index].icon.indexOf('pending') < 0) {
             return 0;
@@ -591,7 +613,7 @@ export class TrackingViewComponent {
                 return 0;
             }
         }
-    return orderDetails.filter((p: any) => allowedStatus.indexOf((p as any).stateDescription) >= 0).length;
+        return orderDetails.filter((p: any) => allowedStatus.indexOf((p as any).stateDescription) >= 0).length;
     }
 
     public productCount(): number {

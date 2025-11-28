@@ -179,6 +179,7 @@ export class MisComprasComponent implements OnInit {
     'Pedido Entregado'
   ];
   private readonly maxStepperSteps = this.canonicalPasos.length;
+  private readonly timelineCompleteIcon = 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg';
 
   private normalize(s: string): string {
     // Normaliza textos de etapa/pasos a minúsculas y aplica helper de glosa
@@ -250,6 +251,24 @@ export class MisComprasComponent implements OnInit {
         isCompleted: false
       };
     });
+  }
+
+  private legacyTraceabilitySteps(trazabilidad: Trazabilidad[]): any[] {
+    const entries = this.sortTrazabilidad(Array.isArray(trazabilidad) ? [...trazabilidad] : []);
+    return this.canonicalPasos.map((label) => {
+      const canonicalKey = this.normalize(label);
+      const match = entries.find(t => this.normalize(t.etapa || '') === canonicalKey);
+      const hasMatch = !!match;
+      const etapaLabel = (match?.etapa || label).trim();
+      return {
+        title: { text: etapaLabel, color: '#4d4f57', isBold: true },
+        description: hasMatch ? (match?.observacion || '') : '',
+        date: hasMatch ? match?.fechaRegistro : undefined,
+        icon: hasMatch && this.isCompletedEstado(match?.estado) ? this.timelineCompleteIcon : 'pending',
+        canonicalKey,
+        machinable: null
+      };
+    }).slice(0, this.maxStepperSteps);
   }
 
   lastReachedIndex(compra: Compra): number {
@@ -327,6 +346,7 @@ export class MisComprasComponent implements OnInit {
     this.trackingDataService.setCompraPayload(resp);
     const c = compraContext || (encontrado as any as Compra);
     // Construcción invoice legacy genérica tomando datos disponibles
+    const traceabilitySteps = this.legacyTraceabilitySteps((c?.trazabilidad || encontrado?.trazabilidad) || []);
     const legacyInvoice = {
       number_printed: folioDigits.toString().padStart(10,'0'),
       type_document: tipoDocumentoCode,
@@ -342,14 +362,9 @@ export class MisComprasComponent implements OnInit {
         icon: 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
       },
       traceability: {
-        steps: ((c?.trazabilidad || encontrado?.trazabilidad) || []).map(t => ({
-          title: { text: t.glosa, color: '#4d4f57', isBold: true },
-          description: '',
-          date: t.fechaRegistro,
-          icon: t.estado === 'finalizado' || t.estado === 'activo' ? 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg' : 'pending',
-          machinable: null
-        }))
+        steps: traceabilitySteps
       },
+      trackingSteps: traceabilitySteps,
       seller: {
         title: 'Vendedor', name: '', mail: '', phone: '',
         icon_principal: 'https://dvimperial.blob.core.windows.net/traceability/contact_icon.svg',

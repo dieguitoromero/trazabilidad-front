@@ -2,7 +2,7 @@
     .tracking-back-row {
         display: flex;
         margin-top: 16px;
-        margin-bottom: 8px;
+        margin-bottom: 24px;
         margin-left: 24px;
     }
     .back-badge {
@@ -19,7 +19,7 @@
         cursor: pointer;
         transition: color .15s ease;
     }
-    .back-badge:hover { background: transparent; box-shadow: none; }
+    .back-badge:hover { color: #0a3a6b; }
     .back-badge .arrow {
         font-size: 20px;
         line-height: 1;
