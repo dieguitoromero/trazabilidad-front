@@ -6,7 +6,23 @@ import { TrackingDataService } from '../../services/tracking-data.service';
 import { environment } from '../../../environments/environment';
 import { normalizeGlosa } from '../../core/helpers/glosa-normalizer';
 
-type Trazabilidad = { glosa: string; fechaRegistro: string; estado: 'activo' | 'finalizado' };
+type Trazabilidad = {
+  etapa?: string;
+  glosa: string;
+  observacion?: string;
+  fechaRegistro: string;
+  estado: 'activo' | 'finalizado' | string;
+  orden?: number;
+};
+
+type StepSnapshot = {
+  label: string;
+  estado: string;
+  fecha?: string;
+  observacion?: string;
+  isActive: boolean;
+  isCompleted: boolean;
+};
 type Compra = {
   tipoDocumento: string;
   numeroDocumento: string;
@@ -37,6 +53,7 @@ export class MisComprasComponent implements OnInit {
   private asociadasOpen = new Set<string>();
   // Pager condensado móvil
   readonly maxPagerNodes = 5;
+  private stepperCache = new WeakMap<Compra, StepSnapshot[]>();
 
   loading = false;
   error = false;
@@ -62,6 +79,7 @@ export class MisComprasComponent implements OnInit {
         if (hasData || !environment.useMockOnEmpty) {
           // Usar siempre la respuesta real; si viene vacía y no queremos mock, mostrar vacío
           this.compras = (resp.compras || []) as Compra[];
+          this.resetStepperCache();
           this.perPage = resp.perPage || environment.limitDefault;
           this.page = resp.page || 1;
           const base = this.compras.length || 1;
@@ -81,6 +99,7 @@ export class MisComprasComponent implements OnInit {
         } else {
           // Mantener vacío si no se permite mock
           this.compras = [];
+          this.resetStepperCache();
           this.totalPages = 1;
         }
         this.loading = false;
@@ -90,9 +109,14 @@ export class MisComprasComponent implements OnInit {
 
   private applyMock(): void {
     this.compras = ADMIN_MOCK_DATA.compras as Compra[];
+    this.resetStepperCache();
     this.perPage = (ADMIN_MOCK_DATA as any).perPage || 10;
     this.page = (ADMIN_MOCK_DATA as any).page || 1;
     this.totalPages = (ADMIN_MOCK_DATA as any).totalPages || Math.max(1, Math.ceil(this.compras.length / this.perPage));
+  }
+
+  private resetStepperCache(): void {
+    this.stepperCache = new WeakMap<Compra, StepSnapshot[]>();
   }
 
   private fullFiltered(): Compra[] {
@@ -147,29 +171,99 @@ export class MisComprasComponent implements OnInit {
     return (this.searchPressed || typed) && this.totalFilteredCount === 0;
   }
 
-  readonly pasos = [
-    'Pedido ingresado',
-    'Pedido pagado',
+  private readonly canonicalPasos = [
+    'Pedido Ingresado',
+    'Pedido Aprobado',
     'Preparación de pedido',
     'Disponible para retiro',
-    'Pedido entregado'
+    'Pedido Entregado'
   ];
+  private readonly maxStepperSteps = this.canonicalPasos.length;
 
   private normalize(s: string): string {
-    // Usar helper y llevar a minúsculas para set comparisons
+    // Normaliza textos de etapa/pasos a minúsculas y aplica helper de glosa
     return (normalizeGlosa(s) || '').toLowerCase();
   }
 
-  pasoActivo(compra: Compra, paso: string): boolean {
-    const target = this.normalize(paso);
-    const item = compra.trazabilidad.find(p => this.normalize(p.glosa) === target);
-    return !!item && (item.estado === 'activo' || item.estado === 'finalizado');
+  private estadoNormalized(estado: string | undefined): string {
+    return (estado || '').trim().toLowerCase();
+  }
+
+  private isActiveEstado(estado: string | undefined): boolean {
+    return this.estadoNormalized(estado) === 'activo';
+  }
+
+  private isCompletedEstado(estado: string | undefined): boolean {
+    const norm = this.estadoNormalized(estado);
+    return norm === 'activo' || norm === 'finalizado' || norm === 'completado' || norm === 'entregado';
+  }
+
+  private sortTrazabilidad(entries: Trazabilidad[]): Trazabilidad[] {
+    if (!entries.length) return entries;
+    const hasOrden = entries.some(t => typeof t.orden === 'number');
+    if (!hasOrden) return entries;
+    return [...entries].sort((a, b) => {
+      const ao = typeof a.orden === 'number' ? a.orden : Number.MAX_SAFE_INTEGER;
+      const bo = typeof b.orden === 'number' ? b.orden : Number.MAX_SAFE_INTEGER;
+      if (ao === bo) return 0;
+      return ao - bo;
+    });
+  }
+
+  private buildPlaceholderSnapshot(): StepSnapshot[] {
+    return this.canonicalPasos.map(label => ({
+      label,
+      estado: 'pendiente',
+      isActive: false,
+      isCompleted: false
+    }));
+  }
+
+  public stepperSnapshot(compra: Compra): StepSnapshot[] {
+    if (!compra) return this.buildPlaceholderSnapshot();
+    const cached = this.stepperCache.get(compra);
+    if (cached) return cached;
+    const snapshot = this.buildCanonicalSnapshots(compra);
+    this.stepperCache.set(compra, snapshot);
+    return snapshot;
+  }
+
+  private buildCanonicalSnapshots(compra: Compra): StepSnapshot[] {
+    const entries = this.sortTrazabilidad(Array.isArray(compra?.trazabilidad) ? [...compra.trazabilidad] : []);
+    return this.canonicalPasos.map((label) => {
+      const canonicalKey = this.normalize(label);
+      const match = entries.find(t => this.normalize(t.etapa || '') === canonicalKey);
+      if (match) {
+        return {
+          label: (match.etapa || label).trim(),
+          estado: match.estado || '',
+          fecha: match.fechaRegistro,
+          observacion: match.observacion,
+          isActive: this.isActiveEstado(match.estado),
+          isCompleted: this.isCompletedEstado(match.estado)
+        };
+      }
+      return {
+        label,
+        estado: 'pendiente',
+        isActive: false,
+        isCompleted: false
+      };
+    });
   }
 
   lastReachedIndex(compra: Compra): number {
+    // Último índice alcanzado según 'etapa' reportada
     let last = -1;
-    const reached = new Set(compra.trazabilidad.map(t => this.normalize(t.glosa)));
-    this.pasos.forEach((p, idx) => { if (reached.has(this.normalize(p))) last = idx; });
+    // Incluir tanto etapa como glosa normalizadas para el set de alcanzados
+    const reached = new Set<string>();
+    compra.trazabilidad.forEach(t => {
+      const e = this.normalize((t.etapa || '').trim());
+      const g = this.normalize((t.glosa || '').trim());
+      if (e) reached.add(e);
+      if (g) reached.add(g);
+    });
+    this.canonicalPasos.forEach((p, idx) => { if (reached.has(this.normalize(p))) last = idx; });
     return last;
   }
 
@@ -177,6 +271,9 @@ export class MisComprasComponent implements OnInit {
     const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
     const rut = environment.clienteId;
     // Búsqueda y navegación unificada
+    // Loguear documento seleccionado
+    // eslint-disable-next-line no-console
+    console.log('DOCUMENTO TRANSPORTADO', c);
     this.misComprasService.buscarDocumento(rut, c.numeroDocumento, 1).subscribe(resp => {
       this.handleBuscarDocumentoResponse(resp, tipo, c.numeroDocumento, c);
     });
@@ -295,7 +392,7 @@ export class MisComprasComponent implements OnInit {
 
   estadoActual(c: Compra): string {
     const idx = this.lastReachedIndex(c);
-    return idx >= 0 ? this.pasos[idx] : this.pasos[0];
+    return idx >= 0 ? this.canonicalPasos[idx] : this.canonicalPasos[0];
   }
 
   toggleAsociadas(c: Compra): void {

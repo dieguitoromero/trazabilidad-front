@@ -54,12 +54,19 @@
         <div class="stepper">
           <div
             class="step"
-            *ngFor="let p of pasos; let i = index"
-            [class.completed]="lastReachedIndex(c) >= i"
-            [class.current]="lastReachedIndex(c) === i"
+            *ngFor="let step of stepperSnapshot(c); let i = index"
+            [class.active]="step.isActive"
+            [class.completed]="step.isCompleted"
           >
-            <div class="dot"></div>
-            <div class="label">{{ p }}</div>
+            <div class="icon-wrapper">
+              <ng-container *ngIf="step.isCompleted; else pendingIcon">
+                <img src="assets/estadoOk.svg" alt="ok" class="icon ok" />
+              </ng-container>
+              <ng-template #pendingIcon>
+                <div class="icon pending"></div>
+              </ng-template>
+            </div>
+            <div class="label">{{ step.label }}</div>
           </div>
         </div>
       </div>

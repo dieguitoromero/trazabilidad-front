@@ -1,5 +1,5 @@
 <div class="order-details-container" [ngClass]="{'box': isBox}">
-    <h3>Resumen de tu pedido </h3>
+    <h3>Resumen de tu pedido</h3>
     <div *ngIf="status.length === 0">
         <div *ngFor="let orderDetail of orderDetails" class="order-detail">
             <img class="product-image" src="{{orderDetail.image}}"/>

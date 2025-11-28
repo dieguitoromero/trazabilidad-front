@@ -11,7 +11,14 @@ export interface CompraApiDto {
   fechaCompra: string;
   tipoEntrega: string;
   direccionEntrega: string;
-  trazabilidad: Array<{ glosa: string; fechaRegistro: string; estado: string }>;
+  trazabilidad: Array<{
+    etapa?: string;
+    glosa: string;
+    observacion?: string;
+    fechaRegistro: string;
+    estado: string;
+    orden?: number;
+  }>;
   esDimensionado: boolean;
   total: number;
   facturasAsociadas?: Array<{ numeroFactura: string; fechaEmision: string; idFactura: number }>; // optional
@@ -101,9 +108,12 @@ export class MisComprasService {
     };
     const comprasRaw: CompraApiDto[] = (resp.compras || resp.documents || []).map((c: any) => {
       const trazabilidad = (c.trazabilidad || c.traceability || []).map((t: any) => ({
+        etapa: t.etapa || t.stage || t.scope || '',
         glosa: t.glosa || t.label || '',
+        observacion: t.observacion || t.observation || t.descripcion || t.description || '',
         fechaRegistro: t.fechaRegistro || t.date || '',
-        estado: t.estado || t.state || ''
+        estado: t.estado || t.state || '',
+        orden: typeof t.orden === 'number' ? t.orden : (typeof t.order === 'number' ? t.order : undefined)
       }));
 
       type Asociada = { numeroFactura: string; fechaEmision: string; idFactura: number };

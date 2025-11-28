@@ -174,10 +174,18 @@
   text-align: center;
 }
 
+/* New icon-based rendering */
+.step .icon-wrapper { position: relative; height: 36px; display:flex; align-items:center; justify-content:center; }
+.step .icon.ok { width:36px; height:36px; display:block; }
+.step .icon.pending { width:36px; height:36px; border-radius:50%; background:#d9dee6; }
+.step.active .label { color:#0a3d85; font-weight:600; }
+.step.completed::before { background:#0a3d85; }
+.step.active::before { background:#0a3d85; }
+
 .step::before {
   content: '';
   position: absolute;
-  top: 8px;
+  top: 18px;
   left: 0;
   right: 0;
   height: 4px;
@@ -185,28 +193,7 @@
   z-index: 0;
 }
 
-.step.completed::before {
-  background: #0a3d85;
-}
-
-.dot {
-  position: relative;
-  width: 18px;
-  height: 18px;
-  margin: 0 auto;
-  border-radius: 50%;
-  background: #cbd5e1;
-  border: 2px solid #cbd5e1;
-  z-index: 1;
-}
-
-.step.current .dot,
-.step.completed .dot {
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: transparent url('/assets/estadoOk.svg') center/contain no-repeat;
-}
+/* remove legacy dot, use icon-wrapper */
 
 .label {
   margin-top: 8px;

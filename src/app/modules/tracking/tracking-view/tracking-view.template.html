@@ -6,9 +6,9 @@
 </div>
 
 <div class="box-container" *ngIf="displaySteps.length">
-  <div class="stepper-progress" *ngIf="completedCount() > 0">
+  <!-- <div class="stepper-progress" *ngIf="completedCount() > 0">
     {{completedCount()}} de {{displaySteps.length}} pasos
-  </div>
+  </div> -->
   <div class="d-flex stepper-view-container mobile-vertical flex-column "
        [ngClass]="{'justify-content-md-center flex-md-row': true, 'vertical': false}">
     <div class="fadingEffect" *ngIf="displaySteps && displaySteps.length > 0"></div>
@@ -22,7 +22,7 @@
              matBadgeOverlap="false"
              matBadgeColor="warn"
              [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0">{{step.title.text}}</p>
-          <p class="sub-title d-block d-md-none">{{step.description}}</p>
+          <p class="sub-title d-block d-md-none" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</p>
           <span class="date d-block d-md-none">{{ step.date ? (step.date | date: 'dd-MM-yyyy') : '-' }}</span>
         </div>
 
@@ -47,7 +47,7 @@
 
         <div class="step-details d-none d-md-block">
           <div class="alcanzado-text" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</div>
-          <span class="date-observacion">{{ step.description || '-' }}</span>
+          <span class="date">{{ step.date ? (step.date | date: 'dd-MM-yyyy') : '-' }}</span>
         </div>
       </div>
     </ng-container>

@@ -1,5 +1,4 @@
 import {Component, ElementRef, ViewChild} from '@angular/core';
-import {InvoiceModel} from '../../../core/models/invoice.model';
 import {SearchModel} from '../models/search-model';
 import {take} from 'rxjs/operators';
 import {TrackingService} from '../../../services/tracking.service';
@@ -13,7 +12,7 @@ import { TrackingStepModel } from '../../../core/models/tracking-step.model';
 })
 export class TrackingViewComponent {
 
-    public invoice: InvoiceModel | undefined;
+    public invoice: any
     // Objeto adaptado para PurchaseTimelineComponent
     public compraAdaptada: any | undefined;
     // Pasos derivados de 'trazabilidad' (o invoice.trackingSteps) para alimentar el nuevo componente stepper
@@ -23,6 +22,14 @@ export class TrackingViewComponent {
     public searchModel: SearchModel | undefined;
     public hideSearch = false;
     private autoSearched = false;
+    private readonly canonicalEtapas = [
+        { key: 'pedido ingresado', label: 'Pedido Ingresado' },
+        { key: 'pedido pagado', label: 'Pedido pagado' },
+        { key: 'preparacion de pedido', label: 'Preparación de Pedido' },
+        { key: 'disponible para retiro', label: 'Disponible para retiro' },
+        { key: 'pedido entregado', label: 'Pedido Entregado' }
+    ];
+    private readonly maxTraceabilitySteps = this.canonicalEtapas.length;
 
     @ViewChild('trackingStepperView')
     public trackingStepperView: ElementRef | undefined;
@@ -33,6 +40,7 @@ export class TrackingViewComponent {
                 private router: Router,
                 private activeRoute: ActivatedRoute,
                 private trackingData: TrackingDataService) {
+                    console.log("COSNTRUCTOR TrackingViewComponent");
         const nav = this.router.getCurrentNavigation();
         const state = nav && nav.extras && nav.extras.state ? nav.extras.state : undefined;
     const buscarResp = state && (state as any).compraBuscarDocumentoResp ? (state as any).compraBuscarDocumentoResp : undefined;
@@ -66,7 +74,7 @@ export class TrackingViewComponent {
                 // Intentar consumir payload transportado para evitar nueva llamada
                 const invoiceTransport = this.trackingData.consumeInvoicePayload();
                 if (invoiceTransport) {
-                    const mapped = InvoiceModel.mapFromObj(invoiceTransport);
+                    const mapped: any = invoiceTransport; // usar payload directo, sin modelo
                     if (mapped) {
                         this.formatInvoiceForStepper(mapped);
                         // eslint-disable-next-line no-console
@@ -127,7 +135,7 @@ export class TrackingViewComponent {
 
     }
 
-    private onSuccess(invoice: InvoiceModel | undefined): void {
+    private onSuccess(invoice: any | undefined): void {
 
         if (!invoice) {
             this.router.navigate(['not-found']);
@@ -137,7 +145,7 @@ export class TrackingViewComponent {
 
         const section = (this.searchModel as any)?.section;
         // Si se pide 'details' y hay detalles, ir primero a detalles
-        if (section === 'details' && invoice?.hasProductDetails) {
+    if (section === 'details' && invoice?.hasProductDetails) {
             setTimeout(() => {
                 this.orderDetailsView?.nativeElement.scrollIntoView({ behavior: 'smooth' });
             }, 400);
@@ -157,7 +165,7 @@ export class TrackingViewComponent {
         }
     }
 
-    private onError(err: InvoiceModel): void {
+    private onError(err: any): void {
         this.hasError = true;
         this.working = false;
     }
@@ -169,21 +177,63 @@ export class TrackingViewComponent {
         }
     }
 
-    /** Filtra y convierte los primeros 5 items con etapa === 'CLIENTE' */
+    /** Mapea la trazabilidad a los 5 pasos canónicos, priorizando la etiqueta de etapa enviada por el servicio */
     private mapTrazabilidadToSteps(trazabilidad: any[]): TrackingStepModel[] {
-        if (!trazabilidad || !Array.isArray(trazabilidad)) { return []; }
-        const clienteItems = trazabilidad
-            .filter((t: any) => (t.etapa || '').toUpperCase() === 'CLIENTE')
-            .sort((a: any, b: any) => (a.orden || 0) - (b.orden || 0))
-            .slice(0, 5);
-        return clienteItems.map((t: any) => {
+        const items = Array.isArray(trazabilidad) ? trazabilidad : [];
+        return this.canonicalEtapas.map((canonical, index) => {
+            const match = this.findEtapaMatch(items, canonical.key);
+            const titleText = this.resolveTitleFromMatch(match, canonical.label);
             const step = new TrackingStepModel();
-            step.title = { text: (t.glosa || '').trim(), color: '', isBold: false } as any;
-            step.description = t.observacion || '';
-            step.date = this.parseFechaRegistro(t.fechaRegistro) as any;
-            step.icon = this.computeIconFromEstado(t.estado);
+            step.title = { text: titleText, color: '', isBold: false } as any;
+
+            if (match) {
+                step.description = this.composeStepDescription(match.glosa, match.observacion);
+                step.date = this.parseFechaRegistro(match.fechaRegistro) as any;
+                step.icon = this.computeIconFromEstado(match.estado);
+            } else {
+                step.description = '';
+                step.date = undefined as any;
+                step.icon = 'pending';
+            }
+
+            (step as any).canonicalKey = canonical.key;
+            (step as any).rawEtapa = match?.etapa;
+            (step as any).rawGlosa = match?.glosa;
+            (step as any).orden = typeof match?.orden === 'number' ? match?.orden : index;
             return step;
         });
+    }
+
+    private composeStepDescription(glosa: string | undefined, observacion: string | undefined): string {
+        const parts: string[] = [];
+        const trimmedGlosa = (glosa || '').trim();
+        const trimmedObs = (observacion || '').trim();
+        if (trimmedGlosa) { parts.push(trimmedGlosa); }
+        if (trimmedObs) { parts.push(trimmedObs); }
+        return parts.join(' • ');
+    }
+
+    private resolveTitleFromMatch(match: any, fallback: string): string {
+        const etapa = (match?.etapa || '').trim();
+        return etapa || fallback;
+    }
+
+    private findEtapaMatch(entries: any[], canonicalKey: string): any | undefined {
+        return entries.find((t: any) => {
+            const etapaNorm = this.normalizeEtapaLabel(t?.etapa);
+            const glosaNorm = this.normalizeEtapaLabel(t?.glosa);
+            return etapaNorm === canonicalKey || glosaNorm === canonicalKey;
+        });
+    }
+
+    private normalizeEtapaLabel(value: string | undefined): string {
+        if (!value) { return ''; }
+        return value
+            .toString()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
     }
 
     private computeIconFromEstado(estado: string | undefined): string {
@@ -250,7 +300,7 @@ export class TrackingViewComponent {
 
         const titles = new Set(
             this.invoice.trackingSteps
-                .map(s => (s.title && s.title.text ? s.title.text.toLowerCase() : ''))
+                .map((s: any) => (s.title && s.title.text ? s.title.text.toLowerCase() : ''))
         );
 
         let last = pasosOrden[0];
@@ -291,9 +341,9 @@ export class TrackingViewComponent {
         return map[g] || glosa;
     }
 
-    private formatInvoiceForStepper(invoice: InvoiceModel): void {
+    private formatInvoiceForStepper(invoice: any): void {
         this.invoice = invoice;
-        const steps = this.padCanonicalSteps(invoice.trackingSteps || []);
+        const steps = this.padCanonicalSteps((invoice as any).trackingSteps || []);
         // Preservar íconos originales cuando son URLs, normalizar glosa si es necesario
         this.stepperSteps = steps.map(s => {
             const m = new TrackingStepModel();
@@ -305,13 +355,15 @@ export class TrackingViewComponent {
             return m;
         });
         this.compraAdaptada = {
-            trazabilidad: steps.map(s => ({
-                glosa: this.normalizeGlosa(s.title?.text),
+            trazabilidad: steps.map((s, idx) => ({
+                etapa: (s as any).rawEtapa || s.title?.text,
+                glosa: (s as any).rawGlosa || this.normalizeGlosa(s.title?.text),
                 fechaRegistro: s.date,
                 estado: s.icon?.indexOf('timeline_complete_icon') >= 0 ? 'finalizado' : (s.icon?.indexOf('pending') >= 0 ? 'pendiente' : 'activo'),
-                observacion: s.description || ''
+                observacion: s.description || '',
+                orden: idx
             })),
-            productos: invoice.orderProducts ? [...invoice.orderProducts] : []
+            productos: (invoice as any).orderProducts ? [...(invoice as any).orderProducts] : []
         };
     }
 
@@ -357,10 +409,12 @@ export class TrackingViewComponent {
         this.stepperSteps = this.padCanonicalSteps(this.mapTrazabilidadToSteps(raw.trazabilidad || []));
         this.compraAdaptada = {
             trazabilidad: (raw.trazabilidad || []).map((t: any) => ({
+                etapa: t.etapa,
                 glosa: this.normalizeGlosa(t.glosa),
                 fechaRegistro: t.fechaRegistro,
                 estado: t.estado || 'activo',
-                observacion: t.observacion || ''
+                observacion: t.observacion || '',
+                orden: t.orden
             })),
             productos: mappedProductos,
             direccionEntrega: raw.direccionEntrega || raw.direccion || ''
@@ -378,7 +432,7 @@ export class TrackingViewComponent {
             'Pedido Entregado'
         ];
         const normalizedExisting = existing.map(s => ({
-            key: (s.title?.text || '').toLowerCase(),
+            key: ((((s as any).canonicalKey) || (s.title?.text || '')).toLowerCase()),
             step: s
         }));
         const hasMap = new Map<string, TrackingStepModel>();
@@ -474,18 +528,7 @@ export class TrackingViewComponent {
     // Steps a mostrar: usa los mapeados desde compra (si existen) o los locales
     public get displaySteps(): TrackingStepModel[] {
         if (this.stepperSteps && this.stepperSteps.length > 0) return this.stepperSteps;
-        const t = (this.compraAdaptada?.trazabilidad || [])
-          .filter((x: any) => String(x.etapa || '').trim().toUpperCase() === 'CLIENTE')
-          .sort((a: any, b: any) => (a.orden || 0) - (b.orden || 0))
-          .slice(0, 5);
-        return t.map((x: any) => {
-            const s = new TrackingStepModel();
-            s.title = { text: x.glosa, color: '', isBold: false } as any;
-            s.description = x.observacion || '';
-            s.date = this.parseFechaRegistro(x.fechaRegistro) as any;
-            s.icon = this.computeIconFromEstado(x.estado);
-            return s;
-        });
+        return this.mapTrazabilidadToSteps(this.compraAdaptada?.trazabilidad || []);
     }
 
     // ---- Inlined stepper helpers ----
@@ -548,7 +591,7 @@ export class TrackingViewComponent {
                 return 0;
             }
         }
-        return orderDetails.filter(p => allowedStatus.indexOf((p as any).stateDescription) >= 0).length;
+    return orderDetails.filter((p: any) => allowedStatus.indexOf((p as any).stateDescription) >= 0).length;
     }
 
     public productCount(): number {
