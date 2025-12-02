@@ -21,7 +21,7 @@ export class TrackingRepository {
   ): Observable<InvoiceModel | undefined> {
     return this.http
       .get(
-        `${this.baseApiUrl}/traceability/v1/traceability/${invoiceId}/${invoiceType}`
+        `${this.baseApiUrl}/api/clients/${invoiceId}/${invoiceType}`
       )
       .pipe(
         map((o: any) => {
