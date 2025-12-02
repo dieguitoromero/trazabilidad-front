@@ -4,6 +4,7 @@ import {switchMap, map, catchError} from 'rxjs/operators';
 import { MisComprasService, CompraApiDto } from './mis-compras.service';
 import {InvoiceModel} from '../core/models/invoice.model';
 import {TrackingRepository} from '../repositories/tracking.repository';
+import { environment } from '../../environments/environment';
 
 @Injectable()
 export class TrackingService {
@@ -29,7 +30,7 @@ export class TrackingService {
      * Si el documento ya trae trazabilidad, se usa directamente; si no, se intenta fallback a V2.
      */
     public getInvoiceFromDocumentsSearch(invoiceId: number, invoiceType: string): Observable<InvoiceModel | undefined> {
-        const rut = '762530058'; // reutilizar environment.clienteId si se prefiere inyectar
+        const rut = environment.clienteId;
         return this.misComprasService.buscarDocumento(rut, invoiceId.toString(), 1).pipe(
             switchMap(resp => {
                 const doc = resp.compras && resp.compras.length > 0 ? resp.compras[0] : undefined;
