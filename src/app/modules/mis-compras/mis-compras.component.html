@@ -27,7 +27,7 @@
         <div class="doc-title">
           {{ c.tipoDocumento }} N° {{ c.numeroDocumento }}
         </div>
-  <button class="detail-btn" (click)="verDetalle(c)">Ver detalle</button>
+          <button class="detail-btn hide-on-mobile" (click)="verDetalle(c)">Ver detalle</button>
       </div>
 
       <div class="meta">
@@ -78,7 +78,7 @@
         <span class="estado-text">Estado: {{ estadoActual(c) }}</span>
       </div>
 
-      <div class="asociadas" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
+      <div class="asociadas hide-on-mobile" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
         <button type="button" class="asociadas-toggle" (click)="toggleAsociadas(c)">
           <span class="link">Facturas asociadas ({{ c.facturasAsociadas.length }})</span>
           <span class="chev" [class.open]="isAsociadasOpen(c)">▾</span>
@@ -92,6 +92,18 @@
             </div>
           </ng-container>
         </div>
+      </div>
+
+      <div class="card-actions show-on-mobile">
+        <button
+          type="button"
+          class="facturas-btn-outline"
+          *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0"
+          (click)="openFacturasModal(c)">
+          <span class="label">Facturas asociadas</span>
+          <span class="facturas-count">{{ c.facturasAsociadas.length }}</span>
+        </button>
+        <button type="button" class="detail-btn mobile" (click)="verDetalle(c)">Ver detalle</button>
       </div>
     </div>
   </div>
@@ -115,5 +127,30 @@
          (click)="goToPage(p)">
       <span>{{ p }}</span>
     </div>
+  </div>
+</div>
+
+<div class="facturas-modal" *ngIf="facturasModalVisible">
+  <div class="facturas-modal__backdrop" (click)="closeFacturasModal()"></div>
+  <div class="facturas-modal__dialog" role="dialog" aria-modal="true">
+    <div class="facturas-modal__header">
+      <div>
+        <h4>Facturas asociadas</h4>
+        <p class="subtitle">{{ facturasModalTitle }}</p>
+      </div>
+      <button class="close-btn" (click)="closeFacturasModal()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="facturas-modal__list" *ngIf="facturasModalItems.length; else sinFacturas">
+      <div class="factura-row" *ngFor="let f of facturasModalItems">
+        <div class="factura-info">
+          <p class="factura-num">Factura N° {{ f.numeroFactura }}</p>
+          <p class="factura-date" *ngIf="f.fechaEmision">Fecha de emisión: {{ f.fechaEmision }}</p>
+        </div>
+        <button class="detail-btn small" [class.disabled]="!f.numeroFactura || f.numeroFactura === '0'" [disabled]="!f.numeroFactura || f.numeroFactura === '0'" (click)="verDetalleFactura(f.numeroFactura)">Ver detalle</button>
+      </div>
+    </div>
+    <ng-template #sinFacturas>
+      <p class="empty-modal">No encontramos facturas para esta compra.</p>
+    </ng-template>
   </div>
 </div>

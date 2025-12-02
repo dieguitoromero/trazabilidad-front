@@ -1,9 +1,9 @@
-import {Component, ElementRef, ViewChild} from '@angular/core';
-import {SearchModel} from '../models/search-model';
-import {take} from 'rxjs/operators';
-import {TrackingService} from '../../../services/tracking.service';
+import { Component, ElementRef, ViewChild } from '@angular/core';
+import { SearchModel } from '../models/search-model';
+import { take } from 'rxjs/operators';
+import { TrackingService } from '../../../services/tracking.service';
 import { TrackingDataService } from '../../../services/tracking-data.service';
-import {ActivatedRoute, Router} from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TrackingStepModel } from '../../../core/models/tracking-step.model';
 
 @Component({
@@ -21,6 +21,7 @@ export class TrackingViewComponent {
     public hasError = false;
     public searchModel: SearchModel | undefined;
     public hideSearch = false;
+    public documentInfoText = '';
     private autoSearched = false;
     private readonly canonicalEtapas = [
         { key: 'pedido ingresado', label: 'Pedido Ingresado' },
@@ -39,13 +40,13 @@ export class TrackingViewComponent {
     public orderDetailsView: ElementRef | undefined;
 
     constructor(private trackingService: TrackingService,
-                private router: Router,
-                private activeRoute: ActivatedRoute,
-                private trackingData: TrackingDataService) {
-                    console.log("COSNTRUCTOR TrackingViewComponent");
+        private router: Router,
+        private activeRoute: ActivatedRoute,
+        private trackingData: TrackingDataService) {
+        console.log("COSNTRUCTOR TrackingViewComponent");
         const nav = this.router.getCurrentNavigation();
         const state = nav && nav.extras && nav.extras.state ? nav.extras.state : undefined;
-    const buscarResp = state && (state as any).compraBuscarDocumentoResp ? (state as any).compraBuscarDocumentoResp : undefined;
+        const buscarResp = state && (state as any).compraBuscarDocumentoResp ? (state as any).compraBuscarDocumentoResp : undefined;
         try {
             // eslint-disable-next-line no-console
             console.log('este es el constructor de TrackingViewComponent1', buscarResp && buscarResp.compras ? JSON.stringify({ compras: buscarResp.compras, total: buscarResp.total, page: buscarResp.page, perPage: buscarResp.perPage, totalPages: buscarResp.totalPages }, null, 2) : 'sin respuesta transportada');
@@ -117,7 +118,7 @@ export class TrackingViewComponent {
 
         source$
             .pipe(take(1))
-            .subscribe({next: this.onSuccess.bind(this), error: this.onError.bind(this)});
+            .subscribe({ next: this.onSuccess.bind(this), error: this.onError.bind(this) });
 
         const snapshot = this.activeRoute.snapshot;
 
@@ -130,8 +131,8 @@ export class TrackingViewComponent {
                 },
                 queryParamsHandling: 'merge'
             });
-        //} else {
-        //    this.router.navigate(['/', search.invoiceId, search.invoiceType]);
+            //} else {
+            //    this.router.navigate(['/', search.invoiceId, search.invoiceType]);
         }
 
 
@@ -147,7 +148,7 @@ export class TrackingViewComponent {
 
         const section = (this.searchModel as any)?.section;
         // Si se pide 'details' y hay detalles, ir primero a detalles
-    if (section === 'details' && invoice?.hasProductDetails) {
+        if (section === 'details' && invoice?.hasProductDetails) {
             setTimeout(() => {
                 this.orderDetailsView?.nativeElement.scrollIntoView({ behavior: 'smooth' });
             }, 400);
@@ -170,6 +171,7 @@ export class TrackingViewComponent {
     private onError(err: any): void {
         this.hasError = true;
         this.working = false;
+        this.documentInfoText = '';
     }
 
     private triggerAutoSearch(): void {
@@ -238,8 +240,8 @@ export class TrackingViewComponent {
         return this.etapaAliasMap[normalized] || normalized;
     }
 
-    private buildEtapaAliasMap(): Record<string,string> {
-        const map: Record<string,string> = {};
+    private buildEtapaAliasMap(): Record<string, string> {
+        const map: Record<string, string> = {};
         this.canonicalEtapas.forEach(canonical => {
             map[canonical.key] = canonical.key;
             (canonical.aliases || []).forEach(alias => {
@@ -252,7 +254,7 @@ export class TrackingViewComponent {
     private computeIconFromEstado(estado: string | undefined): string {
         const e = (estado || '').toLowerCase();
         if (!e) return 'pending';
-        const doneStates = ['activo','finalizado','completado','entregado'];
+        const doneStates = ['activo', 'finalizado', 'completado', 'entregado'];
         return doneStates.some(ds => e.indexOf(ds) >= 0) ? this.timelineCompleteIcon : 'pending';
     }
 
@@ -264,8 +266,8 @@ export class TrackingViewComponent {
         // Intentar formato dd-MM-yyyy
         const m = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
         if (m) {
-            const d = parseInt(m[1],10); const mo = parseInt(m[2],10)-1; const y = parseInt(m[3],10);
-            return new Date(y,mo,d);
+            const d = parseInt(m[1], 10); const mo = parseInt(m[2], 10) - 1; const y = parseInt(m[3], 10);
+            return new Date(y, mo, d);
         }
         return undefined;
     }
@@ -336,20 +338,20 @@ export class TrackingViewComponent {
     private parseDate(fecha: string): Date | undefined {
         const m = (fecha || '').match(/^(\d{2})-(\d{2})-(\d{4})$/);
         if (!m) return undefined;
-        const d = parseInt(m[1],10); const mo = parseInt(m[2],10)-1; const y = parseInt(m[3],10);
-        return new Date(y,mo,d);
+        const d = parseInt(m[1], 10); const mo = parseInt(m[2], 10) - 1; const y = parseInt(m[3], 10);
+        return new Date(y, mo, d);
     }
 
     private normalizeGlosa(glosa: string): string {
         if (!glosa) return glosa;
         const g = glosa.trim().toLowerCase();
-                const map: Record<string,string> = {
-                    'pedido ingresado':'Pedido Ingresado',
-                    'pedido pagado':'Pedido Aprobado',
-                    'pedido aprobado':'Pedido Aprobado',
-                    'preparacion de pedido':'Preparación de Pedido',
-                    'preparación de pedido':'Preparación de Pedido'
-                };
+        const map: Record<string, string> = {
+            'pedido ingresado': 'Pedido Ingresado',
+            'pedido pagado': 'Pedido Aprobado',
+            'pedido aprobado': 'Pedido Aprobado',
+            'preparacion de pedido': 'Preparación de Pedido',
+            'preparación de pedido': 'Preparación de Pedido'
+        };
         return map[g] || glosa;
     }
 
@@ -387,8 +389,11 @@ export class TrackingViewComponent {
                 observacion: s.description || '',
                 orden: idx
             })),
-            productos: normalizedInvoice.orderProducts ? [...normalizedInvoice.orderProducts] : []
+            productos: normalizedInvoice.orderProducts ? [...normalizedInvoice.orderProducts] : [],
+            documentLabel: normalizedInvoice.documentLabel || normalizedInvoice.tipoDocumento,
+            numeroDocumento: normalizedInvoice.printedNumber || normalizedInvoice.numeroDocumento || normalizedInvoice.documentNumber
         };
+        this.documentInfoText = this.buildDocumentInfoString(this.invoice);
     }
 
     private resolveInvoiceTrackingSteps(invoice: any): TrackingStepModel[] {
@@ -414,7 +419,7 @@ export class TrackingViewComponent {
         const paddedSteps = this.padCanonicalSteps(canonicalSteps);
 
         this.invoice = {
-            printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i,'').replace(/^0+/, ''),
+            printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i, '').replace(/^0+/, ''),
             documentType: this.mapTipoDocumentoToCode(raw.tipoDocumento),
             documentLabel: raw.tipoDocumento,
             issueDate: this.parseDate(raw.fechaCompra),
@@ -435,10 +440,13 @@ export class TrackingViewComponent {
                 orden: t.orden
             })),
             productos: mappedProductos,
-            direccionEntrega: raw.direccionEntrega || raw.direccion || ''
+            direccionEntrega: raw.direccionEntrega || raw.direccion || '',
+            documentLabel: raw.tipoDocumento,
+            numeroDocumento: raw.numeroDocumento
         };
-        // Diagnóstico dirección
-        // eslint-disable-next-line no-console
+        this.documentInfoText = this.buildDocumentInfoString(this.invoice);
+    // Diagnóstico dirección
+    // eslint-disable-next-line no-console
     }
 
     private padCanonicalSteps(existing: TrackingStepModel[]): TrackingStepModel[] {
@@ -534,8 +542,8 @@ export class TrackingViewComponent {
         // Usar issueDate como placeholder si no tenemos pickup date específica
         if (this.invoice?.issueDate) {
             const d = this.invoice.issueDate;
-            const dd = String(d.getDate()).padStart(2,'0');
-            const mm = String(d.getMonth()+1).padStart(2,'0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
             const yyyy = d.getFullYear();
             return `${dd}-${mm}-${yyyy}`;
         }
@@ -645,20 +653,59 @@ export class TrackingViewComponent {
     }
 
     public purchaseSummaryTitle(): string {
-        // Construir: "Resumen de tu compra - {label} {numeroSinCeros}"
-        const base = 'Resumen de tu compra';
-        const label = (this.invoice?.documentLabel || '').trim();
-        let num = (this.invoice?.printedNumber || '').toString();
-        // remover todos los caracteres no numéricos y ceros a la izquierda
-        const digits = num.replace(/\D+/g, '');
-        if (digits.length > 0) {
-            // quitar ceros a la izquierda
-            num = digits.replace(/^0+/, '') || '0';
-        } else {
-            // si no hay dígitos, usar tal cual quitando prefijos tipo 'N°' y espacios
-            num = (this.invoice?.printedNumber || '').toString().replace(/^N[°º]?\s*/i, '').trim();
+        return 'Resumen de tu compra';
+    }
+
+    private buildDocumentInfoString(inv: any): string {
+        const label = this.firstNonEmpty([
+            inv?.documentLabel,
+            inv?.tipoDocumento,
+            inv?.documentType,
+            this.compraAdaptada?.documentLabel,
+            (this.compraAdaptada as any)?.tipoDocumento
+        ]) || '';
+
+        const rawNumber = this.firstNonEmpty([
+            inv?.printedNumber,
+            inv?.numeroDocumento,
+            inv?.documentNumber,
+            inv?.number_printed,
+            this.compraAdaptada?.printedNumber,
+            (this.compraAdaptada as any)?.numeroDocumento,
+            (this.compraAdaptada as any)?.documentNumber
+        ]) || '';
+
+        if (!label && !rawNumber) {
+            return '';
         }
-        const parts = [label, num].filter(p => (p || '').length > 0);
-        return parts.length ? `${base} - ${parts.join(' ')}` : base;
+
+        let cleanNum = rawNumber.replace(/^N[°º]?\s*/i, '').trim();
+        cleanNum = cleanNum.replace(/^0+/, '');
+        if (!cleanNum && rawNumber.match(/[0-9]/)) {
+            cleanNum = '0';
+        }
+
+        const parts = [label, cleanNum].filter(Boolean);
+        return parts.join(' ').trim();
+    }
+
+    private firstNonEmpty(values: Array<any>): string | undefined {
+        for (const value of values) {
+            if (value === undefined || value === null) {
+                continue;
+            }
+            const str = value.toString().trim();
+            if (str.length > 0) {
+                return str;
+            }
+        }
+        return undefined;
+    }
+
+    public getDocumentString(): string {
+        if (!this.documentInfoText) {
+            this.documentInfoText = this.buildDocumentInfoString(this.invoice);
+        }
+        return this.documentInfoText;
     }
 }

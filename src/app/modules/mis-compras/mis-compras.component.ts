@@ -23,6 +23,8 @@ type StepSnapshot = {
   isActive: boolean;
   isCompleted: boolean;
 };
+type FacturaAsociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
+
 type Compra = {
   tipoDocumento: string;
   numeroDocumento: string;
@@ -32,7 +34,7 @@ type Compra = {
   trazabilidad: Trazabilidad[];
   esDimensionado: boolean;
   total: number;
-  facturasAsociadas?: Array<{ numeroFactura: string; fechaEmision: string; idFactura: number }>;
+  facturasAsociadas?: FacturaAsociada[];
   productos?: any[]; // agregado para mostrar lista de productos
 };
 
@@ -57,6 +59,9 @@ export class MisComprasComponent implements OnInit {
 
   loading = false;
   error = false;
+  facturasModalVisible = false;
+  facturasModalTitle = '';
+  facturasModalItems: FacturaAsociada[] = [];
 
   constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService, private trackingDataService: TrackingDataService) {}
 
@@ -435,6 +440,21 @@ export class MisComprasComponent implements OnInit {
   isAsociadasOpen(c: Compra): boolean {
     const key = `${c.tipoDocumento}-${c.numeroDocumento}`;
     return this.asociadasOpen.has(key);
+  }
+
+  openFacturasModal(c: Compra): void {
+    if (!c?.facturasAsociadas || c.facturasAsociadas.length === 0) {
+      return;
+    }
+    this.facturasModalItems = [...c.facturasAsociadas];
+    this.facturasModalTitle = `${c.tipoDocumento} ${c.numeroDocumento}`.trim();
+    this.facturasModalVisible = true;
+  }
+
+  closeFacturasModal(): void {
+    this.facturasModalVisible = false;
+    this.facturasModalItems = [];
+    this.facturasModalTitle = '';
   }
 
   goToPage(p: number): void {

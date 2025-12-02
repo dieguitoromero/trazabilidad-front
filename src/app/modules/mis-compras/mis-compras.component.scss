@@ -51,6 +51,10 @@
   gap: 16px;
 }
 
+.show-on-mobile {
+  display: none;
+}
+
 .empty {
   display: flex;
   flex-direction: column;
@@ -104,6 +108,16 @@
   border-radius: 8px;
   padding: 8px 12px;
   cursor: pointer;
+}
+
+.detail-btn.mobile {
+  width: 100%;
+  text-align: center;
+  font-weight: 600;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .meta {
@@ -205,6 +219,18 @@
 @media (max-width: 640px) {
   .hide-on-mobile { display: none !important; }
   .show-on-mobile { display: flex !important; }
+  .card-actions.show-on-mobile {
+    display: flex !important;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .card-actions.show-on-mobile .facturas-btn-outline,
+  .card-actions.show-on-mobile .detail-btn.mobile {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
 }
 
 .estado-movil {
@@ -284,6 +310,128 @@
   padding: 6px 10px;
   border-radius: 8px;
   font-size: 13px;
+}
+
+.card-actions {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.facturas-btn-outline {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #0a3d85;
+  background: #fff;
+  color: #0a3d85;
+  font-weight: 600;
+  gap: 8px;
+}
+
+.facturas-count {
+  min-width: 32px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e6eefb;
+  color: #0a3d85;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.facturas-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.facturas-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.facturas-modal__dialog {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  width: calc(100% - 40px);
+  max-width: 420px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.facturas-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.facturas-modal__header h4 {
+  margin: 0;
+  font-size: 18px;
+  color: #0a3d85;
+}
+
+.facturas-modal__header .subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #4d4f57;
+}
+
+.facturas-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.factura-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.factura-info {
+  flex: 1;
+}
+
+.factura-num {
+  margin: 0 0 4px;
+  font-weight: 600;
+  color: #0a3d85;
+}
+
+.factura-date {
+  margin: 0;
+  font-size: 13px;
+  color: #4d4f57;
+}
+
+.close-btn {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  color: #667085;
+}
+
+.empty-modal {
+  margin: 0;
+  text-align: center;
+  color: #4d4f57;
 }
 
 /* Paginación */

@@ -1,8 +1,8 @@
 <div class="tracking-back-row" *ngIf="invoice">
-    <button class="back-badge" (click)="volver()">
-        <span class="arrow">←</span>
-        <span class="text">Volver</span>
-    </button>
+  <button class="back-badge" (click)="volver()">
+    <span class="arrow">←</span>
+    <span class="text">Volver</span>
+  </button>
 </div>
 
 <div class="box-container" *ngIf="displaySteps.length">
@@ -10,27 +10,22 @@
     {{completedCount()}} de {{displaySteps.length}} pasos
   </div> -->
   <div class="d-flex stepper-view-container mobile-vertical flex-column "
-       [ngClass]="{'justify-content-md-center flex-md-row': true, 'vertical': false}">
+    [ngClass]="{'justify-content-md-center flex-md-row': true, 'vertical': false}">
     <div class="fadingEffect" *ngIf="displaySteps && displaySteps.length > 0"></div>
     <ng-container *ngFor="let step of displaySteps; let i = index;">
       <div class="step-container d-flex" [ngClass]="{'d-md-block': true}">
-        <div class="step-title order-1"
-             [ngClass]="{'order-2': false, 'beginning': i <= 0, 'order-md-0': true}"
-             [ngStyle]="{ 'color': step.title.color }">
-          <p class="title"
-             [matBadge]="numberOfItemsOnStatus(step.title, i)"
-             matBadgeOverlap="false"
-             matBadgeColor="warn"
-             [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0">{{step.title.text}}</p>
+        <div class="step-title order-1" [ngClass]="{'order-2': false, 'beginning': i <= 0, 'order-md-0': true}"
+          [ngStyle]="{ 'color': step.title.color }">
+          <p class="title" [matBadge]="numberOfItemsOnStatus(step.title, i)" matBadgeOverlap="false"
+            matBadgeColor="warn" [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0">{{step.title.text}}</p>
           <p class="sub-title d-block d-md-none" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</p>
           <span class="date d-block d-md-none">{{ step.date ? (step.date | date: 'dd-MM-yyyy') : '-' }}</span>
         </div>
 
         <div class="step d-block order-0"
-             [ngClass]="{'order-1': false, 'beginning': i <= 0, 'd-md-flex order-md-1': true,'in-progress': isStepInProgress(step, i), 'completed': isStepCompleted(step), 'last': isLastStepCompleted(i)}">
-          <div class="step-separator from align-self-center flex-grow-1"
-               *ngIf="i > 0 || true"
-               [ngClass]="{ 'beginning': i <= 0, 'd-none d-md-block': (i == 0)}"></div>
+          [ngClass]="{'order-1': false, 'beginning': i <= 0, 'd-md-flex order-md-1': true,'in-progress': isStepInProgress(step, i), 'completed': isStepCompleted(step), 'last': isLastStepCompleted(i)}">
+          <div class="step-separator from align-self-center flex-grow-1" *ngIf="i > 0 || true"
+            [ngClass]="{ 'beginning': i <= 0, 'd-none d-md-block': (i == 0)}"></div>
           <div class="icon-wrapper">
             <ng-container *ngIf="step.icon !== 'pending'; else pendingIcon">
               <img class="icon" [src]="step.icon" alt="step icon" />
@@ -41,8 +36,9 @@
             <span class="product-count-badge" *ngIf="showDeliveredBadge(step)">{{ productCount() }}</span>
           </div>
           <div class="step-separator to align-self-center flex-grow-1"
-               *ngIf="i < (displaySteps ? displaySteps.length - 1 : 0) || true"
-               [ngClass]="{ 'end': i >= (displaySteps ? displaySteps.length - 1 : 0), 'd-none d-md-block': i >= (displaySteps ? displaySteps.length - 1 : 0)}"></div>
+            *ngIf="i < (displaySteps ? displaySteps.length - 1 : 0) || true"
+            [ngClass]="{ 'end': i >= (displaySteps ? displaySteps.length - 1 : 0), 'd-none d-md-block': i >= (displaySteps ? displaySteps.length - 1 : 0)}">
+          </div>
         </div>
 
         <div class="step-details d-none d-md-block">
@@ -58,8 +54,11 @@
 <div class="box-container" *ngIf="invoice">
   <div class="purchase-summary-card">
     <h3>{{ purchaseSummaryTitle() }}</h3>
+  <p class="document-info" *ngIf="getDocumentString() as docString">{{ docString }}</p>
     <div class="tipo-entrega-row">
-      <div class="icon-col" [ngClass]="{'tienda': resumenTipoEntrega() === 'Retiro en Tienda', 'domicilio': resumenTipoEntrega() !== 'Retiro en Tienda'}"></div>
+      <div class="icon-col"
+        [ngClass]="{'tienda': resumenTipoEntrega() === 'Retiro en Tienda', 'domicilio': resumenTipoEntrega() !== 'Retiro en Tienda'}">
+      </div>
       <div class="data-col">
         <p class="tipo">{{resumenTipoEntrega()}}</p>
         <p class="direccion" *ngIf="direccionEntrega()">{{direccionEntrega()}}</p>
@@ -80,7 +79,8 @@
         <div class="producto-item" *ngFor="let p of invoice?.orderProducts; let i = index">
           <div class="left-block">
             <div class="img-col">
-              <img class="producto-img" [src]="p.image || 'assets/not-image.jpg'" (error)="onImgError($event)" alt="producto" />
+              <img class="producto-img" [src]="p.image || 'assets/not-image.jpg'" (error)="onImgError($event)"
+                alt="producto" />
             </div>
             <div class="info-col">
               <p class="nombre">{{ p.description }}</p>
@@ -96,6 +96,3 @@
     </div>
   </div>
 </div>
-
-
-
