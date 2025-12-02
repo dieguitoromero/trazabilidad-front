@@ -13,7 +13,7 @@ export class TrackingRepository {
   // Use unified baseUrl (APIM host) and append '/api' for documents endpoint
   private apimBase: string = `${environment.baseUrl}/api`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   public getTracking(
     invoiceId: string,
@@ -21,7 +21,7 @@ export class TrackingRepository {
   ): Observable<InvoiceModel | undefined> {
     return this.http
       .get(
-        `${this.baseApiUrl}/traceability/v1/traceability/${invoiceId}/${invoiceType}`
+        `${this.baseApiUrl}/api/clients/${invoiceId}/${invoiceType}`
       )
       .pipe(
         map((o: any) => {
