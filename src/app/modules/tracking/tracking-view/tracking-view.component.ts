@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, ChangeDetectorRef } from '@angular/core';
 import { SearchModel } from '../models/search-model';
 import { take } from 'rxjs/operators';
 import { TrackingService } from '../../../services/tracking.service';
@@ -10,7 +10,7 @@ import { TrackingStepModel } from '../../../core/models/tracking-step.model';
     templateUrl: './tracking-view.template.html',
     styleUrls: ['./tracking-view.scss', './tracking-view.mobile.scss']
 })
-export class TrackingViewComponent {
+export class TrackingViewComponent implements OnInit {
 
     public invoice: any
     // Objeto adaptado para PurchaseTimelineComponent
@@ -42,7 +42,8 @@ export class TrackingViewComponent {
     constructor(private trackingService: TrackingService,
         private router: Router,
         private activeRoute: ActivatedRoute,
-        private trackingData: TrackingDataService) {
+        private trackingData: TrackingDataService,
+        private cdr: ChangeDetectorRef) {
         console.log("COSNTRUCTOR TrackingViewComponent");
         const nav = this.router.getCurrentNavigation();
         const state = nav && nav.extras && nav.extras.state ? nav.extras.state : undefined;
@@ -101,6 +102,47 @@ export class TrackingViewComponent {
             }
         });
 
+    }
+
+    ngOnInit(): void {
+        // Intento adicional de consumir payloads o state de navigation que podrían no haber llegado en el constructor
+        try {
+            const nav = this.router.getCurrentNavigation();
+            const state = nav && nav.extras && nav.extras.state ? nav.extras.state : (window && (window.history && (window.history.state || undefined)));
+            const buscarResp = state && (state as any).compraBuscarDocumentoResp ? (state as any).compraBuscarDocumentoResp : undefined;
+            if (buscarResp && buscarResp.compras && buscarResp.compras.length > 0) {
+                // formato directo desde el payload transportado
+                const raw = buscarResp.compras[0];
+                this.formatCompraDtoForStepper(raw);
+                this.hideSearch = true;
+                this.applyHideHeroBg();
+                this.cdr.detectChanges();
+                return;
+            }
+
+            // Intentar consumir cualquier payload aún no consumido por trackingData
+            const invoiceTransport = this.trackingData.consumeInvoicePayload();
+            if (invoiceTransport) {
+                this.formatInvoiceForStepper(invoiceTransport);
+                this.hideSearch = true;
+                this.applyHideHeroBg();
+                this.cdr.detectChanges();
+                return;
+            }
+            const transport = this.trackingData.consumeCompraPayload();
+            if (transport && transport.compras && transport.compras.length > 0) {
+                const raw = transport.compras[0];
+                this.formatCompraDtoForStepper(raw);
+                this.hideSearch = true;
+                this.applyHideHeroBg();
+                this.cdr.detectChanges();
+                return;
+            }
+        } catch (e) {
+            // no bloquear si algo falla
+            // eslint-disable-next-line no-console
+            console.log('ngOnInit: no payload disponible o error', e);
+        }
     }
 
 
@@ -438,6 +480,8 @@ export class TrackingViewComponent {
             numeroDocumento: normalizedInvoice.printedNumber || normalizedInvoice.numeroDocumento || normalizedInvoice.documentNumber
         };
         this.documentInfoText = this.buildDocumentInfoString(this.invoice);
+        // Forzar detección por si la asignación llega fuera del ciclo de Angular
+        try { this.cdr.detectChanges(); } catch (e) { /* noop */ }
     }
 
     private resolveInvoiceTrackingSteps(invoice: any): TrackingStepModel[] {
@@ -459,16 +503,16 @@ export class TrackingViewComponent {
     private formatCompraDtoForStepper(raw: any): void {
         const mappedProductos = this.mapOrderProducts(raw.productos || raw.orderProducts);
 
-        // Use raw steps directly
-        const steps = this.mapRawSteps(raw.trazabilidad || []);
-        // Do NOT pad with canonical steps
-        const paddedSteps = steps;
+        // Map raw steps y completar con pasos canónicos cuando falten
+        const rawSteps = this.mapTrazabilidadToSteps(raw.trazabilidad || []);
+        const paddedSteps = this.padCanonicalSteps(rawSteps);
 
         this.invoice = {
             printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i, '').replace(/^0+/, ''),
             documentType: this.mapTipoDocumentoToCode(raw.tipoDocumento),
             documentLabel: raw.tipoDocumento,
             issueDate: this.parseDate(raw.fechaCompra),
+            availablePickupDate: this.parseDate((raw as any).fechaDisponibleRetiro),
             deliveryAddress: raw.direccionEntrega || raw.direccion || undefined,
             deliveryType: raw.tipoEntrega || undefined,
             trackingSteps: paddedSteps.map(step => ({ ...step })),
@@ -493,6 +537,7 @@ export class TrackingViewComponent {
         this.documentInfoText = this.buildDocumentInfoString(this.invoice);
         // Diagnóstico dirección
         // eslint-disable-next-line no-console
+        try { this.cdr.detectChanges(); } catch (e) { /* noop */ }
     }
 
     private padCanonicalSteps(existing: TrackingStepModel[]): TrackingStepModel[] {
@@ -584,16 +629,34 @@ export class TrackingViewComponent {
         return adaptDir || undefined;
     }
 
-    public resumenFechaRetiro(): string | undefined {
-        // Usar issueDate como placeholder si no tenemos pickup date específica
-        if (this.invoice?.issueDate) {
-            const d = this.invoice.issueDate;
-            const dd = String(d.getDate()).padStart(2, '0');
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const yyyy = d.getFullYear();
-            return `${dd}-${mm}-${yyyy}`;
+    public resumenFechaRetiro(): string {
+        let inv: any = this.invoice as any;
+        console.log('INVOICE:', (this.invoice.fechaDisponibleRetiro));
+
+        // Priorizar siempre fechaDisponibleRetiro (availablePickupDate) si viene del servicio
+        const d: Date | undefined = inv?.availablePickupDate || this.invoice?.issueDate;
+
+        if (!d) {
+            // Si no hay fecha en el invoice, intentar leer directamente del payload adaptado
+            const rawDate: string | undefined = (this.compraAdaptada as any)?.fechaDisponibleRetiro
+                || (this.compraAdaptada as any)?.fechaRetiro;
+            if (!rawDate) {
+                return '';
+            }
+            const parsed = this.parseDate(rawDate);
+            if (!parsed) {
+                return '';
+            }
+            const ddR = String(parsed.getDate()).padStart(2, '0');
+            const mmR = String(parsed.getMonth() + 1).padStart(2, '0');
+            const yyyyR = parsed.getFullYear();
+            return `${ddR}-${mmR}-${yyyyR}`;
         }
-        return undefined;
+
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${dd}-${mm}-${yyyy}`;
     }
 
     public onImgError(ev: Event): void {
@@ -749,9 +812,7 @@ export class TrackingViewComponent {
     }
 
     public getDocumentString(): string {
-        if (!this.documentInfoText) {
-            this.documentInfoText = this.buildDocumentInfoString(this.invoice);
-        }
-        return this.documentInfoText;
+        const inv: any = this.invoice || this.compraAdaptada;
+        return this.buildDocumentInfoString(inv);
     }
 }

@@ -6,7 +6,7 @@
 </div>
 
 <div class="box-container" *ngIf="displaySteps.length">
-  <!-- <div class="stepper-progress" *ngIf="completedCount() > 0">
+  <!-- <div class="stepper-progress" *ngIf="completedCount() > 0"><p class="document-info" *ngIf="getDocumentString() as docString">{{ docString }}</p>
     {{completedCount()}} de {{displaySteps.length}} pasos
   </div> -->
   <div class="d-flex stepper-view-container mobile-vertical flex-column "
@@ -54,7 +54,6 @@
 <div class="box-container" *ngIf="invoice">
   <div class="purchase-summary-card">
     <h3>{{ purchaseSummaryTitle() }}</h3>
-  <p class="document-info" *ngIf="getDocumentString() as docString">{{ docString }}</p>
     <div class="tipo-entrega-row">
       <div class="icon-col"
         [ngClass]="{'tienda': resumenTipoEntrega() === 'Retiro en Tienda', 'domicilio': resumenTipoEntrega() !== 'Retiro en Tienda'}">
@@ -62,7 +61,7 @@
       <div class="data-col">
         <p class="tipo">{{resumenTipoEntrega()}}</p>
         <p class="direccion" *ngIf="direccionEntrega()">{{direccionEntrega()}}</p>
-        <p class="fecha-compra" *ngIf="invoice.issueDate">Fecha de compra: {{invoice.issueDate | date:'dd-MM-yyyy'}}</p>
+        <p class="fecha-compra" *ngIf="resumenFechaRetiro()">Retira a partir del {{ resumenFechaRetiro() }}</p>
       </div>
     </div>
   </div>
