@@ -95,14 +95,15 @@
       </div>
 
       <div class="card-actions show-on-mobile">
-        <button
-          type="button"
-          class="facturas-btn-outline"
-          *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0"
-          (click)="openFacturasModal(c)">
-          <span class="label">Facturas asociadas</span>
+        <div class="facturas-btn-wrapper" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
+          <button
+            type="button"
+            class="facturas-btn-outline"
+            (click)="openFacturasModal(c)">
+            <span class="label">Facturas asociadas</span>
+          </button>
           <span class="facturas-count">{{ c.facturasAsociadas.length }}</span>
-        </button>
+        </div>
         <button type="button" class="detail-btn mobile" (click)="verDetalle(c)">Ver detalle</button>
       </div>
     </div>
