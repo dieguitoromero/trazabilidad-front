@@ -16,7 +16,7 @@
 .circle {
   width: 72px; height: 72px; border-radius: 50%; background: #e5ecf5; display:flex; align-items:center; justify-content:center;
 }
-.circle img { width: 36px; height: 36px; }
+.circle img { width: 60px; height: 60px; }
 .text-col { font-size: 14px; color:#374151; }
 .line { margin-bottom: 8px; }
 .tipo { font-weight: 500; }
@@ -25,6 +25,6 @@
 @media (max-width: 768px) {
   .purchase-summary-card { padding: 20px 20px; }
   .circle { width:56px; height:56px; }
-  .circle img { width:28px; height:28px; }
+  .circle img { width:48px; height:48px; }
   .title { font-size:18px; }
 }

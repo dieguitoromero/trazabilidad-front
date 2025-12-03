@@ -28,7 +28,7 @@
         <div class="fecha">Fecha de compra: {{ c.fechaCompra | formatFechaCompra }}</div>
         <div class="dimensionado-row" *ngIf="c.esDimensionado">
           <span class="badge dimensionado">
-            <img src="assets/dimensionado-icon.svg" alt="Dimensionado" />
+            <img src="/trazabilidad-app/assets/dimensionado-icon.svg" alt="Dimensionado" />
             Dimensionado
           </span>
         </div>
@@ -36,7 +36,7 @@
 
       <div class="entrega-row" *ngIf="c.tipoEntrega">
         <span class="icon" *ngIf="c.tipoEntrega === 'Despacho a domicilio' || c.tipoEntrega === 'Retiro en tienda'">
-          <img [src]="c.tipoEntrega === 'Despacho a domicilio' ? 'assets/domicilio-icon.svg' : 'assets/tienda-icon.svg'"
+          <img [src]="c.tipoEntrega === 'Despacho a domicilio' ? '/trazabilidad-app/assets/domicilio-icon.svg' : '/trazabilidad-app/assets/tienda-icon.svg'"
             alt="Entrega" />
         </span>
         <span class="entrega-text">
@@ -51,7 +51,7 @@
             [class.completed]="step.isCompleted">
             <div class="icon-wrapper">
               <ng-container *ngIf="step.isCompleted; else pendingIcon">
-                <img src="assets/estadoOk.svg" alt="ok" class="icon ok" />
+                <img src="/trazabilidad-app/assets/estadoOk.svg" alt="ok" class="icon ok" />
               </ng-container>
               <ng-template #pendingIcon>
                 <div class="icon pending"></div>
@@ -65,7 +65,7 @@
       <!-- Timeline detallado removido: solo se mostrará en la pantalla de detalle -->
 
       <div class="estado-movil show-on-mobile">
-        <span class="estado-icon"><img src="assets/estado-icon.svg" alt="Estado" /></span>
+        <span class="estado-icon"><img src="/trazabilidad-app/assets/estado-icon.svg" alt="Estado" /></span>
         <span class="estado-text">Estado: {{ estadoActual(c) }}</span>
       </div>
 

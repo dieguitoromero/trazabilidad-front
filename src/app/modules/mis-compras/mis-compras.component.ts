@@ -308,9 +308,6 @@ export class MisComprasComponent implements OnInit {
     const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
     const rut = environment.clienteId;
     // Búsqueda y navegación unificada
-    // Loguear documento seleccionado
-    // eslint-disable-next-line no-console
-    console.log('DOCUMENTO TRANSPORTADO', c);
     this.misComprasService.buscarDocumento(rut, c.numeroDocumento, 1).subscribe(resp => {
       this.handleBuscarDocumentoResponse(resp, tipo, c.numeroDocumento, c);
     });
@@ -363,10 +360,6 @@ export class MisComprasComponent implements OnInit {
     // Guardar payload bruto para Tracking
     this.trackingDataService.setCompraPayload(resp);
     const c = compraContext || (encontrado as any as Compra);
-    // eslint-disable-next-line no-console
-    console.log('handleBuscarDocumentoResponse c:', JSON.stringify(c, null, 2));
-    // eslint-disable-next-line no-console
-    console.log('handleBuscarDocumentoResponse encontrado:', JSON.stringify(encontrado, null, 2));
     // Construcción invoice legacy genérica tomando datos disponibles
     // Construcción invoice legacy genérica tomando datos disponibles
     const traceabilitySteps = this.legacyTraceabilitySteps((encontrado?.trazabilidad || c?.trazabilidad) || []);

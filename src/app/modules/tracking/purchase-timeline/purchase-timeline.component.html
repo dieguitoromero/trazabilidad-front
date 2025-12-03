@@ -4,7 +4,7 @@
       <div class="label">{{ s.label }}</div>
       <div class="connector left" *ngIf="i > 0" [class.pending]="!s.active" [class.completed]="s.active"></div>
       <div class="icon-wrapper">
-        <img *ngIf="s.active" src="assets/timeline_complete_icon.svg" class="icon-img" alt="completado" />
+        <img *ngIf="s.active" src="/trazabilidad-app/assets/timeline_complete_icon.svg" class="icon-img" alt="completado" />
         <div *ngIf="!s.active" class="icon placeholder"></div>
       </div>
       <div class="connector right" *ngIf="i < renderSteps.length - 1" [class.pending]="!s.active" [class.completed]="s.active"></div>

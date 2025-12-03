@@ -643,11 +643,11 @@ $stepper-gray: #c5ced8;
     }
 
     .icon-col.tienda {
-        background: #e8f0fe url('/assets/tienda-icon.svg') center/26px 26px no-repeat;
+        background: #e8f0fe url('~src/assets/tienda-icon.svg') center/40px 40px no-repeat;
     }
 
     .icon-col.domicilio {
-        background: #e8f0fe url('/assets/domicilio-icon.svg') center/26px 26px no-repeat;
+        background: #e8f0fe url('~src/assets/domicilio-icon.svg') center/40px 40px no-repeat;
     }
 
     .data-col {
@@ -686,7 +686,7 @@ $stepper-gray: #c5ced8;
     .purchase-summary-card .icon-col {
         width: 40px;
         height: 40px;
-        background-size: 22px 22px;
+        background-size: 32px 32px;
     }
 
     .purchase-summary-card .data-col .tipo {
