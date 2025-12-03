@@ -63,7 +63,7 @@ export class MisComprasComponent implements OnInit {
   facturasModalTitle = '';
   facturasModalItems: FacturaAsociada[] = [];
 
-  constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService, private trackingDataService: TrackingDataService) {}
+  constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService, private trackingDataService: TrackingDataService) { }
 
   ngOnInit(): void {
     // Restaurar estado de paginación desde query params si existen
@@ -154,11 +154,11 @@ export class MisComprasComponent implements OnInit {
     const last = total;
     // Casos:
     // 1) Si current <=4 -> [1,2,3,4,last]
-    if (current <= 4) return [1,2,3,4,last];
+    if (current <= 4) return [1, 2, 3, 4, last];
     // 2) Si current >= last-3 -> [1,last-3,last-2,last-1,last]
-    if (current >= last - 3) return [1,last-3,last-2,last-1,last];
+    if (current >= last - 3) return [1, last - 3, last - 2, last - 1, last];
     // 3) Ventana intermedia -> [1,current-1,current,current+1,last]
-    return [1,current-1,current,current+1,last];
+    return [1, current - 1, current, current + 1, last];
   }
 
   isPagerActive(p: number): boolean { return p === this.page; }
@@ -363,18 +363,23 @@ export class MisComprasComponent implements OnInit {
     // Guardar payload bruto para Tracking
     this.trackingDataService.setCompraPayload(resp);
     const c = compraContext || (encontrado as any as Compra);
+    // eslint-disable-next-line no-console
+    console.log('handleBuscarDocumentoResponse c:', JSON.stringify(c, null, 2));
+    // eslint-disable-next-line no-console
+    console.log('handleBuscarDocumentoResponse encontrado:', JSON.stringify(encontrado, null, 2));
     // Construcción invoice legacy genérica tomando datos disponibles
-    const traceabilitySteps = this.legacyTraceabilitySteps((c?.trazabilidad || encontrado?.trazabilidad) || []);
+    // Construcción invoice legacy genérica tomando datos disponibles
+    const traceabilitySteps = this.legacyTraceabilitySteps((encontrado?.trazabilidad || c?.trazabilidad) || []);
     const legacyInvoice = {
-      number_printed: folioDigits.toString().padStart(10,'0'),
+      number_printed: folioDigits.toString().padStart(10, '0'),
       type_document: tipoDocumentoCode,
-      label_document: c?.tipoDocumento || encontrado?.tipoDocumento || '',
-      total: c?.total || encontrado?.total || 0,
+      label_document: encontrado?.tipoDocumento || c?.tipoDocumento || '',
+      total: encontrado?.total || c?.total || 0,
       date_issue: new Date().toISOString(),
       id_pay: 0,
       pickup: {
-        title: (c?.tipoEntrega || encontrado?.tipoEntrega || '').toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho',
-        text: c?.direccionEntrega || encontrado?.direccionEntrega || '',
+        title: (encontrado?.tipoEntrega || c?.tipoEntrega || '').toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho',
+        text: encontrado?.direccionEntrega || c?.direccionEntrega || '',
         title_date: 'Retira a partir del ',
         date: new Date().toISOString(),
         icon: 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
@@ -399,7 +404,8 @@ export class MisComprasComponent implements OnInit {
         sku: p.sku,
         unidadMedida: p.unidadMedida
       })),
-      DetailsProduct: []
+      DetailsProduct: [],
+      trazabilidad: encontrado?.trazabilidad || c?.trazabilidad || []
     };
     this.trackingDataService.setInvoicePayload(legacyInvoice);
     const api = 'doc';

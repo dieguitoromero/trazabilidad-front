@@ -342,34 +342,78 @@ export class TrackingViewComponent {
         return new Date(y, mo, d);
     }
 
-    private normalizeGlosa(glosa: string): string {
-        if (!glosa) return glosa;
-        const g = glosa.trim().toLowerCase();
-        const map: Record<string, string> = {
-            'pedido ingresado': 'Pedido Ingresado',
-            'pedido pagado': 'Pedido Aprobado',
-            'pedido aprobado': 'Pedido Aprobado',
-            'preparacion de pedido': 'Preparación de Pedido',
-            'preparación de pedido': 'Preparación de Pedido'
-        };
-        return map[g] || glosa;
+    // private normalizeGlosa(glosa: string): string {
+    //     if (!glosa) return glosa;
+    //     const g = glosa.trim().toLowerCase();
+    //     const map: Record<string, string> = {
+    //         'pedido ingresado': 'Pedido Ingresado',
+    //         'pedido pagado': 'Pedido Aprobado',
+    //         'pedido aprobado': 'Pedido Aprobado',
+    //         'preparacion de pedido': 'Preparación de Pedido',
+    //         'preparación de pedido': 'Preparación de Pedido'
+    //     };
+    //     return map[g] || glosa;
+    // }
+
+    private mapRawSteps(trazabilidad: any[]): TrackingStepModel[] {
+        if (!Array.isArray(trazabilidad) || trazabilidad.length === 0) return [];
+
+        // Sort by 'orden'
+        const sorted = [...trazabilidad].sort((a, b) => (a.orden || 0) - (b.orden || 0));
+
+        return sorted.map(t => {
+            const step = new TrackingStepModel();
+            // Use raw 'etapa' as title, do not normalize/rename
+            step.title = { text: t.etapa, color: '', isBold: false } as any;
+            step.description = this.composeStepDescription(t.glosa, t.observacion);
+            step.date = this.parseFechaRegistro(t.fechaRegistro) as any;
+            step.icon = this.computeIconFromEstado(t.estado);
+
+            (step as any).rawEtapa = t.etapa;
+            (step as any).rawGlosa = t.glosa;
+            (step as any).orden = t.orden;
+
+            return step;
+        });
     }
 
     private formatInvoiceForStepper(invoice: any): void {
+        // eslint-disable-next-line no-console
+        console.log('formatInvoiceForStepper INVOICE:', JSON.stringify(invoice, null, 2));
         const normalizedInvoice: any = { ...invoice };
         const rawProducts = (normalizedInvoice.orderProducts && normalizedInvoice.orderProducts.length)
             ? normalizedInvoice.orderProducts
             : normalizedInvoice.productos;
+        // eslint-disable-next-line no-console
+        console.log('formatInvoiceForStepper RAW PRODUCTS:', JSON.stringify(rawProducts, null, 2));
         normalizedInvoice.orderProducts = this.mapOrderProducts(rawProducts);
         normalizedInvoice.deliveryType = normalizedInvoice.deliveryType || normalizedInvoice.tipoEntrega || normalizedInvoice.delivery_type;
         normalizedInvoice.deliveryAddress = normalizedInvoice.deliveryAddress || normalizedInvoice.direccionEntrega || normalizedInvoice.direccion || normalizedInvoice.delivery_address;
 
         const sourceSteps = this.resolveInvoiceTrackingSteps(normalizedInvoice);
-        const steps = this.padCanonicalSteps(sourceSteps);
-        // Preservar íconos originales cuando son URLs, normalizar glosa si es necesario
+        // Use raw steps if available from resolveInvoiceTrackingSteps (which now handles rawTrazabilidad)
+        // If sourceSteps came from canonical mapping (legacy), we might want to keep it, 
+        // but for the new requirement we prefer raw mapping if 'trazabilidad' exists.
+
+        // However, resolveInvoiceTrackingSteps calls mapTrazabilidadToSteps for rawTrazabilidad.
+        // We should change that logic or handle it here.
+        // Let's check if we have rawTrazabilidad and use mapRawSteps directly.
+
+        let steps: TrackingStepModel[] = [];
+        if (normalizedInvoice.trazabilidad && Array.isArray(normalizedInvoice.trazabilidad) && normalizedInvoice.trazabilidad.length > 0) {
+            steps = this.mapRawSteps(normalizedInvoice.trazabilidad);
+        } else {
+            // Fallback to existing logic for legacy/other sources, but avoid padding if we want strict raw
+            // For now, let's assume if we don't have raw trazabilidad, we use the old logic but maybe without padding?
+            // The requirement is specific to the JSON response provided which has 'trazabilidad'.
+            steps = this.padCanonicalSteps(sourceSteps);
+        }
+
+        // Preservar íconos originales cuando son URLs
         const normalizedSteps = steps.map(s => {
             const m = new TrackingStepModel();
-            m.title = { text: this.normalizeGlosa(s.title?.text), color: s.title?.color, isBold: s.title?.isBold } as any;
+            // Do NOT normalize glosa here for raw steps
+            m.title = { text: s.title?.text, color: s.title?.color, isBold: s.title?.isBold } as any;
             m.description = s.description || '';
             m.date = s.date;
             m.icon = s.icon === 'done' ? this.timelineCompleteIcon : (s.icon || 'pending');
@@ -383,7 +427,7 @@ export class TrackingViewComponent {
         this.compraAdaptada = {
             trazabilidad: steps.map((s, idx) => ({
                 etapa: (s as any).rawEtapa || s.title?.text,
-                glosa: (s as any).rawGlosa || this.normalizeGlosa(s.title?.text),
+                glosa: (s as any).rawGlosa || s.title?.text, // Do not normalize
                 fechaRegistro: s.date,
                 estado: s.icon?.indexOf('timeline_complete_icon') >= 0 ? 'finalizado' : (s.icon?.indexOf('pending') >= 0 ? 'pendiente' : 'activo'),
                 observacion: s.description || '',
@@ -415,8 +459,10 @@ export class TrackingViewComponent {
     private formatCompraDtoForStepper(raw: any): void {
         const mappedProductos = this.mapOrderProducts(raw.productos || raw.orderProducts);
 
-        const canonicalSteps = this.mapTrazabilidadToSteps(raw.trazabilidad || []);
-        const paddedSteps = this.padCanonicalSteps(canonicalSteps);
+        // Use raw steps directly
+        const steps = this.mapRawSteps(raw.trazabilidad || []);
+        // Do NOT pad with canonical steps
+        const paddedSteps = steps;
 
         this.invoice = {
             printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i, '').replace(/^0+/, ''),
@@ -433,7 +479,7 @@ export class TrackingViewComponent {
         this.compraAdaptada = {
             trazabilidad: (raw.trazabilidad || []).map((t: any) => ({
                 etapa: t.etapa,
-                glosa: this.normalizeGlosa(t.glosa),
+                glosa: t.glosa, // Do not normalize
                 fechaRegistro: t.fechaRegistro,
                 estado: t.estado || 'activo',
                 observacion: t.observacion || '',
@@ -445,8 +491,8 @@ export class TrackingViewComponent {
             numeroDocumento: raw.numeroDocumento
         };
         this.documentInfoText = this.buildDocumentInfoString(this.invoice);
-    // Diagnóstico dirección
-    // eslint-disable-next-line no-console
+        // Diagnóstico dirección
+        // eslint-disable-next-line no-console
     }
 
     private padCanonicalSteps(existing: TrackingStepModel[]): TrackingStepModel[] {

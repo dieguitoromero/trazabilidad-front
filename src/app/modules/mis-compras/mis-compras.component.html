@@ -2,13 +2,8 @@
   <h2 class="title">Mis Compras</h2>
 
   <div class="search-row">
-    <input
-      type="text"
-      placeholder="Buscar por N° de pedido"
-      [(ngModel)]="searchTerm"
-      (keyup.enter)="buscar()"
-      (input)="onInputChange()"
-    />
+    <input type="text" placeholder="Buscar por N° de pedido" [(ngModel)]="searchTerm" (keyup.enter)="buscar()"
+      (input)="onInputChange()" />
     <button class="search-btn" aria-label="Buscar" (click)="buscar()">
       🔍
     </button>
@@ -27,11 +22,10 @@
         <div class="doc-title">
           {{ c.tipoDocumento }} N° {{ c.numeroDocumento }}
         </div>
-          <button class="detail-btn hide-on-mobile" (click)="verDetalle(c)">Ver detalle</button>
       </div>
 
       <div class="meta">
-  <div class="fecha">Fecha de compra: {{ c.fechaCompra | formatFechaCompra }}</div>
+        <div class="fecha">Fecha de compra: {{ c.fechaCompra | formatFechaCompra }}</div>
         <div class="dimensionado-row" *ngIf="c.esDimensionado">
           <span class="badge dimensionado">
             <img src="assets/dimensionado-icon.svg" alt="Dimensionado" />
@@ -42,7 +36,8 @@
 
       <div class="entrega-row" *ngIf="c.tipoEntrega">
         <span class="icon" *ngIf="c.tipoEntrega === 'Despacho a domicilio' || c.tipoEntrega === 'Retiro en tienda'">
-          <img [src]="c.tipoEntrega === 'Despacho a domicilio' ? 'assets/domicilio-icon.svg' : 'assets/tienda-icon.svg'" alt="Entrega" />
+          <img [src]="c.tipoEntrega === 'Despacho a domicilio' ? 'assets/domicilio-icon.svg' : 'assets/tienda-icon.svg'"
+            alt="Entrega" />
         </span>
         <span class="entrega-text">
           {{ c.tipoEntrega }}{{ c.direccionEntrega ? ': ' + c.direccionEntrega : '' }}
@@ -52,12 +47,8 @@
 
       <div class="hide-on-mobile">
         <div class="stepper">
-          <div
-            class="step"
-            *ngFor="let step of stepperSnapshot(c); let i = index"
-            [class.active]="step.isActive"
-            [class.completed]="step.isCompleted"
-          >
+          <div class="step" *ngFor="let step of stepperSnapshot(c); let i = index" [class.active]="step.isActive"
+            [class.completed]="step.isCompleted">
             <div class="icon-wrapper">
               <ng-container *ngIf="step.isCompleted; else pendingIcon">
                 <img src="assets/estadoOk.svg" alt="ok" class="icon ok" />
@@ -79,53 +70,46 @@
       </div>
 
       <div class="asociadas hide-on-mobile" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
-        <button type="button" class="asociadas-toggle" (click)="toggleAsociadas(c)">
-          <span class="link">Facturas asociadas ({{ c.facturasAsociadas.length }})</span>
-          <span class="chev" [class.open]="isAsociadasOpen(c)">▾</span>
-        </button>
+        <!-- Button moved to footer -->
         <div class="asociadas-list" *ngIf="isAsociadasOpen(c)">
           <ng-container *ngFor="let f of c.facturasAsociadas">
             <div class="asociada-item" *ngIf="f && (f.numeroFactura || f.fechaEmision)">
               <span class="dot-bullet">•</span>
-              <span class="asociada-text">Factura N° {{ f.numeroFactura }}<ng-container *ngIf="f.fechaEmision"> - {{ f.fechaEmision }}</ng-container></span>
-                <button class="detail-btn small" [class.disabled]="!f.numeroFactura || f.numeroFactura === '0'" [disabled]="!f.numeroFactura || f.numeroFactura === '0'" (click)="verDetalleFactura(f.numeroFactura)">Ver detalle</button>
+              <span class="asociada-text">Factura N° {{ f.numeroFactura }}<ng-container *ngIf="f.fechaEmision"> - {{
+                  f.fechaEmision }}</ng-container></span>
+              <button class="detail-btn small" [class.disabled]="!f.numeroFactura || f.numeroFactura === '0'"
+                [disabled]="!f.numeroFactura || f.numeroFactura === '0'"
+                (click)="verDetalleFactura(f.numeroFactura)">Ver detalle</button>
             </div>
           </ng-container>
         </div>
       </div>
 
+      <div class="card-footer-actions">
+        <button class="btn-outline" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0"
+          (click)="openFacturasModal(c)">
+          Facturas asociadas
+          <span class="badge-count">{{ c.facturasAsociadas.length }}</span>
+        </button>
+        <button class="detail-btn" (click)="verDetalle(c)">Ver detalle</button>
+      </div>
+
       <div class="card-actions show-on-mobile">
-        <div class="facturas-btn-wrapper" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
-          <button
-            type="button"
-            class="facturas-btn-outline"
-            (click)="openFacturasModal(c)">
-            <span class="label">Facturas asociadas</span>
-          </button>
-          <span class="facturas-count">{{ c.facturasAsociadas.length }}</span>
-        </div>
-        <button type="button" class="detail-btn mobile" (click)="verDetalle(c)">Ver detalle</button>
+        <!-- Mobile actions now handled by card-footer-actions which is unified -->
       </div>
     </div>
   </div>
 
   <div class="pagination-row desktop-only" *ngIf="!hasNoResults && totalPages > 1">
-    <button
-      class="page-box"
-      *ngFor="let p of pages"
-      [class.active]="p === page"
-      (click)="goToPage(p)">
+    <button class="page-box" *ngFor="let p of pages" [class.active]="p === page" (click)="goToPage(p)">
       {{ p }}
     </button>
   </div>
 
   <!-- Pager condensado móvil -->
   <div class="mobile-condensed-pager" *ngIf="!hasNoResults && totalPages > 1">
-    <div class="pager-node"
-         *ngFor="let p of condensedPager"
-         [class.active]="isPagerActive(p)"
-         [class.neighbor]="isPagerNeighbor(p)"
-         (click)="goToPage(p)">
+    <div class="pager-node" *ngFor="let p of condensedPager" [class.active]="isPagerActive(p)"
+      [class.neighbor]="isPagerNeighbor(p)" (click)="goToPage(p)">
       <span>{{ p }}</span>
     </div>
   </div>
@@ -147,7 +131,9 @@
           <p class="factura-num">Factura N° {{ f.numeroFactura }}</p>
           <p class="factura-date" *ngIf="f.fechaEmision">Fecha de emisión: {{ f.fechaEmision }}</p>
         </div>
-        <button class="detail-btn small" [class.disabled]="!f.numeroFactura || f.numeroFactura === '0'" [disabled]="!f.numeroFactura || f.numeroFactura === '0'" (click)="verDetalleFactura(f.numeroFactura)">Ver detalle</button>
+        <button class="detail-btn small" [class.disabled]="!f.numeroFactura || f.numeroFactura === '0'"
+          [disabled]="!f.numeroFactura || f.numeroFactura === '0'" (click)="verDetalleFactura(f.numeroFactura)">Ver
+          detalle</button>
       </div>
     </div>
     <ng-template #sinFacturas>
