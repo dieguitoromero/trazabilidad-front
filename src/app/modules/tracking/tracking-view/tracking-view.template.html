@@ -17,7 +17,7 @@
         <div class="step-title order-1" [ngClass]="{'order-2': false, 'beginning': i <= 0, 'order-md-0': true}"
           [ngStyle]="{ 'color': step.title.color }">
           <p class="title" [matBadge]="numberOfItemsOnStatus(step.title, i)" matBadgeOverlap="false"
-            matBadgeColor="warn" [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0">{{step.title.text}}</p>
+            matBadgeColor="warn" [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0 || isDeliveredTitle(step.title?.text)">{{step.title.text}}</p>
           <p class="sub-title d-block d-md-none" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</p>
           <span class="date d-block d-md-none">{{ step.date ? (step.date | date: 'dd-MM-yyyy') : '-' }}</span>
         </div>
@@ -78,7 +78,7 @@
         <div class="producto-item" *ngFor="let p of invoice?.orderProducts; let i = index">
           <div class="left-block">
             <div class="img-col">
-              <img class="producto-img" [src]="p.image || 'assets/not-image.jpg'" (error)="onImgError($event)"
+              <img class="producto-img" [src]="p.image || (baseHref + 'assets/not-image.jpg')" (error)="onImgError($event)"
                 alt="producto" />
             </div>
             <div class="info-col">

@@ -12,7 +12,9 @@ import { TrackingStepModel } from '../../../core/models/tracking-step.model';
 })
 export class TrackingViewComponent implements OnInit {
 
-    public invoice: any
+    public invoice: any = null;
+    // Base href usado para resolver rutas a assets en tiempo de ejecución
+    public baseHref: string = '/';
     // Objeto adaptado para PurchaseTimelineComponent
     public compraAdaptada: any | undefined;
     // Pasos derivados de 'trazabilidad' (o invoice.trackingSteps) para alimentar el nuevo componente stepper
@@ -39,22 +41,14 @@ export class TrackingViewComponent implements OnInit {
     @ViewChild('orderDetailsView')
     public orderDetailsView: ElementRef | undefined;
 
-    constructor(private trackingService: TrackingService,
+        constructor(private trackingService: TrackingService,
         private router: Router,
         private activeRoute: ActivatedRoute,
         private trackingData: TrackingDataService,
         private cdr: ChangeDetectorRef) {
-        console.log("COSNTRUCTOR TrackingViewComponent");
         const nav = this.router.getCurrentNavigation();
         const state = nav && nav.extras && nav.extras.state ? nav.extras.state : undefined;
         const buscarResp = state && (state as any).compraBuscarDocumentoResp ? (state as any).compraBuscarDocumentoResp : undefined;
-        try {
-            // eslint-disable-next-line no-console
-            console.log('este es el constructor de TrackingViewComponent1', buscarResp && buscarResp.compras ? JSON.stringify({ compras: buscarResp.compras, total: buscarResp.total, page: buscarResp.page, perPage: buscarResp.perPage, totalPages: buscarResp.totalPages }, null, 2) : 'sin respuesta transportada');
-        } catch {
-            // eslint-disable-next-line no-console
-            console.log('este es el constructor de TrackingViewComponent1', 'error serializando respuesta');
-        }
         this.activeRoute.params.subscribe((params) => {
             if (params.invoiceId || params.invoiceType) {
                 this.hideSearch = true;
@@ -102,6 +96,15 @@ export class TrackingViewComponent implements OnInit {
             }
         });
 
+        // Determinar el base href actual (desde la etiqueta <base> en index.html)
+        try {
+            const b = document.getElementsByTagName('base')[0];
+            const href = b ? (b.getAttribute('href') || '/') : '/';
+            this.baseHref = href.endsWith('/') ? href : href + '/';
+        } catch (e) {
+            this.baseHref = '/';
+        }
+
     }
 
     ngOnInit(): void {
@@ -116,7 +119,7 @@ export class TrackingViewComponent implements OnInit {
                 this.formatCompraDtoForStepper(raw);
                 this.hideSearch = true;
                 this.applyHideHeroBg();
-                this.cdr.detectChanges();
+                this.scheduleDetectChanges();
                 return;
             }
 
@@ -126,7 +129,7 @@ export class TrackingViewComponent implements OnInit {
                 this.formatInvoiceForStepper(invoiceTransport);
                 this.hideSearch = true;
                 this.applyHideHeroBg();
-                this.cdr.detectChanges();
+                this.scheduleDetectChanges();
                 return;
             }
             const transport = this.trackingData.consumeCompraPayload();
@@ -135,13 +138,11 @@ export class TrackingViewComponent implements OnInit {
                 this.formatCompraDtoForStepper(raw);
                 this.hideSearch = true;
                 this.applyHideHeroBg();
-                this.cdr.detectChanges();
+                this.scheduleDetectChanges();
                 return;
             }
         } catch (e) {
             // no bloquear si algo falla
-            // eslint-disable-next-line no-console
-            console.log('ngOnInit: no payload disponible o error', e);
         }
     }
 
@@ -420,14 +421,14 @@ export class TrackingViewComponent implements OnInit {
     }
 
     private formatInvoiceForStepper(invoice: any): void {
-        // eslint-disable-next-line no-console
-        console.log('formatInvoiceForStepper INVOICE:', JSON.stringify(invoice, null, 2));
+        if (!invoice) {
+            return;
+        }
         const normalizedInvoice: any = { ...invoice };
         const rawProducts = (normalizedInvoice.orderProducts && normalizedInvoice.orderProducts.length)
             ? normalizedInvoice.orderProducts
             : normalizedInvoice.productos;
-        // eslint-disable-next-line no-console
-        console.log('formatInvoiceForStepper RAW PRODUCTS:', JSON.stringify(rawProducts, null, 2));
+        
         normalizedInvoice.orderProducts = this.mapOrderProducts(rawProducts);
         normalizedInvoice.deliveryType = normalizedInvoice.deliveryType || normalizedInvoice.tipoEntrega || normalizedInvoice.delivery_type;
         normalizedInvoice.deliveryAddress = normalizedInvoice.deliveryAddress || normalizedInvoice.direccionEntrega || normalizedInvoice.direccion || normalizedInvoice.delivery_address;
@@ -481,7 +482,7 @@ export class TrackingViewComponent implements OnInit {
         };
         this.documentInfoText = this.buildDocumentInfoString(this.invoice);
         // Forzar detección por si la asignación llega fuera del ciclo de Angular
-        try { this.cdr.detectChanges(); } catch (e) { /* noop */ }
+        this.scheduleDetectChanges();
     }
 
     private resolveInvoiceTrackingSteps(invoice: any): TrackingStepModel[] {
@@ -574,7 +575,7 @@ export class TrackingViewComponent implements OnInit {
             documentType: p.documentType,
             quantity: p.quantity !== undefined ? p.quantity : p.cantidad,
             codeUnimed: p.codeUnimed,
-            image: p.image || p.imagen || 'assets/not-image.jpg',
+            image: p.image || p.imagen || (this.baseHref + 'assets/not-image.jpg'),
             description: p.description || p.nombre || p.descripcion,
             descriptionUnimed: p.descriptionUnimed,
             code: p.code !== undefined ? p.code : p.codigo,
@@ -596,6 +597,7 @@ export class TrackingViewComponent implements OnInit {
     public totalCanonical(): number { return 5; }
 
     public resumenTipoEntrega(): string | undefined {
+        if (!this.invoice) return undefined;
         const tipo = (this.invoice as any)?.deliveryType?.toLowerCase();
         if (tipo) {
             if (tipo.includes('retiro')) return 'Retiro en Tienda';
@@ -621,6 +623,7 @@ export class TrackingViewComponent implements OnInit {
     }
 
     public direccionEntrega(): string | undefined {
+        if (!this.invoice) return undefined;
         const pickupText = ((this.invoice as any)?.pickup?.text || '').trim();
         if (pickupText) return pickupText;
         const invDir = ((this.invoice as any)?.deliveryAddress || '').trim();
@@ -630,8 +633,8 @@ export class TrackingViewComponent implements OnInit {
     }
 
     public resumenFechaRetiro(): string {
-        let inv: any = this.invoice as any;
-        console.log('INVOICE:', (this.invoice.fechaDisponibleRetiro));
+        const inv: any = this.invoice as any;
+        if (!inv) return '';
 
         // Priorizar siempre fechaDisponibleRetiro (availablePickupDate) si viene del servicio
         const d: Date | undefined = inv?.availablePickupDate || this.invoice?.issueDate;
@@ -662,7 +665,7 @@ export class TrackingViewComponent implements OnInit {
     public onImgError(ev: Event): void {
         const img = ev.target as HTMLImageElement;
         if (!img) return;
-        img.src = 'assets/not-image.jpg';
+        img.src = this.baseHref + 'assets/not-image.jpg';
     }
 
     public productSubtitle(): string {
@@ -814,5 +817,16 @@ export class TrackingViewComponent implements OnInit {
     public getDocumentString(): string {
         const inv: any = this.invoice || this.compraAdaptada;
         return this.buildDocumentInfoString(inv);
+    }
+
+    private scheduleDetectChanges(): void {
+        // Schedule detectChanges asynchronously to avoid running it during Angular's own CD cycle
+        Promise.resolve().then(() => {
+            try { this.cdr.detectChanges(); } catch (e) { /* noop */ }
+        });
+    }
+
+    public isDeliveredTitle(title: string | undefined): boolean {
+        return this.normalizeEtapaLabel(title || '') === 'pedido entregado';
     }
 }
