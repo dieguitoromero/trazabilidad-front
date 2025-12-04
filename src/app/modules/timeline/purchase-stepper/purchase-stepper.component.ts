@@ -8,7 +8,7 @@ import { Component, Input } from '@angular/core';
            [class.completed]="i <= lastReachedIndex"
            [class.current]="i === lastReachedIndex">
         <div class="icon-wrapper" *ngIf="i <= lastReachedIndex">
-          <img src="/trazabilidad-app/assets/timeline_complete_icon.svg" alt="Paso completado" />
+          <img src="assets/timeline_complete_icon.svg" alt="Paso completado" />
         </div>
         <div class="dot" *ngIf="i > lastReachedIndex"></div>
         <div class="label">{{ s }}</div>

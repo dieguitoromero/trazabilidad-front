@@ -27,9 +27,10 @@ export class TrackingViewComponent implements OnInit {
     private autoSearched = false;
     private readonly canonicalEtapas = [
         { key: 'pedido ingresado', label: 'Pedido Ingresado' },
-        { key: 'pedido aprobado', label: 'Pedido Aprobado', aliases: ['pedido pagado'] },
-        { key: 'preparacion de pedido', label: 'Preparación de Pedido' },
-        { key: 'disponible para retiro', label: 'Disponible para retiro' },
+        { key: 'pedido pagado', label: 'Pedido pagado', aliases: ['pedido aprobado'] },
+        { key: 'preparacion de pedido', label: 'Preparacion de Pedido' },
+        { key: 'pendiente de envio', label: 'Pendiente de Envío' },
+        { key: 'pedido en ruta', label: 'Pedido en Ruta' },
         { key: 'pedido entregado', label: 'Pedido Entregado' }
     ];
     private readonly maxTraceabilitySteps = this.canonicalEtapas.length;
@@ -346,9 +347,10 @@ export class TrackingViewComponent implements OnInit {
     public statusActual(): string {
         const pasosOrden = [
             'Pedido Ingresado',
-            'Pedido Aprobado',
-            'Preparación de Pedido',
-            'Disponible para retiro',
+            'Pedido pagado',
+            'Preparacion de Pedido',
+            'Pendiente de Envío',
+            'Pedido en Ruta',
             'Pedido Entregado'
         ];
 
@@ -504,9 +506,15 @@ export class TrackingViewComponent implements OnInit {
     private formatCompraDtoForStepper(raw: any): void {
         const mappedProductos = this.mapOrderProducts(raw.productos || raw.orderProducts);
 
-        // Map raw steps y completar con pasos canónicos cuando falten
-        const rawSteps = this.mapTrazabilidadToSteps(raw.trazabilidad || []);
-        const paddedSteps = this.padCanonicalSteps(rawSteps);
+        // Usar mapRawSteps cuando hay trazabilidad para mostrar todos los estados del backend
+        let steps: TrackingStepModel[] = [];
+        if (raw.trazabilidad && Array.isArray(raw.trazabilidad) && raw.trazabilidad.length > 0) {
+            steps = this.mapRawSteps(raw.trazabilidad);
+        } else {
+            // Fallback a mapeo canónico si no hay trazabilidad
+            const rawSteps = this.mapTrazabilidadToSteps(raw.trazabilidad || []);
+            steps = this.padCanonicalSteps(rawSteps);
+        }
 
         this.invoice = {
             printedNumber: raw.numeroDocumento?.replace(/^N[°º]?\s*/i, '').replace(/^0+/, ''),
@@ -516,11 +524,11 @@ export class TrackingViewComponent implements OnInit {
             availablePickupDate: this.parseDate((raw as any).fechaDisponibleRetiro),
             deliveryAddress: raw.direccionEntrega || raw.direccion || undefined,
             deliveryType: raw.tipoEntrega || undefined,
-            trackingSteps: paddedSteps.map(step => ({ ...step })),
+            trackingSteps: steps.map(step => ({ ...step })),
             orderProducts: mappedProductos,
             hasProductDetails: mappedProductos.length > 0
         } as any;
-        this.stepperSteps = paddedSteps;
+        this.stepperSteps = steps;
         this.compraAdaptada = {
             trazabilidad: (raw.trazabilidad || []).map((t: any) => ({
                 etapa: t.etapa,
@@ -594,7 +602,7 @@ export class TrackingViewComponent implements OnInit {
         return this.stepperSteps.filter(s => s.icon !== 'pending').length;
     }
 
-    public totalCanonical(): number { return 5; }
+    public totalCanonical(): number { return 6; }
 
     public resumenTipoEntrega(): string | undefined {
         if (!this.invoice) return undefined;

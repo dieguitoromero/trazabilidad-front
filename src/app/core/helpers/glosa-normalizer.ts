@@ -7,14 +7,16 @@ export function normalizeGlosa(raw: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
   const map: Record<string,string> = {
-    'pedido ingresado': 'Pedido ingresado',
-    'pedido pagado': 'Pedido pagado',
-    'pedido aprobado': 'Pedido pagado',
-    'preparacion de pedido': 'Preparación de pedido',
-    'preparación de pedido': 'Preparación de pedido',
-    'disponible para retiro': 'Disponible para retiro',
-    'pedido entregado': 'Pedido entregado',
-    'pedido en ruta': 'Preparación de pedido' // provisional mapping; adjust if business rules differ
+    'pedido ingresado': 'pedido ingresado',
+    'pedido pagado': 'pedido pagado',
+    'pedido aprobado': 'pedido pagado',
+    'preparacion de pedido': 'preparacion de pedido',
+    'preparación de pedido': 'preparacion de pedido',
+    'pendiente de envio': 'pendiente de envio',
+    'pendiente de envío': 'pendiente de envio',
+    'pedido en ruta': 'pedido en ruta',
+    'disponible para retiro': 'disponible para retiro',
+    'pedido entregado': 'pedido entregado'
   };
   return map[base] || raw;
 }

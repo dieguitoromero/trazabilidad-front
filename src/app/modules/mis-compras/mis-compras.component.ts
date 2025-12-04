@@ -178,9 +178,10 @@ export class MisComprasComponent implements OnInit {
 
   private readonly canonicalPasos = [
     'Pedido Ingresado',
-    'Pedido Aprobado',
-    'Preparación de pedido',
-    'Disponible para retiro',
+    'Pedido pagado',
+    'Preparacion de Pedido',
+    'Pendiente de Envío',
+    'Pedido en Ruta',
     'Pedido Entregado'
   ];
   private readonly maxStepperSteps = this.canonicalPasos.length;
@@ -260,7 +261,22 @@ export class MisComprasComponent implements OnInit {
   }
 
   private findCanonicalMatch(entries: Trazabilidad[], canonicalKey: string): Trazabilidad | undefined {
-    return entries.find(t => this.matchesCanonicalEntry(t, canonicalKey));
+    // Primero intentar match directo
+    let match = entries.find(t => this.matchesCanonicalEntry(t, canonicalKey));
+    if (match) return match;
+    
+    // Si no hay match directo, buscar por aliases
+    // "Pedido Aprobado" debe mapearse a "Pedido pagado"
+    if (canonicalKey === this.normalize('Pedido pagado')) {
+      const aprobadoKey = this.normalize('Pedido Aprobado');
+      match = entries.find(t => {
+        const etapaKey = this.normalize(t.etapa || '');
+        const glosaKey = this.normalize(t.glosa || '');
+        return etapaKey === aprobadoKey || glosaKey === aprobadoKey;
+      });
+    }
+    
+    return match;
   }
 
   private matchesCanonicalEntry(entry: Trazabilidad | undefined, canonicalKey: string): boolean {
@@ -425,6 +441,45 @@ export class MisComprasComponent implements OnInit {
   estadoActual(c: Compra): string {
     const idx = this.lastReachedIndex(c);
     return idx >= 0 ? this.canonicalPasos[idx] : this.canonicalPasos[0];
+  }
+
+  /**
+   * Determina si es retiro en tienda basado en el tipoEntrega.
+   * Maneja variantes como "Entrega a domicilio", "Despacho a domicilio", etc.
+   */
+  isRetiroEnTienda(compra: Compra): boolean {
+    if (!compra || !compra.tipoEntrega) return false;
+    const tipo = (compra.tipoEntrega || '').toLowerCase().trim();
+    // Si contiene "retiro" o "tienda", es retiro en tienda
+    if (tipo.includes('retiro') || tipo.includes('tienda')) {
+      return true;
+    }
+    // Si contiene "domicilio", "entrega" o "despacho", es domicilio (no retiro)
+    if (tipo.includes('domicilio') || tipo.includes('entrega') || tipo.includes('despacho')) {
+      return false;
+    }
+    // Por defecto, asumir que no es retiro
+    return false;
+  }
+
+  /**
+   * Obtiene el tipo de entrega normalizado para mostrar.
+   */
+  getTipoEntregaLabel(compra: Compra): string {
+    if (!compra || !compra.tipoEntrega) return '';
+    const tipo = (compra.tipoEntrega || '').trim();
+    
+    // Normalizar variantes comunes
+    const tipoLower = tipo.toLowerCase();
+    if (tipoLower.includes('retiro') || tipoLower.includes('tienda')) {
+      return 'Retiro en tienda';
+    }
+    if (tipoLower.includes('domicilio') || tipoLower.includes('entrega') || tipoLower.includes('despacho')) {
+      return 'Despacho a domicilio';
+    }
+    
+    // Si no coincide con ningún patrón, devolver el original
+    return tipo;
   }
 
   toggleAsociadas(c: Compra): void {
