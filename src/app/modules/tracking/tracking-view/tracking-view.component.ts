@@ -29,7 +29,7 @@ export class TrackingViewComponent implements OnInit {
         { key: 'pedido ingresado', label: 'Pedido Ingresado' },
         { key: 'pedido pagado', label: 'Pedido pagado', aliases: ['pedido aprobado'] },
         { key: 'preparacion de pedido', label: 'Preparacion de Pedido' },
-        { key: 'pendiente de envio', label: 'Pendiente de Envío' },
+        { key: 'pendiente de envio', label: 'Pendiente de Envío', aliases: ['disponible para retiro'] },
         { key: 'pedido en ruta', label: 'Pedido en Ruta' },
         { key: 'pedido entregado', label: 'Pedido Entregado' }
     ];
@@ -225,7 +225,7 @@ export class TrackingViewComponent implements OnInit {
         }
     }
 
-    /** Mapea la trazabilidad a los 5 pasos canónicos, priorizando la etiqueta de etapa enviada por el servicio */
+    /** Mapea la trazabilidad a los 6 pasos canónicos, priorizando la etiqueta de etapa enviada por el servicio */
     private mapTrazabilidadToSteps(trazabilidad: any[]): TrackingStepModel[] {
         const items = Array.isArray(trazabilidad) ? trazabilidad : [];
         return this.canonicalEtapas.map((canonical, index) => {
@@ -446,11 +446,10 @@ export class TrackingViewComponent implements OnInit {
 
         let steps: TrackingStepModel[] = [];
         if (normalizedInvoice.trazabilidad && Array.isArray(normalizedInvoice.trazabilidad) && normalizedInvoice.trazabilidad.length > 0) {
-            steps = this.mapRawSteps(normalizedInvoice.trazabilidad);
+            // Siempre mapear a los 6 pasos canónicos (igual que en mis-compras)
+            steps = this.mapTrazabilidadToSteps(normalizedInvoice.trazabilidad);
         } else {
-            // Fallback to existing logic for legacy/other sources, but avoid padding if we want strict raw
-            // For now, let's assume if we don't have raw trazabilidad, we use the old logic but maybe without padding?
-            // The requirement is specific to the JSON response provided which has 'trazabilidad'.
+            // Fallback to existing logic for legacy/other sources
             steps = this.padCanonicalSteps(sourceSteps);
         }
 
@@ -506,10 +505,10 @@ export class TrackingViewComponent implements OnInit {
     private formatCompraDtoForStepper(raw: any): void {
         const mappedProductos = this.mapOrderProducts(raw.productos || raw.orderProducts);
 
-        // Usar mapRawSteps cuando hay trazabilidad para mostrar todos los estados del backend
+        // Siempre mapear a los 6 pasos canónicos (igual que en mis-compras)
         let steps: TrackingStepModel[] = [];
         if (raw.trazabilidad && Array.isArray(raw.trazabilidad) && raw.trazabilidad.length > 0) {
-            steps = this.mapRawSteps(raw.trazabilidad);
+            steps = this.mapTrazabilidadToSteps(raw.trazabilidad);
         } else {
             // Fallback a mapeo canónico si no hay trazabilidad
             const rawSteps = this.mapTrazabilidadToSteps(raw.trazabilidad || []);
@@ -820,6 +819,65 @@ export class TrackingViewComponent implements OnInit {
             }
         }
         return undefined;
+    }
+
+    public getDocumentType(): string {
+        if (!this.invoice) {
+            return 'Documento';
+        }
+
+        const tipo = this.firstNonEmpty([
+            this.invoice?.documentLabel,
+            this.invoice?.tipoDocumento,
+            this.invoice?.documentType,
+            this.compraAdaptada?.documentLabel,
+            (this.compraAdaptada as any)?.tipoDocumento
+        ]) || '';
+
+        if (!tipo) {
+            return 'Documento';
+        }
+
+        // Normalizar el tipo de documento
+        const tipoLower = tipo.toLowerCase().trim();
+        if (tipoLower.includes('nota') && tipoLower.includes('venta')) {
+            return 'Nota de Venta';
+        } else if (tipoLower.includes('factura')) {
+            return 'Factura';
+        } else if (tipoLower.includes('boleta')) {
+            return 'Boleta';
+        }
+
+        // Si no coincide con ninguno, devolver el valor original capitalizado
+        return tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase();
+    }
+
+    public getDocumentNumber(): string {
+        if (!this.invoice) {
+            return '';
+        }
+
+        const rawNumber = this.firstNonEmpty([
+            this.invoice?.printedNumber,
+            this.invoice?.numeroDocumento,
+            this.invoice?.documentNumber,
+            this.invoice?.number_printed,
+            this.compraAdaptada?.printedNumber,
+            (this.compraAdaptada as any)?.numeroDocumento,
+            (this.compraAdaptada as any)?.documentNumber
+        ]) || '';
+
+        if (!rawNumber) {
+            return '';
+        }
+
+        let cleanNum = rawNumber.replace(/^N[°º]?\s*/i, '').trim();
+        cleanNum = cleanNum.replace(/^0+/, '');
+        if (!cleanNum && rawNumber.match(/[0-9]/)) {
+            cleanNum = '0';
+        }
+
+        return cleanNum;
     }
 
     public getDocumentString(): string {

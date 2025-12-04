@@ -1,5 +1,5 @@
 <div class="mis-compras-wrapper">
-  <h2 class="title">Mis Compras</h2>
+  <h2 class="title" (click)="volverATodosLosDocumentos()">Mis Compras</h2>
 
   <div class="search-row" *ngIf="!clienteNoEncontrado">
     <input type="text" placeholder="Buscar por N° de pedido" [(ngModel)]="searchTerm" (keyup.enter)="buscar()"
@@ -35,6 +35,9 @@
         <div class="doc-title">
           {{ c.tipoDocumento }} N° {{ c.numeroDocumento }}
         </div>
+        <div class="card-header-actions">
+          <button class="detail-btn" (click)="verDetalle(c)">Ver detalle</button>
+        </div>
       </div>
 
       <div class="meta">
@@ -64,7 +67,7 @@
             [class.completed]="step.isCompleted">
             <div class="icon-wrapper">
               <ng-container *ngIf="step.isCompleted; else pendingIcon">
-                <img src="assets/estadoOk.svg" alt="ok" class="icon ok" />
+                <img src="assets/timeline_complete_icon.svg" alt="ok" class="icon ok" />
               </ng-container>
               <ng-template #pendingIcon>
                 <div class="icon pending"></div>
@@ -82,8 +85,11 @@
         <span class="estado-text">Estado: {{ estadoActual(c) }}</span>
       </div>
 
-      <div class="asociadas hide-on-mobile" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
-        <!-- Button moved to footer -->
+      <div class="facturas-asociadas-link" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
+        <a (click)="toggleAsociadas(c)">Ver facturas asociadas ({{ c.facturasAsociadas.length }})</a>
+      </div>
+
+      <div class="asociadas" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
         <div class="asociadas-list" *ngIf="isAsociadasOpen(c)">
           <ng-container *ngFor="let f of c.facturasAsociadas">
             <div class="asociada-item" *ngIf="f && (f.numeroFactura || f.fechaEmision)">
@@ -98,14 +104,6 @@
         </div>
       </div>
 
-      <div class="card-footer-actions">
-        <button class="btn-outline" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0"
-          (click)="openFacturasModal(c)">
-          Facturas asociadas
-          <span class="badge-count">{{ c.facturasAsociadas.length }}</span>
-        </button>
-        <button class="detail-btn" (click)="verDetalle(c)">Ver detalle</button>
-      </div>
 
       <div class="card-actions show-on-mobile">
         <!-- Mobile actions now handled by card-footer-actions which is unified -->
@@ -114,43 +112,31 @@
   </div>
 
   <div class="pagination-row desktop-only" *ngIf="!hasNoResults && !clienteNoEncontrado && totalPages > 1">
-    <button class="page-box" *ngFor="let p of pages" [class.active]="p === page" (click)="goToPage(p)">
+    <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
+      ‹
+    </button>
+    <button class="page-box" *ngFor="let p of getVisiblePages()" [class.active]="p === page" 
+      [class.ellipsis]="p === '...'" [disabled]="p === '...'" (click)="handlePageClick(p)">
       {{ p }}
+    </button>
+    <button class="pagination-arrow" [class.disabled]="page === totalPages" (click)="goToPage(page + 1)" 
+      [disabled]="page === totalPages">
+      ›
     </button>
   </div>
 
   <!-- Pager condensado móvil -->
   <div class="mobile-condensed-pager" *ngIf="!hasNoResults && !clienteNoEncontrado && totalPages > 1">
+    <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
+      ‹
+    </button>
     <div class="pager-node" *ngFor="let p of condensedPager" [class.active]="isPagerActive(p)"
       [class.neighbor]="isPagerNeighbor(p)" (click)="goToPage(p)">
       <span>{{ p }}</span>
     </div>
-  </div>
-</div>
-
-<div class="facturas-modal" *ngIf="facturasModalVisible">
-  <div class="facturas-modal__backdrop" (click)="closeFacturasModal()"></div>
-  <div class="facturas-modal__dialog" role="dialog" aria-modal="true">
-    <div class="facturas-modal__header">
-      <div>
-        <h4>Facturas asociadas</h4>
-        <p class="subtitle">{{ facturasModalTitle }}</p>
-      </div>
-      <button class="close-btn" (click)="closeFacturasModal()" aria-label="Cerrar">✕</button>
-    </div>
-    <div class="facturas-modal__list" *ngIf="facturasModalItems.length; else sinFacturas">
-      <div class="factura-row" *ngFor="let f of facturasModalItems">
-        <div class="factura-info">
-          <p class="factura-num">Factura N° {{ f.numeroFactura }}</p>
-          <p class="factura-date" *ngIf="f.fechaEmision">Fecha de emisión: {{ f.fechaEmision }}</p>
-        </div>
-        <button class="detail-btn small" [class.disabled]="!f.numeroFactura || f.numeroFactura === '0'"
-          [disabled]="!f.numeroFactura || f.numeroFactura === '0'" (click)="verDetalleFactura(f.numeroFactura)">Ver
-          detalle</button>
-      </div>
-    </div>
-    <ng-template #sinFacturas>
-      <p class="empty-modal">No encontramos facturas para esta compra.</p>
-    </ng-template>
+    <button class="pagination-arrow" [class.disabled]="page === totalPages" (click)="goToPage(page + 1)" 
+      [disabled]="page === totalPages">
+      ›
+    </button>
   </div>
 </div>

@@ -3,7 +3,7 @@
 }
 
 .mis-compras-wrapper {
-  padding: 24px 16px 48px;
+  padding: 20px 16px 32px;
   max-width: 980px;
   margin: 0 auto;
 }
@@ -11,13 +11,21 @@
 .title {
   color: #0a3d85;
   font-weight: 700;
-  margin: 0 0 16px;
+  font-size: 22px;
+  margin: 0 0 12px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  user-select: none;
+
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
 .search-row {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 
   input[type="text"] {
     flex: 1;
@@ -48,7 +56,7 @@
 .cards {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
 }
 
 .show-on-mobile {
@@ -140,10 +148,12 @@
 
 .card {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
-  padding: 16px;
-  border: 1px solid #edeff2;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  padding: 20px 24px;
+  margin: 16px 0 0 0;
+  margin-bottom: 8px;
+  border: none;
 }
 
 .card-header {
@@ -151,27 +161,57 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+  gap: 12px;
 }
 
 .doc-title {
   color: #0a3d85;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 16px;
+  flex: 1;
+}
+
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .detail-btn {
-  background: #0a3d85;
+  background: #003c69;
   color: #fff;
-  border: 1px solid #0a3d85;
-  border-radius: 10px;
-  padding: 10px 20px;
+  border: 1px solid #003c69;
+  border-radius: 8px;
+  padding: 6px 14px;
   cursor: pointer;
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: 600;
+  font-size: 12px;
   transition: all 0.2s ease;
+  white-space: nowrap;
 
   &:hover {
-    background: #082f66;
-    border-color: #082f66;
+    background: darken(#003c69, 10%);
+    border-color: darken(#003c69, 10%);
+  }
+}
+
+.facturas-asociadas-link {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e8ed;
+
+  a {
+    color: #0a3d85;
+    text-decoration: underline;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #003c69;
+    }
   }
 }
 
@@ -188,12 +228,13 @@
   color: #0a3d85;
   border: 1px solid #0a3d85;
   position: relative;
-  border-radius: 10px;
-  padding: 10px 20px;
+  border-radius: 8px;
+  padding: 6px 14px;
   cursor: pointer;
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: 600;
+  font-size: 12px;
   transition: all 0.2s ease;
+  white-space: nowrap;
 
   &:hover {
     background: #f0f5ff;
@@ -273,6 +314,7 @@
   gap: 8px;
   color: #344054;
   margin: 8px 0 12px;
+  font-size: 14px;
 }
 
 .icon {
@@ -282,76 +324,159 @@
 }
 
 .icon img {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   display: block;
 }
+
+$stepper-blue: #003c69;
+$stepper-green: #29b366;
+$stepper-gray: #c5ced8;
 
 .stepper {
   position: relative;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 0;
-  margin-top: 12px;
+  margin-top: 8px;
+  padding: 0;
 }
 
 .step {
   position: relative;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: visible;
 }
 
 /* New icon-based rendering */
 .step .icon-wrapper {
   position: relative;
-  height: 36px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 10; /* Aumentado para asegurar que esté por encima de las líneas */
 }
 
 .step .icon.ok {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   display: block;
+  position: relative;
+  z-index: 2;
 }
 
 .step .icon.pending {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: #d9dee6;
+  background: #e5e8ed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #9ca3af;
+  border: 1px solid #d1d5db;
+  position: relative;
+  z-index: 2;
 }
 
 .step.active .label {
-  color: #0a3d85;
+  color: #2b3e63;
   font-weight: 600;
 }
 
-.step.completed::before {
-  background: #0a3d85;
-}
-
-.step.active::before {
-  background: #0a3d85;
-}
-
+/* Línea base - se dibuja desde el centro hacia la derecha */
 .step::before {
   content: '';
   position: absolute;
-  top: 18px;
-  left: 0;
+  top: 14px;
+  left: 50%;
   right: 0;
-  height: 4px;
-  background: #e5e7eb;
+  height: 2px;
+  background-color: $stepper-gray;
   z-index: 0;
+}
+
+/* El último paso no dibuja línea hacia la derecha */
+.step:last-child::before {
+  display: none;
+}
+
+/* Línea desde la izquierda hasta el centro */
+.step:not(:first-child)::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 0;
+  right: 50%;
+  height: 2px;
+  background-color: $stepper-gray;
+  z-index: 0;
+}
+
+/* Difuminado en el primer paso - lado izquierdo */
+.step:first-child::before {
+  left: 0;
+  width: 100%;
+  border-radius: 999px 0 0 999px;
+  background: linear-gradient(90deg, rgba(197, 206, 216, 0) 0%, rgba(197, 206, 216, 0.3) 20%, rgba(197, 206, 216, 1) 50%);
+}
+
+/* Difuminado en el último paso - lado derecho */
+.step:last-child::after {
+  left: 0;
+  width: 100%;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
+}
+
+/* Pasos completados - línea azul hacia la derecha */
+.step.completed::before {
+  background-color: $stepper-blue;
+}
+
+/* Línea desde la izquierda es azul si el paso anterior estaba completado Y el actual también */
+.step.completed + .step.completed::after {
+  background-color: $stepper-blue;
+}
+
+/* Si un paso no completado sigue a uno completado, la línea desde la izquierda debe ser azul hasta el centro, luego gris */
+/* Esta línea se extiende más allá del borde izquierdo para cubrir la línea azul del paso anterior */
+.step.completed + .step:not(.completed)::after {
+  left: -50%; /* Extender hacia atrás para cubrir la línea del paso anterior */
+  right: 50%;
+  background: linear-gradient(90deg, $stepper-blue 0%, $stepper-blue 50%, $stepper-gray 50%, $stepper-gray 100%);
+  z-index: 1; /* Asegurar que esté sobre la línea del paso anterior */
+}
+
+.step.completed:first-child::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(0, 60, 105, 0) 0%, rgba(0, 60, 105, 0.3) 20%, rgba(0, 60, 105, 1) 50%);
+}
+
+.step.completed:last-child::after {
+  right: 0;
+  background: linear-gradient(90deg, rgba(0, 60, 105, 1) 50%, rgba(0, 60, 105, 0.3) 80%, rgba(0, 60, 105, 0) 100%);
+}
+
+/* Pasos activos */
+.step.active::before,
+.step.active::after {
+  background-color: $stepper-blue;
 }
 
 /* remove legacy dot, use icon-wrapper */
 
 .label {
-  margin-top: 8px;
-  font-size: 12px;
+  margin-top: 4px;
+  font-size: 11px;
   color: #667085;
+  line-height: 1.2;
+  font-weight: normal;
 }
 
 /* Responsive */
@@ -364,9 +489,19 @@
     display: flex !important;
   }
 
-  .card-footer-actions {
+  .card-header {
+    flex-wrap: wrap;
+  }
+
+  .card-header-actions {
     flex-direction: row;
     justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .doc-title {
+    width: 100%;
+    margin-bottom: 8px;
   }
 }
 
@@ -408,7 +543,7 @@
 
 /* Facturas asociadas */
 .asociadas {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .asociadas-title {
@@ -431,23 +566,41 @@
 .asociada-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: #344054;
+  padding: 4px 0;
 }
 
 .asociada-item .dot-bullet {
   font-size: 18px;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .asociada-item .asociada-text {
-  flex: 1;
+  flex: 0 1 auto;
+  white-space: nowrap;
 }
 
 .detail-btn.small {
-  padding: 6px 10px;
+  padding: 6px 14px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12px;
+  background: #003c69;
+  color: #fff;
+  border: 1px solid #003c69;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    background: darken(#003c69, 10%);
+    border-color: darken(#003c69, 10%);
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .card-actions {
@@ -494,81 +647,6 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.facturas-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.facturas-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-}
-
-.facturas-modal__dialog {
-  position: relative;
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  width: calc(100% - 40px);
-  max-width: 420px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
-}
-
-.facturas-modal__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.facturas-modal__header h4 {
-  margin: 0;
-  font-size: 18px;
-  color: #0a3d85;
-}
-
-.facturas-modal__header .subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: #4d4f57;
-}
-
-.facturas-modal__list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.factura-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.factura-info {
-  flex: 1;
-}
-
-.factura-num {
-  margin: 0 0 4px;
-  font-weight: 600;
-  color: #0a3d85;
-}
-
-.factura-date {
-  margin: 0;
-  font-size: 13px;
-  color: #4d4f57;
-}
 
 .close-btn {
   border: none;
@@ -588,37 +666,68 @@
 .pagination-row {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 8px;
   margin: 10px 0 0 0;
   /* separación respecto al listado */
 }
 
-.page-box {
+.pagination-arrow {
   width: 36px;
   height: 36px;
-  background: #153a65;
-  /* azul por defecto */
-  color: #fff;
-  border: none;
+  background: transparent;
+  color: #667085;
+  border: 1px solid #d0d5dd;
   border-radius: 6px;
+  font-size: 20px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background .15s ease, transform .15s ease;
+  transition: all .15s ease;
+
+  &:hover:not(.disabled) {
+    background: #f9fafb;
+    border-color: #98a2b3;
+  }
+
+  &.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
-.page-box.active {
-  background: #f8323e;
-}
+.page-box {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  color: #344054;
+  border: none;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
 
-.page-box:hover:not(.active) {
-  background: #0e2a4a;
-}
+  &.active {
+    background: #344054;
+    color: #fff;
+  }
 
-.page-box:active {
-  transform: scale(.94);
+  &.ellipsis {
+    cursor: default;
+    color: #667085;
+    background: transparent;
+  }
+
+  &:hover:not(.active):not(.ellipsis) {
+    background: #f9fafb;
+    color: #344054;
+  }
 }
 
 /* Pager condensado móvil */
@@ -646,7 +755,7 @@
 }
 
 .mobile-condensed-pager .pager-node.neighbor {
-  background: #003c69;
+  background: #0a3d85;
   color: #fff;
 }
 

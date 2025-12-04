@@ -1,8 +1,16 @@
-<div class="tracking-back-row" *ngIf="invoice">
-  <button class="back-badge" (click)="volver()">
-    <span class="arrow">←</span>
-    <span class="text">Volver</span>
-  </button>
+<div class="tracking-wrapper">
+  <h2 class="tracking-title">Detalle de documento</h2>
+  
+  <div class="tracking-back-row" *ngIf="invoice">
+    <button class="back-badge" (click)="volver()">
+      <span class="arrow">←</span>
+      <span class="text">Volver</span>
+    </button>
+  </div>
+
+  <div class="document-header" *ngIf="invoice && getDocumentNumber()">
+    <span class="document-label">{{ getDocumentType() }} N° : {{ getDocumentNumber() }}</span>
+  </div>
 </div>
 
 <div class="box-container" *ngIf="displaySteps.length">
@@ -19,7 +27,7 @@
           <p class="title" [matBadge]="numberOfItemsOnStatus(step.title, i)" matBadgeOverlap="false"
             matBadgeColor="warn" [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0 || isDeliveredTitle(step.title?.text)">{{step.title.text}}</p>
           <p class="sub-title d-block d-md-none" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</p>
-          <span class="date d-block d-md-none">{{ step.date ? (step.date | date: 'dd-MM-yyyy') : '-' }}</span>
+          <span class="date d-block d-md-none">{{ step.date ? (step.date | date: 'dd-MM-yy') : '-' }}</span>
         </div>
 
         <div class="step d-block order-0"
@@ -43,7 +51,7 @@
 
         <div class="step-details d-none d-md-block">
           <div class="alcanzado-text" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</div>
-          <span class="date">{{ step.date ? (step.date | date: 'dd-MM-yyyy') : '-' }}</span>
+          <span class="date">{{ step.date ? (step.date | date: 'dd-MM-yy') : '-' }}</span>
         </div>
       </div>
     </ng-container>

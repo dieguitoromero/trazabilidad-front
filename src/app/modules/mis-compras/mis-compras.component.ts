@@ -225,6 +225,53 @@ export class MisComprasComponent implements OnInit {
     return Math.abs(idx - activeIdx) === 1;
   }
 
+  getVisiblePages(): (number | string)[] {
+    const total = Math.max(1, this.totalPages || 1);
+    const current = Math.max(1, this.page || 1);
+    const result: (number | string)[] = [];
+
+    if (total <= 7) {
+      // Si hay 7 o menos páginas, mostrar todas
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    // Siempre mostrar la primera página
+    result.push(1);
+
+    if (current <= 4) {
+      // Si estamos cerca del inicio: 1, 2, 3, 4, ..., total
+      for (let i = 2; i <= 4; i++) {
+        result.push(i);
+      }
+      if (total > 5) {
+        result.push('...');
+      }
+      result.push(total);
+    } else if (current >= total - 3) {
+      // Si estamos cerca del final: 1, ..., total-3, total-2, total-1, total
+      result.push('...');
+      for (let i = total - 3; i <= total; i++) {
+        result.push(i);
+      }
+    } else {
+      // En el medio: 1, ..., current-1, current, current+1, ..., total
+      result.push('...');
+      result.push(current - 1);
+      result.push(current);
+      result.push(current + 1);
+      result.push('...');
+      result.push(total);
+    }
+
+    return result;
+  }
+
+  handlePageClick(page: number | string): void {
+    if (typeof page === 'number') {
+      this.goToPage(page);
+    }
+  }
+
   get hasNoResults(): boolean {
     const typed = (this.searchTerm || '').trim().length > 0;
     // Si estamos en modo búsqueda o hay texto en el campo de búsqueda, y no hay resultados
@@ -328,6 +375,17 @@ export class MisComprasComponent implements OnInit {
         const etapaKey = this.normalize(t.etapa || '');
         const glosaKey = this.normalize(t.glosa || '');
         return etapaKey === aprobadoKey || glosaKey === aprobadoKey;
+      });
+      if (match) return match;
+    }
+    
+    // "Disponible para retiro" debe mapearse a "Pendiente de Envío"
+    if (canonicalKey === this.normalize('Pendiente de Envío')) {
+      const retiroKey = this.normalize('Disponible para retiro');
+      match = entries.find(t => {
+        const etapaKey = this.normalize(t.etapa || '');
+        const glosaKey = this.normalize(t.glosa || '');
+        return etapaKey === retiroKey || glosaKey === retiroKey;
       });
     }
     
@@ -484,6 +542,32 @@ export class MisComprasComponent implements OnInit {
       });
       this.fetchComprasReal();
     }
+  }
+
+  volverATodosLosDocumentos(): void {
+    // Limpiar búsqueda y volver a mostrar todos los documentos
+    this.searchTerm = '';
+    this.isSearching = false;
+    this.searchPressed = false;
+    this.page = 1;
+    
+    // Actualizar URL eliminando el parámetro 'buscar'
+    const currentParams = this.route.snapshot.queryParams;
+    const newParams: any = { page: 1, perPage: this.perPage, rut: this.rut };
+    // Copiar otros parámetros excepto 'buscar'
+    Object.keys(currentParams).forEach(key => {
+      if (key !== 'buscar' && !newParams.hasOwnProperty(key)) {
+        newParams[key] = currentParams[key];
+      }
+    });
+    
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: newParams
+    });
+    
+    // Cargar todos los documentos
+    this.fetchComprasReal();
   }
 
   private mapTipoDocumentoToCode(tipo: string): string {

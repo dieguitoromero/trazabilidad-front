@@ -3,11 +3,41 @@ $stepper-green: #29b366;
 $stepper-gray: #c5ced8;
 
 :host {
+    .tracking-wrapper {
+        padding: 24px 16px 0;
+        max-width: 980px;
+        margin: 0 auto;
+    }
+
+    .box-container {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 0 16px;
+    }
+
+    .tracking-title {
+        color: #0a3d85;
+        font-weight: 700;
+        font-size: 22px;
+        margin: 0 0 12px;
+    }
+
     .tracking-back-row {
         display: flex;
         margin-top: 16px;
-        margin-bottom: 36px;
-        margin-left: 24px;
+        margin-bottom: 24px;
+        margin-left: 0;
+    }
+
+    .document-header {
+        padding: 0 24px 16px;
+        margin-bottom: 8px;
+
+        .document-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2b3e63;
+        }
     }
 
     .back-badge {
@@ -99,10 +129,12 @@ $stepper-gray: #c5ced8;
 
     .box-container {
         width: 100%;
-        margin: 24px 0 0 0;
-        box-shadow: 1px 3px 11px #CCC;
-        padding: 0 24px;
+        margin: 16px 0 0 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        padding: 20px 24px;
         margin-bottom: 8px;
+        background: #fff;
+        border-radius: 8px;
 
         &.no-padding {
             padding: 0;
@@ -185,10 +217,10 @@ $stepper-gray: #c5ced8;
 // Inline stepper styles (ported from the original tracking-stepper-view)
 :host {
     .stepper-view-container {
-        margin-top: -20px;
+        margin-top: 0;
         position: relative;
-        margin-bottom: 20px;
-        padding: 15px 0;
+        margin-bottom: 0;
+        padding: 8px 0 16px;
         display: flex;
         flex-direction: column;
 
@@ -208,62 +240,65 @@ $stepper-gray: #c5ced8;
 
             .product-count-badge {
                 position: absolute;
-                top: -6px;
-                right: -6px;
+                top: -4px;
+                right: -4px;
                 background: #d32f2f;
                 color: #fff;
-                font-size: 11px;
-                line-height: 16px;
-                width: 16px;
-                height: 16px;
-                border-radius: 8px;
+                font-size: 10px;
+                line-height: 14px;
+                width: 14px;
+                height: 14px;
+                border-radius: 7px;
                 text-align: center;
                 font-weight: 600;
-                box-shadow: 0 0 0 2px #fff;
+                box-shadow: 0 0 0 1.5px #fff;
             }
 
             .alcanzado-text {
-                margin-top: 4px;
+                margin-top: 2px;
                 font-size: 11px;
-                font-weight: 600;
-                color: #003c69;
+                font-weight: 500;
+                color: #4d4f57;
                 text-align: center;
-                line-height: 1.2;
+                line-height: 1.3;
             }
 
             .step-title {
-                margin: 16px 0;
-                color: #4d4f57;
-                font-weight: bold;
+                margin: 8px 0 4px;
+                color: #2b3e63;
+                font-weight: 600;
+                font-size: 13px;
 
                 p {
                     white-space: nowrap;
                     text-overflow: ellipsis;
                     display: inline-block;
+                    margin: 0;
                 }
             }
 
             .step-details {
-                padding: 10px 20px;
+                padding: 4px 8px 0;
 
                 p {
-                    padding: 0 20px;
-                    font-size: 12px;
+                    padding: 0;
+                    font-size: 11px;
                     color: #606060;
+                    margin: 0 0 2px;
                 }
 
                 span,
                 .date-observacion {
                     font-weight: normal;
-                    font-size: 12px;
+                    font-size: 11px;
                     color: #959494;
                 }
             }
 
             .step {
                 .icon {
-                    width: 36px;
-                    height: 36px;
+                    width: 28px;
+                    height: 28px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -271,17 +306,19 @@ $stepper-gray: #c5ced8;
 
                 .step-separator {
                     position: relative;
-                    height: 4px;
+                    height: 2px;
                     background-color: $stepper-gray;
                     border-radius: 999px;
                     overflow: hidden;
 
                     &.beginning {
                         border-radius: 999px 0 0 999px;
+                        background: linear-gradient(90deg, rgba(197, 206, 216, 0) 0%, rgba(197, 206, 216, 0.3) 20%, rgba(197, 206, 216, 1) 50%);
                     }
 
                     &.end {
                         border-radius: 0 999px 999px 0;
+                        background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
                     }
 
                     &::after {
@@ -322,6 +359,14 @@ $stepper-gray: #c5ced8;
                     .step-separator {
                         background-color: $stepper-blue;
 
+                        &.beginning {
+                            background: linear-gradient(90deg, rgba(11, 76, 143, 0) 0%, rgba(11, 76, 143, 0.3) 20%, rgba(11, 76, 143, 1) 50%);
+                        }
+
+                        &.end {
+                            background: linear-gradient(90deg, rgba(11, 76, 143, 1) 50%, rgba(11, 76, 143, 0.3) 80%, rgba(11, 76, 143, 0) 100%);
+                        }
+
                         &::after {
                             background-image: none;
                         }
@@ -357,6 +402,7 @@ $stepper-gray: #c5ced8;
                             }
                         }
                     }
+
                 }
 
                 &.last {
@@ -370,6 +416,23 @@ $stepper-gray: #c5ced8;
                         }
                     }
                 }
+
+                // Línea punteada verde cuando el paso completado va seguido de uno pendiente
+                // Esta regla debe tener máxima especificidad para sobrescribir .last y .completed
+                &.completed.last:not(.in-progress) {
+                    .step-separator.to:not(.end) {
+                        background-color: transparent !important;
+                        background-image: none !important;
+                        
+                        &::after {
+                            content: '' !important;
+                            background-image: radial-gradient(circle, $stepper-green 40%, transparent 42%) !important;
+                            background-size: 14px 6px !important;
+                            background-repeat: repeat-x !important;
+                            background-position: center !important;
+                        }
+                    }
+                }
             }
         }
 
@@ -378,41 +441,43 @@ $stepper-gray: #c5ced8;
             margin-top: 0px;
 
             .step-container {
-                .step-title {
-                    text-align: left;
-                    margin: 31px 0 0 15px;
+            .step-title {
+                text-align: left;
+                margin: 20px 0 0 12px;
 
-                    &.beginning {
-                        margin-top: 0;
-                    }
-
-                    .title {
-                        white-space: nowrap;
-                        text-overflow: ellipsis;
-                        color: #4d4f57;
-                        font-weight: bold;
-                        margin-bottom: 2px;
-                        display: block;
-                    }
-
-                    .sub-title {
-                        font-size: 12px;
-                        color: #606060;
-                        margin-bottom: 2px;
-                    }
-
-                    .date {
-                        font-size: 12px;
-                        font-weight: normal;
-                        color: #959494;
-                    }
+                &.beginning {
+                    margin-top: 0;
                 }
+
+                .title {
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    color: #2b3e63;
+                    font-weight: 600;
+                    font-size: 13px;
+                    margin-bottom: 2px;
+                    display: block;
+                }
+
+                .sub-title {
+                    font-size: 11px;
+                    color: #606060;
+                    margin-bottom: 2px;
+                    line-height: 1.3;
+                }
+
+                .date {
+                    font-size: 11px;
+                    font-weight: normal;
+                    color: #959494;
+                }
+            }
 
                 .step {
                     .step-separator {
                         width: 2px;
-                        min-height: 45px;
-                        margin: -5px auto 0;
+                        min-height: 35px;
+                        margin: -3px auto 0;
                         height: auto;
 
                         &.beginning {
@@ -457,15 +522,16 @@ $stepper-gray: #c5ced8;
 
 :host {
     .step .icon.pending {
-        width: 36px;
-        height: 36px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
-        background: #d9dee6;
+        background: #e5e8ed;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 12px;
-        color: #6b7685;
+        font-size: 10px;
+        color: #9ca3af;
+        border: 1px solid #d1d5db;
     }
 }
 
