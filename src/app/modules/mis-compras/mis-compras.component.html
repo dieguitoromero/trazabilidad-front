@@ -1,7 +1,7 @@
 <div class="mis-compras-wrapper">
   <h2 class="title">Mis Compras</h2>
 
-  <div class="search-row">
+  <div class="search-row" *ngIf="!clienteNoEncontrado">
     <input type="text" placeholder="Buscar por N° de pedido" [(ngModel)]="searchTerm" (keyup.enter)="buscar()"
       (input)="onInputChange()" />
     <button class="search-btn" aria-label="Buscar" (click)="buscar()">
@@ -10,13 +10,26 @@
   </div>
 
   <div class="loading" *ngIf="loading">Cargando compras...</div>
-  <div class="error" *ngIf="!loading && error">No se pudo cargar desde el servicio, mostrando datos locales.</div>
-  <div class="empty" *ngIf="hasNoResults && !loading">
+  <div class="error" *ngIf="!loading && error && !clienteNoEncontrado">No se pudo cargar desde el servicio, mostrando datos locales.</div>
+  
+  <!-- Vista cuando no se encuentra el cliente -->
+  <div class="cliente-no-encontrado" *ngIf="!loading && clienteNoEncontrado">
+    <div class="cliente-no-encontrado__icon">⚠</div>
+    <h3 class="cliente-no-encontrado__title">Cliente no encontrado</h3>
+    <p class="cliente-no-encontrado__message">
+      No se encontró información para el cliente con RUT <strong>{{ rut }}</strong>.
+    </p>
+    <p class="cliente-no-encontrado__submessage">
+      Por favor, verifica que el RUT sea correcto e intenta nuevamente.
+    </p>
+  </div>
+  
+  <div class="empty" *ngIf="hasNoResults && !loading && !clienteNoEncontrado">
     <div class="info-icon">i</div>
     <div class="text">No se encontró documento</div>
   </div>
 
-  <div class="cards" *ngIf="!hasNoResults">
+  <div class="cards" *ngIf="!hasNoResults && !clienteNoEncontrado">
     <div class="card" *ngFor="let c of filteredCompras">
       <div class="card-header">
         <div class="doc-title">
@@ -100,14 +113,14 @@
     </div>
   </div>
 
-  <div class="pagination-row desktop-only" *ngIf="!hasNoResults && totalPages > 1">
+  <div class="pagination-row desktop-only" *ngIf="!hasNoResults && !clienteNoEncontrado && totalPages > 1">
     <button class="page-box" *ngFor="let p of pages" [class.active]="p === page" (click)="goToPage(p)">
       {{ p }}
     </button>
   </div>
 
   <!-- Pager condensado móvil -->
-  <div class="mobile-condensed-pager" *ngIf="!hasNoResults && totalPages > 1">
+  <div class="mobile-condensed-pager" *ngIf="!hasNoResults && !clienteNoEncontrado && totalPages > 1">
     <div class="pager-node" *ngFor="let p of condensedPager" [class.active]="isPagerActive(p)"
       [class.neighbor]="isPagerNeighbor(p)" (click)="goToPage(p)">
       <span>{{ p }}</span>

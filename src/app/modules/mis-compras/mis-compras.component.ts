@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ADMIN_MOCK_DATA } from './mock-admin-data';
 import { MisComprasService, MisComprasResponseDto } from '../../services/mis-compras.service';
 import { TrackingDataService } from '../../services/tracking-data.service';
@@ -59,9 +60,14 @@ export class MisComprasComponent implements OnInit {
 
   loading = false;
   error = false;
+  clienteNoEncontrado = false;
   facturasModalVisible = false;
   facturasModalTitle = '';
   facturasModalItems: FacturaAsociada[] = [];
+  
+  // RUT del cliente - se obtiene de query params o usa el valor por defecto del environment
+  rut: string = environment.clienteId;
+  private rutProporcionadoExplicitamente = false;
 
   constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService, private trackingDataService: TrackingDataService) { }
 
@@ -72,16 +78,32 @@ export class MisComprasComponent implements OnInit {
     const qpPerPage = Number(qp.perPage);
     if (!isNaN(qpPage) && qpPage > 0) { this.page = qpPage; }
     if (!isNaN(qpPerPage) && qpPerPage > 0) { this.perPage = qpPerPage; }
+    
+    // Leer el RUT del cliente desde query params
+    if (qp.rut && typeof qp.rut === 'string' && qp.rut.trim()) {
+      this.rut = qp.rut.trim();
+      this.rutProporcionadoExplicitamente = true;
+    }
+    
     this.fetchComprasReal();
   }
 
   private fetchComprasReal(): void {
     this.loading = true;
-    const rut = environment.clienteId;
-    this.misComprasService.getCompras(rut, this.page, this.perPage).subscribe({
+    this.clienteNoEncontrado = false;
+    this.error = false;
+    this.misComprasService.getCompras(this.rut, this.page, this.perPage).subscribe({
       next: (resp: MisComprasResponseDto) => {
         const hasData = !!resp.compras && resp.compras.length > 0;
-        if (hasData || !environment.useMockOnEmpty) {
+        
+        // Si no hay datos y el RUT fue proporcionado explícitamente, considerar que el cliente no existe
+        if (!hasData && this.rutProporcionadoExplicitamente) {
+          this.clienteNoEncontrado = true;
+          this.compras = [];
+          this.resetStepperCache();
+          this.totalPages = 1;
+          this.error = false;
+        } else if (hasData || !environment.useMockOnEmpty) {
           // Usar siempre la respuesta real; si viene vacía y no queremos mock, mostrar vacío
           this.compras = (resp.compras || []) as Compra[];
           this.resetStepperCache();
@@ -90,22 +112,39 @@ export class MisComprasComponent implements OnInit {
           const base = this.compras.length || 1;
           this.totalPages = resp.totalPages || Math.max(1, Math.ceil(base / this.perPage));
           this.error = false;
+          this.clienteNoEncontrado = false;
         } else {
           // Fallback a mock sólo si está permitido en env
           this.applyMock();
+          this.clienteNoEncontrado = false;
         }
         this.loading = false;
       },
-      error: (err) => {
-        console.error('[MisComprasComponent] Error API, usando mock', err);
-        this.error = true;
-        if (environment.useMockOnEmpty) {
-          this.applyMock();
-        } else {
-          // Mantener vacío si no se permite mock
+      error: (err: any) => {
+        console.error('[MisComprasComponent] Error API', err);
+        
+        // Si el error es 404 o 400 y el RUT fue proporcionado explícitamente, considerar cliente no encontrado
+        const isHttpError = err instanceof HttpErrorResponse;
+        const isNotFound = isHttpError && (err.status === 404 || err.status === 400);
+        
+        if (isNotFound && this.rutProporcionadoExplicitamente) {
+          this.clienteNoEncontrado = true;
+          this.error = false;
           this.compras = [];
           this.resetStepperCache();
           this.totalPages = 1;
+        } else {
+          this.error = true;
+          if (environment.useMockOnEmpty) {
+            this.applyMock();
+            this.clienteNoEncontrado = false;
+          } else {
+            // Mantener vacío si no se permite mock
+            this.compras = [];
+            this.resetStepperCache();
+            this.totalPages = 1;
+            this.clienteNoEncontrado = false;
+          }
         }
         this.loading = false;
       }
@@ -322,9 +361,8 @@ export class MisComprasComponent implements OnInit {
 
   verDetalle(c: Compra): void {
     const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
-    const rut = environment.clienteId;
     // Búsqueda y navegación unificada
-    this.misComprasService.buscarDocumento(rut, c.numeroDocumento, 1).subscribe(resp => {
+    this.misComprasService.buscarDocumento(this.rut, c.numeroDocumento, 1).subscribe(resp => {
       this.handleBuscarDocumentoResponse(resp, tipo, c.numeroDocumento, c);
     });
   }
@@ -354,9 +392,8 @@ export class MisComprasComponent implements OnInit {
   }
 
   verDetalleFactura(numeroFactura: string): void {
-    const rut = environment.clienteId;
     // Forzar búsqueda igual que documento principal para transportar respuesta y productos
-    this.misComprasService.buscarDocumento(rut, numeroFactura, 1).subscribe(resp => {
+    this.misComprasService.buscarDocumento(this.rut, numeroFactura, 1).subscribe(resp => {
       // Priorizar tipo desde respuesta si existe, fallback FCV
       const encontrado = resp.compras?.[0];
       const tipo = this.mapTipoDocumentoToCode(encontrado?.tipoDocumento || 'factura');
@@ -517,7 +554,7 @@ export class MisComprasComponent implements OnInit {
       // Actualizar URL para persistir estado y permitir volver con la misma página
       this.router.navigate([], {
         relativeTo: this.route,
-        queryParams: { page: this.page, perPage: this.perPage },
+        queryParams: { page: this.page, perPage: this.perPage, rut: this.rut },
         queryParamsHandling: 'merge'
       });
       this.fetchComprasReal();
