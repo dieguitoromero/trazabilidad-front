@@ -3,14 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --proxy-config proxy.conf.json",
-  "start:legacy": "NODE_OPTIONS=--openssl-legacy-provider ng serve --proxy-config proxy.conf.json --poll=1000",
-    "build": "ng build",
-    "build:legacy": "NODE_OPTIONS=--openssl-legacy-provider ng build",
+    "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng serve --proxy-config proxy.conf.json",
+    "start:legacy": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng serve --proxy-config proxy.conf.json --poll=1000",
+    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng build --base-href /trazabilidad-app/ --configuration=production",
+    "build:legacy": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng build",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "build-dev": "ng build --base-href /trazabilidad-app/ --configuration=production"
+    "build-dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng build --base-href /trazabilidad-app/ --configuration=production"
   },
   "private": true,
   "dependencies": {
@@ -36,6 +36,8 @@
     "@types/jasmine": "~3.6.0",
     "@types/node": "^12.11.1",
     "codelyzer": "^6.0.0",
+    "cross-env": "^10.1.0",
+    "http-parser-js": "^0.5.10",
     "jasmine-core": "~3.6.0",
     "jasmine-spec-reporter": "~5.0.0",
     "karma": "~5.1.0",
@@ -43,6 +45,8 @@
     "karma-coverage": "~2.0.3",
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "^1.5.0",
+    "patch-package": "^8.0.1",
+    "postinstall-postinstall": "^2.1.0",
     "protractor": "~7.0.0",
     "ts-node": "~8.3.0",
     "tslint": "~6.1.0",

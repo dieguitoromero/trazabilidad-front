@@ -78,7 +78,7 @@
         <div class="producto-item" *ngFor="let p of invoice?.orderProducts; let i = index">
           <div class="left-block">
             <div class="img-col">
-              <img class="producto-img" [src]="p.image || (baseHref + 'assets/not-image.jpg')" (error)="onImgError($event)"
+              <img class="producto-img" [src]="p.image || '/trazabilidad-app/assets/not-image.jpg'" (error)="onImgError($event)"
                 alt="producto" />
             </div>
             <div class="info-col">
