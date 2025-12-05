@@ -21,10 +21,12 @@ export class TrackingViewComponent implements OnInit {
     public stepperSteps: TrackingStepModel[] = [];
     public working = false;
     public hasError = false;
+    public clienteIdRequerido = false; // Indica que falta el parÃ¡metro clienteId en la URL
     public searchModel: SearchModel | undefined;
     public hideSearch = false;
     public documentInfoText = '';
     private autoSearched = false;
+    private clienteId: string | null = null;
     private readonly canonicalEtapas = [
         { key: 'pedido ingresado', label: 'Pedido Ingresado' },
         { key: 'pedido aprobado', label: 'Pedido Aprobado', aliases: ['pedido pagado'] },
@@ -62,6 +64,14 @@ export class TrackingViewComponent implements OnInit {
         });
 
         this.activeRoute.queryParams.subscribe((params) => {
+            // Obtener clienteId de los query params (requerido)
+            if (params.clienteId && typeof params.clienteId === 'string' && params.clienteId.trim()) {
+                this.clienteId = params.clienteId.trim();
+                this.clienteIdRequerido = false;
+            } else {
+                this.clienteIdRequerido = true;
+            }
+            
             if (params.folioDocumento || params.tipoDocumento) {
                 this.hideSearch = true;
                 const id = Number(params.folioDocumento);
@@ -149,9 +159,28 @@ export class TrackingViewComponent implements OnInit {
 
 
     public onSearch(search: SearchModel): void {
+        // Validar que clienteId estÃ© disponible
+        if (!this.clienteId) {
+            // Intentar obtener de query params si no estÃ¡ disponible
+            const qp = this.activeRoute.snapshot.queryParams;
+            this.clienteId = (qp.clienteId && typeof qp.clienteId === 'string' && qp.clienteId.trim()) 
+                ? qp.clienteId.trim() 
+                : null;
+            
+            if (!this.clienteId) {
+                this.clienteIdRequerido = true;
+                this.hasError = false;
+                this.working = false;
+                return;
+            }
+        }
+        
+        // Si clienteId estÃ¡ disponible, asegurar que no se muestre el mensaje de requerido
+        this.clienteIdRequerido = false;
+        
         const api = (search as any).api || 'doc';
         // Nuevo flujo: intentar siempre con documents search primero (api='doc'), luego fallback segÃºn tipo
-        let source$ = this.trackingService.getInvoiceFromDocumentsSearch(search.invoiceId, search.invoiceType);
+        let source$ = this.trackingService.getInvoiceFromDocumentsSearch(search.invoiceId, search.invoiceType, this.clienteId);
         if (api === 'v1') {
             source$ = this.trackingService.getInvoiceTracking(search.invoiceId, search.invoiceType);
         } else if (api === 'v2') {
@@ -171,7 +200,8 @@ export class TrackingViewComponent implements OnInit {
                 queryParams: {
                     folioDocumento: search.invoiceId,
                     tipoDocumento: search.invoiceType,
-                    api
+                    api,
+                    clienteId: this.clienteId
                 },
                 queryParamsHandling: 'merge'
             });
@@ -905,7 +935,7 @@ export class TrackingViewComponent implements OnInit {
         const title = (step.title?.text || '').toLowerCase();
         return title === 'pedido entregado' && this.productCount() > 0;
     }
-    // Verifica si un paso tiene pasos pendientes después
+    // Verifica si un paso tiene pasos pendientes despuï¿½s
     public hasPendingAfter(step: TrackingStepModel, index: number): boolean {
         const steps = this.displaySteps;
         if (!steps || index >= steps.length - 1) return false;
@@ -917,7 +947,7 @@ export class TrackingViewComponent implements OnInit {
         return isCurrentDone && isNextPending;
     }
 
-    // Verifica si un paso pendiente viene después de un completado/en progreso
+    // Verifica si un paso pendiente viene despuï¿½s de un completado/en progreso
     public hasPendingFrom(step: TrackingStepModel, index: number): boolean {
         const steps = this.displaySteps;
         if (!steps || index <= 0) return false;
@@ -925,7 +955,7 @@ export class TrackingViewComponent implements OnInit {
         const isPending = step.icon.indexOf('pending') >= 0;
         if (!isPending) return false;
         
-        // Buscar hacia atrás hasta encontrar un paso completado
+        // Buscar hacia atrï¿½s hasta encontrar un paso completado
         for (let i = index - 1; i >= 0; i--) {
             const prevStep = steps[i];
             if (prevStep.icon.indexOf('pending') < 0) {

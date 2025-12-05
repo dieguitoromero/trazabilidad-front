@@ -1,7 +1,19 @@
 <div class="mis-compras-wrapper">
   <h2 class="title" (click)="volverATodosLosDocumentos()">Mis Compras</h2>
 
-  <div class="search-row" *ngIf="!clienteNoEncontrado">
+  <!-- Vista cuando falta el parámetro clienteId en la URL -->
+  <div class="cliente-id-requerido" *ngIf="!loading && clienteIdRequerido">
+    <div class="cliente-id-requerido__icon">⚠</div>
+    <h3 class="cliente-id-requerido__title">Información requerida</h3>
+    <p class="cliente-id-requerido__message">
+      No se ha proporcionado la información necesaria para acceder a esta sección.
+    </p>
+    <p class="cliente-id-requerido__submessage">
+      Por favor, verifica que la URL contenga los parámetros necesarios e intenta nuevamente.
+    </p>
+  </div>
+
+  <div class="search-row" *ngIf="!clienteNoEncontrado && !clienteIdRequerido">
     <input type="text" placeholder="Buscar por N° de pedido" [(ngModel)]="searchTerm" (keyup.enter)="buscar()"
       (input)="onInputChange()" />
     <button type="button" class="search-btn" aria-label="Buscar"
@@ -11,7 +23,7 @@
   </div>
 
   <div class="loading" *ngIf="loading">Cargando compras...</div>
-  <div class="error" *ngIf="!loading && error && !clienteNoEncontrado">No se pudo cargar desde el servicio, mostrando
+  <div class="error" *ngIf="!loading && error && !clienteNoEncontrado && !clienteIdRequerido">No se pudo cargar desde el servicio, mostrando
     datos locales.</div>
 
   <!-- Vista cuando no se encuentra el cliente -->
@@ -26,12 +38,12 @@
     </p>
   </div>
 
-  <div class="empty" *ngIf="hasNoResults && !loading && !clienteNoEncontrado">
+  <div class="empty" *ngIf="hasNoResults && !loading && !clienteNoEncontrado && !clienteIdRequerido">
     <div class="info-icon">i</div>
     <div class="text">No se encontró documento</div>
   </div>
 
-  <div class="cards" *ngIf="!hasNoResults && !clienteNoEncontrado">
+  <div class="cards" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido">
     <div class="card" *ngFor="let c of filteredCompras">
       <div class="card-header">
         <div class="doc-title">
@@ -121,7 +133,7 @@
     </div>
   </div>
 
-  <div class="pagination-row desktop-only" *ngIf="!hasNoResults && !clienteNoEncontrado && totalPages > 1">
+  <div class="pagination-row desktop-only" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1">
     <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
       ‹
     </button>
@@ -136,7 +148,7 @@
   </div>
 
   <!-- Pager condensado móvil -->
-  <div class="mobile-condensed-pager" *ngIf="!hasNoResults && !clienteNoEncontrado && totalPages > 1">
+  <div class="mobile-condensed-pager" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1">
     <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
       ‹
     </button>

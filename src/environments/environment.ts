@@ -6,7 +6,6 @@ export const environment = {
   urlToken: "https://apim-imperial-dev-ues-001.azure-api.net/get-token/token",
   // Deprecated: prefer baseUrl + '/api'
   baseMisComprasApiUrl: "https://apim-imperial-dev-ues-001.azure-api.net/api",
-  clienteId: "762530058",
   limitDefault: 10,
   useMockOnEmpty: false
 };

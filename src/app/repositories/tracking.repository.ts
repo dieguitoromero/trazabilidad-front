@@ -1,4 +1,5 @@
 import { environment } from "../../environments/environment";
+// Nota: clienteId ya no se obtiene de environment, debe pasarse como parámetro desde la URL
 import { EMPTY, Observable, of, throwError } from "rxjs";
 import { InvoiceModel } from "../core/models/invoice.model";
 import { HttpClient, HttpErrorResponse, HttpResponse } from "@angular/common/http";
@@ -94,10 +95,9 @@ export class TrackingRepository {
       );
   }
 
-  public getDocument(invoiceId: string, invoiceType: string): Observable<InvoiceModel | undefined> {
+  public getDocument(invoiceId: string, invoiceType: string, clienteId: string): Observable<InvoiceModel | undefined> {
     // Requisito: usar URL absoluta con clienteId para facturas (FCV)
     // https://apim-imperial-dev-ues-001.azure-api.net/api/documents/FCV/(numero)/?clienteId=762530058
-    const clienteId = environment.clienteId;
     const url = `${this.apimBase}/documents/${invoiceType}/${invoiceId}/?clienteId=${clienteId}`;
     return this.http.get<any>(url).pipe(
       map(resp => {

@@ -28,9 +28,8 @@ export class TrackingService {
      * Nuevo flujo: usar endpoint de búsqueda de documentos para obtener data y mapear a InvoiceModel.
      * Si el documento ya trae trazabilidad, se usa directamente; si no, se intenta fallback a V2.
      */
-    public getInvoiceFromDocumentsSearch(invoiceId: number, invoiceType: string): Observable<InvoiceModel | undefined> {
-        const rut = '762530058'; // reutilizar environment.clienteId si se prefiere inyectar
-        return this.misComprasService.buscarDocumento(rut, invoiceId.toString(), 1).pipe(
+    public getInvoiceFromDocumentsSearch(invoiceId: number, invoiceType: string, clienteId: string): Observable<InvoiceModel | undefined> {
+        return this.misComprasService.buscarDocumento(clienteId, invoiceId.toString(), 1).pipe(
             switchMap(resp => {
                 const doc = resp.compras && resp.compras.length > 0 ? resp.compras[0] : undefined;
                 if (!doc) { return of(undefined); }
@@ -104,9 +103,9 @@ export class TrackingService {
         return 'BLV';
     }
 
-    public getInvoiceDocument(invoiceId: number, invoiceType: string): Observable<InvoiceModel | undefined> {
+    public getInvoiceDocument(invoiceId: number, invoiceType: string, clienteId: string): Observable<InvoiceModel | undefined> {
         const padded = this.padInvoiceNumber(invoiceId, 10);
-        return this.trackingRepository.getDocument(padded, invoiceType).pipe(
+        return this.trackingRepository.getDocument(padded, invoiceType, clienteId).pipe(
             switchMap(doc => {
                 if (!doc) { return of(undefined); }
                 // Si el documento no trae pasos de trazabilidad, intentamos obtenerlos vía V2

@@ -8,12 +8,24 @@
   
   <h2 class="tracking-title">Detalle de documento</h2>
 
-  <div class="document-header" *ngIf="invoice && getDocumentNumber()">
+  <!-- Vista cuando falta el parámetro clienteId en la URL -->
+  <div class="cliente-id-requerido" *ngIf="!working && clienteIdRequerido">
+    <div class="cliente-id-requerido__icon">⚠</div>
+    <h3 class="cliente-id-requerido__title">Información requerida</h3>
+    <p class="cliente-id-requerido__message">
+      No se ha proporcionado la información necesaria para acceder a esta sección.
+    </p>
+    <p class="cliente-id-requerido__submessage">
+      Por favor, verifica que la URL contenga los parámetros necesarios e intenta nuevamente.
+    </p>
+  </div>
+
+  <div class="document-header" *ngIf="invoice && getDocumentNumber() && !clienteIdRequerido">
     <span class="document-label">{{ getDocumentType() }} N° : {{ getDocumentNumber() }}</span>
   </div>
 </div>
 
-<div class="box-container" *ngIf="displaySteps.length">
+<div class="box-container" *ngIf="displaySteps.length && !clienteIdRequerido">
   <!-- <div class="stepper-progress" *ngIf="completedCount() > 0"><p class="document-info" *ngIf="getDocumentString() as docString">{{ docString }}</p>
     {{completedCount()}} de {{displaySteps.length}} pasos
   </div> -->
@@ -62,7 +74,7 @@
 </div>
 
 <!-- Card: Resumen de tu compra -->
-<div class="box-container" *ngIf="invoice">
+<div class="box-container" *ngIf="invoice && !clienteIdRequerido">
   <div class="purchase-summary-card">
     <h3>{{ purchaseSummaryTitle() }}</h3>
     <div class="tipo-entrega-row">

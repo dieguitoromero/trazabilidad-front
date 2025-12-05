@@ -78,12 +78,13 @@ export class MisComprasComponent implements OnInit {
   loading = false;
   error = false;
   clienteNoEncontrado = false;
+  clienteIdRequerido = false; // Indica que falta el parámetro clienteId en la URL
   facturasModalVisible = false;
   facturasModalTitle = '';
   facturasModalItems: FacturaAsociada[] = [];
 
-  // RUT del cliente - se obtiene de query params o usa el valor por defecto del environment
-  rut: string = environment.clienteId;
+  // RUT del cliente - se obtiene de query params (requerido)
+  rut: string | null = null;
   private rutProporcionadoExplicitamente = false;
 
   constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService, private trackingDataService: TrackingDataService) { }
@@ -96,10 +97,20 @@ export class MisComprasComponent implements OnInit {
     if (!isNaN(qpPage) && qpPage > 0) { this.page = qpPage; }
     if (!isNaN(qpPerPage) && qpPerPage > 0) { this.perPage = qpPerPage; }
 
-    // Leer el RUT del cliente desde query params
-    if (qp.rut && typeof qp.rut === 'string' && qp.rut.trim()) {
-      this.rut = qp.rut.trim();
+    // Leer el RUT del cliente desde query params (requerido)
+    // También aceptar clienteId como alias para rut
+    const rutParam = qp.rut || qp.clienteId;
+    if (rutParam && typeof rutParam === 'string' && rutParam.trim()) {
+      this.rut = rutParam.trim();
       this.rutProporcionadoExplicitamente = true;
+      this.clienteIdRequerido = false;
+    } else {
+      // Si no se proporciona, mostrar vista de clienteId requerido
+      this.clienteIdRequerido = true;
+      this.error = false;
+      this.clienteNoEncontrado = false;
+      this.loading = false;
+      return;
     }
 
     // Si hay un término de búsqueda en la URL, ejecutar la búsqueda
@@ -112,6 +123,12 @@ export class MisComprasComponent implements OnInit {
   }
 
   private fetchComprasReal(): void {
+    if (!this.rut) {
+      this.error = true;
+      this.loading = false;
+      return;
+    }
+    
     this.loading = true;
     this.clienteNoEncontrado = false;
     this.error = false;
@@ -705,8 +722,13 @@ export class MisComprasComponent implements OnInit {
     }
 
     // Asegurar que tenemos un RUT válido antes de buscar
-    const rutToUse = this.rut || environment.clienteId;
-    console.log('[MisComprasComponent] Llamando a buscarDocumento con:', { rut: rutToUse, term, page: 1, perPage: this.perPage });
+    if (!this.rut) {
+      this.error = true;
+      this.loading = false;
+      return;
+    }
+    
+    console.log('[MisComprasComponent] Llamando a buscarDocumento con:', { rut: this.rut, term, page: 1, perPage: this.perPage });
 
     // Buscar documento específico en la API
     this.isSearching = true;
@@ -714,7 +736,7 @@ export class MisComprasComponent implements OnInit {
     this.loading = true;
     this.page = 1;
 
-    this.misComprasService.buscarDocumento(rutToUse, term, 1, this.perPage).subscribe({
+    this.misComprasService.buscarDocumento(this.rut, term, 1, this.perPage).subscribe({
       next: (resp: MisComprasResponseDto) => {
         console.log('[MisComprasComponent] Respuesta de buscarDocumento:', resp);
         const hasData = !!resp.compras && resp.compras.length > 0;
