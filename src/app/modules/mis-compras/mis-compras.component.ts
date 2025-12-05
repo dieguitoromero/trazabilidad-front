@@ -682,6 +682,9 @@ export class MisComprasComponent implements OnInit {
   }
 
   verDetalle(c: Compra): void {
+    if (!this.rut) {
+      return;
+    }
     const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
     // Búsqueda y navegación unificada
     this.misComprasService.buscarDocumento(this.rut, c.numeroDocumento, 1, this.perPage).subscribe(resp => {
@@ -755,11 +758,13 @@ export class MisComprasComponent implements OnInit {
         }
 
         // Actualizar URL con el término de búsqueda y la página
-        this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: { page: this.page, perPage: this.perPage, rut: rutToUse, buscar: term },
-          queryParamsHandling: 'merge'
-        });
+        if (this.rut) {
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { page: this.page, perPage: this.perPage, rut: this.rut, buscar: term },
+            queryParamsHandling: 'merge'
+          });
+        }
       },
       error: (err: any) => {
         console.error('[MisComprasComponent] Error buscando documento', err);
@@ -832,6 +837,9 @@ export class MisComprasComponent implements OnInit {
   }
 
   verDetalleFactura(numeroFactura: string): void {
+    if (!this.rut) {
+      return;
+    }
     // Forzar búsqueda igual que documento principal para transportar respuesta y productos
     this.misComprasService.buscarDocumento(this.rut, numeroFactura, 1, this.perPage).subscribe(resp => {
       // Priorizar tipo desde respuesta si existe, fallback FCV
@@ -993,7 +1001,7 @@ export class MisComprasComponent implements OnInit {
       this.page = p;
 
       // Si estamos en modo búsqueda, buscar en la página correspondiente
-      if (this.isSearching && this.searchTerm.trim()) {
+      if (this.isSearching && this.searchTerm.trim() && this.rut) {
         const term = this.searchTerm.trim();
         this.loading = true;
         this.misComprasService.buscarDocumento(this.rut, term, p, this.perPage).subscribe({
