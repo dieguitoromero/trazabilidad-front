@@ -68,8 +68,6 @@ export class TrackingViewComponent implements OnInit {
             if (params.clienteId && typeof params.clienteId === 'string' && params.clienteId.trim()) {
                 this.clienteId = params.clienteId.trim();
                 this.clienteIdRequerido = false;
-            } else {
-                this.clienteIdRequerido = true;
             }
             
             if (params.folioDocumento || params.tipoDocumento) {
@@ -89,6 +87,8 @@ export class TrackingViewComponent implements OnInit {
                         // eslint-disable-next-line no-console
                         this.hideSearch = true;
                         this.applyHideHeroBg();
+                        // Si hay payload transportado, no requerir clienteId
+                        this.clienteIdRequerido = false;
                         return;
                     }
                 }
@@ -99,11 +99,22 @@ export class TrackingViewComponent implements OnInit {
                     // eslint-disable-next-line no-console
                     this.hideSearch = true;
                     this.applyHideHeroBg();
+                    // Si hay payload transportado, no requerir clienteId
+                    this.clienteIdRequerido = false;
                     // Evitar auto búsqueda si ya cargamos invoice
                     return;
                 }
+                // Solo requerir clienteId si no hay payload transportado y vamos a hacer búsqueda
+                if (!this.clienteId) {
+                    this.clienteIdRequerido = true;
+                }
                 this.triggerAutoSearch();
                 this.applyHideHeroBg();
+            } else {
+                // Si no hay folioDocumento ni tipoDocumento, verificar si falta clienteId
+                if (!this.clienteId) {
+                    this.clienteIdRequerido = true;
+                }
             }
         });
 
@@ -130,6 +141,8 @@ export class TrackingViewComponent implements OnInit {
                 this.formatCompraDtoForStepper(raw);
                 this.hideSearch = true;
                 this.applyHideHeroBg();
+                // Si hay payload transportado, no requerir clienteId
+                this.clienteIdRequerido = false;
                 this.scheduleDetectChanges();
                 return;
             }
@@ -140,6 +153,8 @@ export class TrackingViewComponent implements OnInit {
                 this.formatInvoiceForStepper(invoiceTransport);
                 this.hideSearch = true;
                 this.applyHideHeroBg();
+                // Si hay payload transportado, no requerir clienteId
+                this.clienteIdRequerido = false;
                 this.scheduleDetectChanges();
                 return;
             }
@@ -149,6 +164,8 @@ export class TrackingViewComponent implements OnInit {
                 this.formatCompraDtoForStepper(raw);
                 this.hideSearch = true;
                 this.applyHideHeroBg();
+                // Si hay payload transportado, no requerir clienteId
+                this.clienteIdRequerido = false;
                 this.scheduleDetectChanges();
                 return;
             }

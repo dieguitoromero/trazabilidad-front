@@ -910,7 +910,8 @@ export class MisComprasComponent implements OnInit {
         api,
         section: 'details',
         page: this.page,
-        perPage: this.perPage
+        perPage: this.perPage,
+        clienteId: this.rut // Incluir clienteId para que esté disponible en el tracking view
       },
       queryParamsHandling: 'merge',
       state: { compraBuscarDocumentoResp: resp }
