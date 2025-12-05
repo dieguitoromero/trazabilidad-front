@@ -27,7 +27,7 @@ export class TrackingViewComponent implements OnInit {
     private autoSearched = false;
     private readonly canonicalEtapas = [
         { key: 'pedido ingresado', label: 'Pedido Ingresado' },
-        { key: 'pedido pagado', label: 'Pedido pagado', aliases: ['pedido aprobado'] },
+        { key: 'pedido aprobado', label: 'Pedido Aprobado', aliases: ['pedido pagado'] },
         { key: 'preparacion de pedido', label: 'Preparacion de Pedido' },
         { key: 'pendiente de envio', label: 'Pendiente de Envío', aliases: ['disponible para retiro'] },
         { key: 'pedido en ruta', label: 'Pedido en Ruta' },
@@ -235,19 +235,57 @@ export class TrackingViewComponent implements OnInit {
             step.title = { text: titleText, color: '', isBold: false } as any;
 
             if (match) {
-                step.description = this.composeStepDescription(match.glosa, match.observacion);
-                step.date = this.parseFechaRegistro(match.fechaRegistro) as any;
-                step.icon = this.computeIconFromEstado(match.estado);
+                const indProcesado = match.indProcesado !== undefined ? match.indProcesado : null;
+                
+                // Siempre usar el label canónico
+                step.title.text = canonical.label;
+                
+                // Preferir campos calculados del backend si están disponibles, sino calcular manualmente
+                if (match.title) {
+                    step.title.color = match.title.color || this.computeTitleColor(indProcesado, match.estado);
+                    step.title.isBold = match.title.isBold !== undefined ? match.title.isBold : this.computeIsBold(indProcesado, match.estado);
+                } else {
+                    step.title.color = this.computeTitleColor(indProcesado, match.estado);
+                    step.title.isBold = this.computeIsBold(indProcesado, match.estado);
+                }
+                
+                // Usar description calculada del backend si está disponible
+                if (match.description !== undefined) {
+                    step.description = match.description || '';
+                } else {
+                    step.description = this.composeStepDescription(match.glosa, match.observacion);
+                }
+                
+                // Usar date calculada del backend si está disponible (puede ser null)
+                if (match.date !== undefined) {
+                    step.date = match.date !== null ? this.parseFechaRegistro(match.date) as any : undefined;
+                } else {
+                    // Fallback: calcular fecha manualmente
+                    const fechaRegistro = (indProcesado !== null && match.fechaRegistro && match.fechaRegistro.trim()) 
+                        ? match.fechaRegistro 
+                        : undefined;
+                    step.date = fechaRegistro ? this.parseFechaRegistro(fechaRegistro) as any : undefined;
+                }
+                
+                // Usar icon calculado del backend si está disponible
+                if (match.icon) {
+                    step.icon = match.icon;
+                } else {
+                    step.icon = this.computeIconFromEstado(match.estado, indProcesado);
+                }
             } else {
                 step.description = '';
                 step.date = undefined as any;
                 step.icon = 'pending';
+                step.title.color = '#575962'; // gris medio para pendiente
+                step.title.isBold = false;
             }
 
             (step as any).canonicalKey = canonical.key;
             (step as any).rawEtapa = match?.etapa;
             (step as any).rawGlosa = match?.glosa;
             (step as any).orden = typeof match?.orden === 'number' ? match?.orden : index;
+            (step as any).indProcesado = match?.indProcesado;
             return step;
         });
     }
@@ -260,8 +298,8 @@ export class TrackingViewComponent implements OnInit {
     }
 
     private resolveTitleFromMatch(match: any, fallback: string): string {
-        const etapa = (match?.etapa || '').trim();
-        return etapa || fallback;
+        // Siempre usar el label canónico para mantener consistencia con Mis Compras
+        return fallback;
     }
 
     private findEtapaMatch(entries: any[], canonical: { key: string; aliases?: string[] }): any | undefined {
@@ -295,22 +333,75 @@ export class TrackingViewComponent implements OnInit {
         return map;
     }
 
-    private computeIconFromEstado(estado: string | undefined): string {
+    private computeIconFromEstado(estado: string | undefined, indProcesado?: number | null): string {
+        // Priorizar indProcesado si está disponible
+        if (indProcesado !== undefined && indProcesado !== null) {
+            if (indProcesado === 1) {
+                return this.timelineCompleteIcon; // Completado
+            } else if (indProcesado === 0) {
+                return this.timelineCompleteIcon; // En progreso (usar mismo ícono o timeline_in_progress_icon.svg si existe)
+            } else {
+                return 'pending'; // Pendiente
+            }
+        }
+        // Fallback al estado anterior para compatibilidad
         const e = (estado || '').toLowerCase();
         if (!e) return 'pending';
         const doneStates = ['activo', 'finalizado', 'completado', 'entregado'];
         return doneStates.some(ds => e.indexOf(ds) >= 0) ? this.timelineCompleteIcon : 'pending';
     }
 
-    private parseFechaRegistro(raw: string): Date | undefined {
-        if (!raw) return undefined;
-        // Intentar parseo directo (ISO / timestamp, incluyendo milisegundos y zona)
+    private computeTitleColor(indProcesado?: number | null, estado?: string): string {
+        if (indProcesado === 1) {
+            return '#4d4f57'; // gris oscuro para completado
+        } else if (indProcesado === 0) {
+            return '#00aa00'; // verde para en progreso (opcional, puede usar #4d4f57)
+        }
+        return '#575962'; // gris medio para pendiente
+    }
+
+    private computeIsBold(indProcesado?: number | null, estado?: string): boolean {
+        if (indProcesado === 1 || indProcesado === 0) {
+            return true; // Negrita para completado o en progreso
+        }
+        return false; // No negrita para pendiente
+    }
+
+    private parseFechaRegistro(raw: string | null | undefined): Date | undefined {
+        // Manejar null explícitamente (nuevo formato del backend)
+        if (raw === null || raw === undefined) return undefined;
+        if (!raw || !raw.trim()) return undefined;
+        
+        // Intentar parseo directo (ISO 8601: yyyy-MM-ddTHH:mm:ss o yyyy-MM-ddTHH:mm:ss.fff)
+        // Date.parse() maneja automáticamente el formato con milisegundos
         const direct = Date.parse(raw);
         if (!isNaN(direct)) return new Date(direct);
-        // Intentar formato dd-MM-yyyy
-        const m = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-        if (m) {
-            const d = parseInt(m[1], 10); const mo = parseInt(m[2], 10) - 1; const y = parseInt(m[3], 10);
+        
+        // Intentar formato ISO 8601 sin T: yyyy-MM-dd HH:mm:ss
+        const isoSpaceMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
+        if (isoSpaceMatch) {
+            const y = parseInt(isoSpaceMatch[1], 10);
+            const mo = parseInt(isoSpaceMatch[2], 10) - 1;
+            const d = parseInt(isoSpaceMatch[3], 10);
+            const h = parseInt(isoSpaceMatch[4], 10);
+            const mi = parseInt(isoSpaceMatch[5], 10);
+            const s = parseInt(isoSpaceMatch[6], 10);
+            return new Date(y, mo, d, h, mi, s);
+        }
+        // Intentar formato ISO 8601 solo fecha: yyyy-MM-dd
+        const isoDateMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoDateMatch) {
+            const y = parseInt(isoDateMatch[1], 10);
+            const mo = parseInt(isoDateMatch[2], 10) - 1;
+            const d = parseInt(isoDateMatch[3], 10);
+            return new Date(y, mo, d);
+        }
+        // Intentar formato legacy dd-MM-yyyy
+        const legacyMatch = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (legacyMatch) {
+            const d = parseInt(legacyMatch[1], 10);
+            const mo = parseInt(legacyMatch[2], 10) - 1;
+            const y = parseInt(legacyMatch[3], 10);
             return new Date(y, mo, d);
         }
         return undefined;
@@ -347,7 +438,7 @@ export class TrackingViewComponent implements OnInit {
     public statusActual(): string {
         const pasosOrden = [
             'Pedido Ingresado',
-            'Pedido pagado',
+            'Pedido Aprobado',
             'Preparacion de Pedido',
             'Pendiente de Envío',
             'Pedido en Ruta',
@@ -381,10 +472,27 @@ export class TrackingViewComponent implements OnInit {
     }
 
     private parseDate(fecha: string): Date | undefined {
-        const m = (fecha || '').match(/^(\d{2})-(\d{2})-(\d{4})$/);
-        if (!m) return undefined;
-        const d = parseInt(m[1], 10); const mo = parseInt(m[2], 10) - 1; const y = parseInt(m[3], 10);
-        return new Date(y, mo, d);
+        if (!fecha || !fecha.trim()) return undefined;
+        // Intentar parseo ISO 8601 primero
+        const direct = Date.parse(fecha);
+        if (!isNaN(direct)) return new Date(direct);
+        // Intentar formato ISO 8601: yyyy-MM-dd
+        const isoMatch = fecha.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch) {
+            const y = parseInt(isoMatch[1], 10);
+            const mo = parseInt(isoMatch[2], 10) - 1;
+            const d = parseInt(isoMatch[3], 10);
+            return new Date(y, mo, d);
+        }
+        // Intentar formato legacy dd-MM-yyyy
+        const legacyMatch = fecha.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (legacyMatch) {
+            const d = parseInt(legacyMatch[1], 10);
+            const mo = parseInt(legacyMatch[2], 10) - 1;
+            const y = parseInt(legacyMatch[3], 10);
+            return new Date(y, mo, d);
+        }
+        return undefined;
     }
 
     // private normalizeGlosa(glosa: string): string {
@@ -408,15 +516,40 @@ export class TrackingViewComponent implements OnInit {
 
         return sorted.map(t => {
             const step = new TrackingStepModel();
-            // Use raw 'etapa' as title, do not normalize/rename
-            step.title = { text: t.etapa, color: '', isBold: false } as any;
-            step.description = this.composeStepDescription(t.glosa, t.observacion);
-            step.date = this.parseFechaRegistro(t.fechaRegistro) as any;
-            step.icon = this.computeIconFromEstado(t.estado);
+            const indProcesado = t.indProcesado !== undefined ? t.indProcesado : null;
+            
+            // Preferir campos calculados del backend si están disponibles
+            if (t.title && t.description !== undefined && t.date !== undefined && t.icon) {
+                // Usar campos calculados del backend
+                step.title = {
+                    text: t.etapa || t.title.text || '',
+                    color: t.title.color || this.computeTitleColor(indProcesado, t.estado),
+                    isBold: t.title.isBold !== undefined ? t.title.isBold : this.computeIsBold(indProcesado, t.estado)
+                } as any;
+                step.description = t.description || '';
+                step.date = t.date !== null ? this.parseFechaRegistro(t.date) as any : undefined;
+                step.icon = t.icon || this.computeIconFromEstado(t.estado, indProcesado);
+            } else {
+                // Fallback: calcular manualmente
+                step.title = { 
+                    text: t.etapa || '', 
+                    color: this.computeTitleColor(indProcesado, t.estado), 
+                    isBold: this.computeIsBold(indProcesado, t.estado) 
+                } as any;
+                step.description = this.composeStepDescription(t.glosa, t.observacion);
+                
+                // La fecha solo se muestra si indProcesado !== null (completado o en progreso)
+                const fechaRegistro = (indProcesado !== null && t.fechaRegistro && t.fechaRegistro.trim()) 
+                    ? t.fechaRegistro 
+                    : undefined;
+                step.date = fechaRegistro ? this.parseFechaRegistro(fechaRegistro) as any : undefined;
+                step.icon = this.computeIconFromEstado(t.estado, indProcesado);
+            }
 
             (step as any).rawEtapa = t.etapa;
             (step as any).rawGlosa = t.glosa;
             (step as any).orden = t.orden;
+            (step as any).indProcesado = indProcesado;
 
             return step;
         });
@@ -472,10 +605,11 @@ export class TrackingViewComponent implements OnInit {
             trazabilidad: steps.map((s, idx) => ({
                 etapa: (s as any).rawEtapa || s.title?.text,
                 glosa: (s as any).rawGlosa || s.title?.text, // Do not normalize
-                fechaRegistro: s.date,
+                fechaRegistro: s.date ? (typeof s.date === 'string' ? s.date : s.date.toISOString()) : undefined,
                 estado: s.icon?.indexOf('timeline_complete_icon') >= 0 ? 'finalizado' : (s.icon?.indexOf('pending') >= 0 ? 'pendiente' : 'activo'),
                 observacion: s.description || '',
-                orden: idx
+                orden: idx,
+                indProcesado: (s as any).indProcesado !== undefined ? (s as any).indProcesado : null
             })),
             productos: normalizedInvoice.orderProducts ? [...normalizedInvoice.orderProducts] : [],
             documentLabel: normalizedInvoice.documentLabel || normalizedInvoice.tipoDocumento,
@@ -535,7 +669,8 @@ export class TrackingViewComponent implements OnInit {
                 fechaRegistro: t.fechaRegistro,
                 estado: t.estado || 'activo',
                 observacion: t.observacion || '',
-                orden: t.orden
+                orden: t.orden,
+                indProcesado: t.indProcesado !== undefined ? (t.indProcesado === null ? null : Number(t.indProcesado)) : undefined
             })),
             productos: mappedProductos,
             direccionEntrega: raw.direccionEntrega || raw.direccion || '',
@@ -769,6 +904,35 @@ export class TrackingViewComponent implements OnInit {
     public showDeliveredBadge(step: TrackingStepModel): boolean {
         const title = (step.title?.text || '').toLowerCase();
         return title === 'pedido entregado' && this.productCount() > 0;
+    }
+    // Verifica si un paso tiene pasos pendientes despu�s
+    public hasPendingAfter(step: TrackingStepModel, index: number): boolean {
+        const steps = this.displaySteps;
+        if (!steps || index >= steps.length - 1) return false;
+        
+        const nextStep = steps[index + 1];
+        const isCurrentDone = step.icon.indexOf('pending') < 0;
+        const isNextPending = nextStep.icon.indexOf('pending') >= 0;
+        
+        return isCurrentDone && isNextPending;
+    }
+
+    // Verifica si un paso pendiente viene despu�s de un completado/en progreso
+    public hasPendingFrom(step: TrackingStepModel, index: number): boolean {
+        const steps = this.displaySteps;
+        if (!steps || index <= 0) return false;
+        
+        const isPending = step.icon.indexOf('pending') >= 0;
+        if (!isPending) return false;
+        
+        // Buscar hacia atr�s hasta encontrar un paso completado
+        for (let i = index - 1; i >= 0; i--) {
+            const prevStep = steps[i];
+            if (prevStep.icon.indexOf('pending') < 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public purchaseSummaryTitle(): string {

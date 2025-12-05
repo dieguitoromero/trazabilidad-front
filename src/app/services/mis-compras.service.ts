@@ -18,6 +18,16 @@ export interface CompraApiDto {
     fechaRegistro: string;
     estado: string;
     orden?: number;
+    indProcesado?: number | null; // 1 = completado, 0 = en progreso, null = pendiente
+    // Campos calculados del backend (preferir usar estos cuando estén disponibles)
+    title?: {
+      text: string;
+      color: string;
+      isBold: boolean;
+    };
+    description?: string;
+    date?: string | null; // Fecha ISO 8601 con milisegundos o null
+    icon?: string; // URL del ícono
   }>;
   esDimensionado: boolean;
   total: number;
@@ -112,7 +122,17 @@ export class MisComprasService {
         observacion: t.observacion || t.observation || t.descripcion || t.description || '',
         fechaRegistro: t.fechaRegistro || t.date || '',
         estado: t.estado || t.state || '',
-        orden: typeof t.orden === 'number' ? t.orden : (typeof t.order === 'number' ? t.order : undefined)
+        orden: typeof t.orden === 'number' ? t.orden : (typeof t.order === 'number' ? t.order : undefined),
+        indProcesado: t.indProcesado !== undefined ? (t.indProcesado === null ? null : Number(t.indProcesado)) : undefined,
+        // Campos calculados del backend (preferir usar estos cuando estén disponibles)
+        title: t.title ? {
+          text: t.title.text || t.etapa || '',
+          color: t.title.color || '',
+          isBold: t.title.isBold !== undefined ? t.title.isBold : false
+        } : undefined,
+        description: t.description !== undefined ? t.description : undefined,
+        date: t.date !== undefined ? t.date : undefined,
+        icon: (t.icon && t.icon.trim()) ? t.icon.trim() : undefined
       }));
 
       type Asociada = { numeroFactura: string; fechaEmision: string; idFactura: number };

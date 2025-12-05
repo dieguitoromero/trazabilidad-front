@@ -14,6 +14,16 @@ type Trazabilidad = {
   fechaRegistro: string;
   estado: 'activo' | 'finalizado' | string;
   orden?: number;
+  indProcesado?: number | null; // 1 = completado, 0 = en progreso, null = pendiente
+  // Campos calculados del backend (preferir usar estos cuando estén disponibles)
+  title?: {
+    text: string;
+    color: string;
+    isBold: boolean;
+  };
+  description?: string;
+  date?: string | null; // Fecha ISO 8601 con milisegundos o null
+  icon?: string; // URL del ícono
 };
 
 type StepSnapshot = {
@@ -23,6 +33,12 @@ type StepSnapshot = {
   observacion?: string;
   isActive: boolean;
   isCompleted: boolean;
+  isInProgress?: boolean; // Si el paso está en progreso (indProcesado = 0)
+  color?: string; // Color del título según indProcesado
+  isBold?: boolean; // Si el título debe ser negrita
+  icon?: string; // URL del ícono o 'pending'
+  hasPendingAfter?: boolean; // Si hay pasos pendientes después de este paso
+  hasPendingFrom?: boolean; // Si este paso pendiente viene después de un paso completado/en progreso
 };
 type FacturaAsociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
 
@@ -65,7 +81,7 @@ export class MisComprasComponent implements OnInit {
   facturasModalVisible = false;
   facturasModalTitle = '';
   facturasModalItems: FacturaAsociada[] = [];
-  
+
   // RUT del cliente - se obtiene de query params o usa el valor por defecto del environment
   rut: string = environment.clienteId;
   private rutProporcionadoExplicitamente = false;
@@ -79,13 +95,13 @@ export class MisComprasComponent implements OnInit {
     const qpPerPage = Number(qp.perPage);
     if (!isNaN(qpPage) && qpPage > 0) { this.page = qpPage; }
     if (!isNaN(qpPerPage) && qpPerPage > 0) { this.perPage = qpPerPage; }
-    
+
     // Leer el RUT del cliente desde query params
     if (qp.rut && typeof qp.rut === 'string' && qp.rut.trim()) {
       this.rut = qp.rut.trim();
       this.rutProporcionadoExplicitamente = true;
     }
-    
+
     // Si hay un término de búsqueda en la URL, ejecutar la búsqueda
     if (qp.buscar && typeof qp.buscar === 'string' && qp.buscar.trim()) {
       this.searchTerm = qp.buscar.trim();
@@ -103,7 +119,7 @@ export class MisComprasComponent implements OnInit {
     this.misComprasService.getCompras(this.rut, this.page, this.perPage).subscribe({
       next: (resp: MisComprasResponseDto) => {
         const hasData = !!resp.compras && resp.compras.length > 0;
-        
+
         // Si no hay datos y el RUT fue proporcionado explícitamente, considerar que el cliente no existe
         if (!hasData && this.rutProporcionadoExplicitamente) {
           this.clienteNoEncontrado = true;
@@ -130,11 +146,11 @@ export class MisComprasComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('[MisComprasComponent] Error API', err);
-        
+
         // Si el error es 404 o 400 y el RUT fue proporcionado explícitamente, considerar cliente no encontrado
         const isHttpError = err instanceof HttpErrorResponse;
         const isNotFound = isHttpError && (err.status === 404 || err.status === 400);
-        
+
         if (isNotFound && this.rutProporcionadoExplicitamente) {
           this.clienteNoEncontrado = true;
           this.error = false;
@@ -280,7 +296,7 @@ export class MisComprasComponent implements OnInit {
 
   private readonly canonicalPasos = [
     'Pedido Ingresado',
-    'Pedido pagado',
+    'Pedido Aprobado',
     'Preparacion de Pedido',
     'Pendiente de Envío',
     'Pedido en Ruta',
@@ -302,9 +318,56 @@ export class MisComprasComponent implements OnInit {
     return this.estadoNormalized(estado) === 'activo';
   }
 
-  private isCompletedEstado(estado: string | undefined): boolean {
+  private isCompletedEstado(estado: string | undefined, indProcesado?: number | null): boolean {
+    // Priorizar indProcesado si está disponible
+    if (indProcesado !== undefined && indProcesado !== null) {
+      return indProcesado === 1; // 1 = completado
+    }
+    // Fallback al estado anterior para compatibilidad
     const norm = this.estadoNormalized(estado);
     return norm === 'activo' || norm === 'finalizado' || norm === 'completado' || norm === 'entregado';
+  }
+
+  private isInProgressEstado(indProcesado?: number | null): boolean {
+    return indProcesado === 0; // 0 = en progreso
+  }
+
+  private isPendingEstado(indProcesado?: number | null): boolean {
+    return indProcesado === null || indProcesado === undefined;
+  }
+
+  private computeTitleColor(indProcesado?: number | null, estado?: string): string {
+    if (indProcesado === 1) {
+      return '#4d4f57'; // gris oscuro para completado
+    } else if (indProcesado === 0) {
+      return '#00aa00'; // verde para en progreso (opcional, puede usar #4d4f57)
+    }
+    return '#575962'; // gris medio para pendiente
+  }
+
+  private computeIsBold(indProcesado?: number | null, estado?: string): boolean {
+    if (indProcesado === 1 || indProcesado === 0) {
+      return true; // Negrita para completado o en progreso
+    }
+    return false; // No negrita para pendiente
+  }
+
+  private computeIconFromEstado(estado: string | undefined, indProcesado?: number | null): string {
+    // Priorizar indProcesado si está disponible
+    if (indProcesado !== undefined && indProcesado !== null) {
+      if (indProcesado === 1) {
+        return this.timelineCompleteIcon; // Completado
+      } else if (indProcesado === 0) {
+        return this.timelineCompleteIcon; // En progreso (usar mismo ícono o timeline_in_progress_icon.svg si existe)
+      } else {
+        return 'pending'; // Pendiente
+      }
+    }
+    // Fallback al estado anterior para compatibilidad
+    const e = (estado || '').toLowerCase();
+    if (!e) return 'pending';
+    const doneStates = ['activo', 'finalizado', 'completado', 'entregado'];
+    return doneStates.some(ds => e.indexOf(ds) >= 0) ? this.timelineCompleteIcon : 'pending';
   }
 
   private sortTrazabilidad(entries: Trazabilidad[]): Trazabilidad[] {
@@ -339,46 +402,163 @@ export class MisComprasComponent implements OnInit {
 
   private buildCanonicalSnapshots(compra: Compra): StepSnapshot[] {
     const entries = this.sortTrazabilidad(Array.isArray(compra?.trazabilidad) ? [...compra.trazabilidad] : []);
-    return this.canonicalPasos.map((label) => {
+    const snapshots = this.canonicalPasos.map((label) => {
       const canonicalKey = this.normalize(label);
       const match = this.findCanonicalMatch(entries, canonicalKey);
       if (match) {
-        const labelSource = (match.etapa || match.glosa || label).trim();
+        // Siempre usar el label canónico para mantener consistencia
+        const indProcesado = match.indProcesado;
+
+        // Si no hay indProcesado ni estado válido, el paso es pendiente
+        const hasValidState = indProcesado !== undefined && indProcesado !== null;
+        const hasEstado = match.estado && match.estado.trim() && this.isCompletedEstado(match.estado, undefined);
+
+        // Preferir campos calculados del backend si están disponibles
+        let fecha: string | undefined = undefined;
+        let isCompleted = false;
+        let isInProgress = false;
+
+        if (match.date !== undefined) {
+          // Usar fecha calculada del backend (puede ser null)
+          fecha = match.date !== null ? match.date : undefined;
+        } else {
+          // Fallback: calcular fecha manualmente
+          fecha = (indProcesado !== null && indProcesado !== undefined && match.fechaRegistro && match.fechaRegistro.trim())
+            ? match.fechaRegistro
+            : undefined;
+        }
+
+        // Calcular ícono: SIEMPRE usar el del backend si está disponible (el backend siempre envía icon)
+        // El backend envía URLs como: https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg
+        // IMPORTANTE: El backend SIEMPRE envía el campo icon, incluso para etapas pendientes
+        let icon: string;
+        if (match.icon && typeof match.icon === 'string' && match.icon.trim() && match.icon.trim() !== 'null') {
+          // El backend siempre envía una URL de ícono, usarla directamente
+          icon = match.icon.trim();
+        } else if (hasValidState || hasEstado) {
+          // Fallback: calcular manualmente solo si el backend no envió icon
+          icon = this.computeIconFromEstado(match.estado, indProcesado);
+        } else {
+          // Sin estado válido ni icon del backend: usar círculo gris (pending)
+          icon = 'pending';
+        }
+
+        // Determinar estado completado y en progreso basado en indProcesado (mutuamente excluyentes)
+        // IMPORTANTE: Si indProcesado es null/undefined, el paso SIEMPRE es pendiente
+        // indProcesado = 0 → en progreso
+        // indProcesado = 1 → completado  
+        // indProcesado = null/undefined → pendiente (IGNORA el campo 'estado')
+        if (indProcesado === 1) {
+          isCompleted = true;
+          isInProgress = false;
+        } else if (indProcesado === 0) {
+          isCompleted = false;
+          isInProgress = true;
+        } else {
+          // indProcesado es null o undefined → paso pendiente
+          isCompleted = false;
+          isInProgress = false;
+        }
+
+        // Preferir campos calculados del backend para color y negrita
+        let color: string;
+        let isBold: boolean;
+
+        if (match.title) {
+          color = match.title.color || this.computeTitleColor(indProcesado, match.estado);
+          isBold = match.title.isBold !== undefined ? match.title.isBold : this.computeIsBold(indProcesado, match.estado);
+        } else {
+          color = this.computeTitleColor(indProcesado, match.estado);
+          isBold = this.computeIsBold(indProcesado, match.estado);
+        }
+
         return {
-          label: labelSource,
+          label: label, // Usar siempre el label canónico
           estado: match.estado || '',
-          fecha: match.fechaRegistro,
-          observacion: match.observacion,
-          isActive: this.isActiveEstado(match.estado),
-          isCompleted: this.isCompletedEstado(match.estado)
+          fecha: fecha,
+          observacion: match.description !== undefined ? match.description : match.observacion,
+          isActive: isInProgress || this.isActiveEstado(match.estado),
+          isCompleted: isCompleted, // true solo si está completado (indProcesado === 1)
+          isInProgress: isInProgress, // true si está en progreso (indProcesado === 0)
+          icon: icon, // URL del ícono o 'pending'
+          color: color,
+          isBold: isBold
         };
       }
       return {
         label,
         estado: 'pendiente',
         isActive: false,
-        isCompleted: false
+        isCompleted: false,
+        isInProgress: false,
+        icon: 'pending', // Siempre mostrar ícono pendiente (círculo gris)
+        color: '#575962', // gris medio para pendiente
+        isBold: false
       };
     });
+
+    // Segunda pasada: calcular hasPendingAfter
+    // hasPendingAfter: Un paso completado tiene pasos pendientes después si:
+    // 1. Está completado (no en progreso)
+    // 2. El siguiente paso inmediato es pendiente (no completado ni en progreso)
+    const snapshotsWithPendingAfter = snapshots.map((snapshot, index) => {
+      const nextSnapshot = snapshots[index + 1];
+
+      const hasPendingAfter = snapshot.isCompleted && !snapshot.isInProgress &&
+        nextSnapshot &&
+        !nextSnapshot.isCompleted &&
+        !nextSnapshot.isInProgress;
+
+      return {
+        ...snapshot,
+        hasPendingAfter
+      };
+    });
+
+    // Tercera pasada: calcular hasPendingFrom iterativamente
+    // hasPendingFrom: Un paso pendiente viene después de un completado/en progreso si:
+    // 1. No está completado ni en progreso (es pendiente)
+    // 2. El paso anterior está completado, en progreso, O es pendiente con hasPendingFrom
+    //    (esto extiende las líneas verdes a TODOS los pendientes consecutivos)
+    const finalSnapshots: StepSnapshot[] = [];
+    for (let i = 0; i < snapshotsWithPendingAfter.length; i++) {
+      const snapshot = snapshotsWithPendingAfter[i];
+      const prevSnapshot = i > 0 ? finalSnapshots[i - 1] : undefined;
+
+      // Calcular hasPendingFrom con logging
+      const isPending = !snapshot.isCompleted && !snapshot.isInProgress;
+      const prevIsCompleted = prevSnapshot?.isCompleted === true;
+      const prevIsInProgress = prevSnapshot?.isInProgress === true;
+      const prevHasPendingFrom = prevSnapshot?.hasPendingFrom === true;
+
+      const hasPendingFrom = isPending && (prevIsCompleted || prevIsInProgress || prevHasPendingFrom);
+
+      finalSnapshots.push({
+        ...snapshot,
+        hasPendingFrom
+      });
+    }
+
+    return finalSnapshots;
   }
 
   private findCanonicalMatch(entries: Trazabilidad[], canonicalKey: string): Trazabilidad | undefined {
     // Primero intentar match directo
     let match = entries.find(t => this.matchesCanonicalEntry(t, canonicalKey));
     if (match) return match;
-    
+
     // Si no hay match directo, buscar por aliases
-    // "Pedido Aprobado" debe mapearse a "Pedido pagado"
-    if (canonicalKey === this.normalize('Pedido pagado')) {
-      const aprobadoKey = this.normalize('Pedido Aprobado');
+    // "Pedido pagado" debe mapearse a "Pedido Aprobado"
+    if (canonicalKey === this.normalize('Pedido Aprobado')) {
+      const pagadoKey = this.normalize('Pedido pagado');
       match = entries.find(t => {
         const etapaKey = this.normalize(t.etapa || '');
         const glosaKey = this.normalize(t.glosa || '');
-        return etapaKey === aprobadoKey || glosaKey === aprobadoKey;
+        return etapaKey === pagadoKey || glosaKey === pagadoKey;
       });
       if (match) return match;
     }
-    
+
     // "Disponible para retiro" debe mapearse a "Pendiente de Envío"
     if (canonicalKey === this.normalize('Pendiente de Envío')) {
       const retiroKey = this.normalize('Disponible para retiro');
@@ -388,7 +568,7 @@ export class MisComprasComponent implements OnInit {
         return etapaKey === retiroKey || glosaKey === retiroKey;
       });
     }
-    
+
     return match;
   }
 
@@ -407,11 +587,62 @@ export class MisComprasComponent implements OnInit {
       const match = this.findCanonicalMatch(entries, canonicalKey);
       const hasMatch = !!match;
       const etapaLabel = (match?.etapa || match?.glosa || label).trim();
+
+      // Preferir campos calculados del backend si están disponibles
+      let icon = 'pending';
+      let color = '#575962'; // gris medio para pendiente
+      let isBold = false;
+      let fecha: string | undefined = undefined;
+
+      if (hasMatch && match) {
+        const indProcesado = match.indProcesado;
+
+        // Usar campos calculados del backend si están disponibles
+        if (match.title && match.icon) {
+          icon = match.icon;
+          color = match.title.color || '#575962';
+          isBold = match.title.isBold !== undefined ? match.title.isBold : false;
+        } else {
+          // Fallback: calcular manualmente basado en indProcesado
+          if (indProcesado === 1) {
+            // Completado
+            icon = this.timelineCompleteIcon;
+            color = '#4d4f57'; // gris oscuro
+            isBold = true;
+          } else if (indProcesado === 0) {
+            // En progreso
+            icon = this.timelineCompleteIcon; // o timeline_in_progress_icon.svg si existe
+            color = '#00aa00'; // verde (opcional, puede usar #4d4f57)
+            isBold = true;
+          } else {
+            // Pendiente o fallback al estado anterior
+            if (this.isCompletedEstado(match.estado, indProcesado)) {
+              icon = this.timelineCompleteIcon;
+              color = '#4d4f57';
+              isBold = true;
+            }
+          }
+        }
+
+        // Usar fecha calculada del backend si está disponible
+        if (match.date !== undefined) {
+          fecha = match.date !== null ? match.date : undefined;
+        } else {
+          // Fallback: calcular fecha manualmente
+          const indProcesado = match.indProcesado;
+          fecha = (indProcesado !== null && match.fechaRegistro && match.fechaRegistro.trim())
+            ? match.fechaRegistro
+            : undefined;
+        }
+      }
+
       return {
-        title: { text: etapaLabel, color: '#4d4f57', isBold: true },
-        description: hasMatch ? (match?.observacion || '') : '',
-        date: hasMatch ? match?.fechaRegistro : undefined,
-        icon: hasMatch && this.isCompletedEstado(match?.estado) ? this.timelineCompleteIcon : 'pending',
+        title: { text: label, color: color, isBold: isBold }, // Usar siempre el label canónico
+        description: hasMatch && match
+          ? (match.description !== undefined ? match.description : (match.observacion || ''))
+          : '',
+        date: fecha,
+        icon: icon,
         canonicalKey,
         machinable: null
       };
@@ -450,7 +681,7 @@ export class MisComprasComponent implements OnInit {
   buscar(): void {
     const term = (this.searchTerm || '').trim();
     console.log('[MisComprasComponent] buscar() llamado con término:', term, 'RUT:', this.rut);
-    
+
     if (!term) {
       // Si no hay término de búsqueda, volver a cargar todas las compras
       this.isSearching = false;
@@ -472,17 +703,17 @@ export class MisComprasComponent implements OnInit {
       this.fetchComprasReal();
       return;
     }
-    
+
     // Asegurar que tenemos un RUT válido antes de buscar
     const rutToUse = this.rut || environment.clienteId;
     console.log('[MisComprasComponent] Llamando a buscarDocumento con:', { rut: rutToUse, term, page: 1, perPage: this.perPage });
-    
+
     // Buscar documento específico en la API
     this.isSearching = true;
     this.searchPressed = true;
     this.loading = true;
     this.page = 1;
-    
+
     this.misComprasService.buscarDocumento(rutToUse, term, 1, this.perPage).subscribe({
       next: (resp: MisComprasResponseDto) => {
         console.log('[MisComprasComponent] Respuesta de buscarDocumento:', resp);
@@ -500,7 +731,7 @@ export class MisComprasComponent implements OnInit {
         if (!hasData) {
           this.searchPressed = true;
         }
-        
+
         // Actualizar URL con el término de búsqueda y la página
         this.router.navigate([], {
           relativeTo: this.route,
@@ -550,7 +781,7 @@ export class MisComprasComponent implements OnInit {
     this.isSearching = false;
     this.searchPressed = false;
     this.page = 1;
-    
+
     // Actualizar URL eliminando el parámetro 'buscar'
     const currentParams = this.route.snapshot.queryParams;
     const newParams: any = { page: 1, perPage: this.perPage, rut: this.rut };
@@ -560,12 +791,12 @@ export class MisComprasComponent implements OnInit {
         newParams[key] = currentParams[key];
       }
     });
-    
+
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: newParams
     });
-    
+
     // Cargar todos los documentos
     this.fetchComprasReal();
   }
@@ -692,7 +923,7 @@ export class MisComprasComponent implements OnInit {
   getTipoEntregaLabel(compra: Compra): string {
     if (!compra || !compra.tipoEntrega) return '';
     const tipo = (compra.tipoEntrega || '').trim();
-    
+
     // Normalizar variantes comunes
     const tipoLower = tipo.toLowerCase();
     if (tipoLower.includes('retiro') || tipoLower.includes('tienda')) {
@@ -701,7 +932,7 @@ export class MisComprasComponent implements OnInit {
     if (tipoLower.includes('domicilio') || tipoLower.includes('entrega') || tipoLower.includes('despacho')) {
       return 'Despacho a domicilio';
     }
-    
+
     // Si no coincide con ningún patrón, devolver el original
     return tipo;
   }
@@ -738,7 +969,7 @@ export class MisComprasComponent implements OnInit {
   goToPage(p: number): void {
     if (p >= 1 && p <= this.totalPages) {
       this.page = p;
-      
+
       // Si estamos en modo búsqueda, buscar en la página correspondiente
       if (this.isSearching && this.searchTerm.trim()) {
         const term = this.searchTerm.trim();
@@ -752,7 +983,7 @@ export class MisComprasComponent implements OnInit {
             this.totalPages = resp.totalPages || 1;
             this.error = false;
             this.loading = false;
-            
+
             // Actualizar URL con el término de búsqueda y la página
             this.router.navigate([], {
               relativeTo: this.route,

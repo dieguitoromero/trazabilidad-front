@@ -4,16 +4,11 @@ $stepper-gray: #c5ced8;
 
 :host {
     .tracking-wrapper {
-        padding: 24px 16px 0;
+        padding: 20px 16px 32px;
         max-width: 980px;
         margin: 0 auto;
     }
 
-    .box-container {
-        max-width: 980px;
-        margin: 0 auto;
-        padding: 0 16px;
-    }
 
     .tracking-title {
         color: #0a3d85;
@@ -128,11 +123,13 @@ $stepper-gray: #c5ced8;
     }
 
     .box-container {
-        width: 100%;
-        margin: 16px 0 0 0;
+        // Ajustar max-width para igualar el ancho efectivo con mis-compras
+        // En mis-compras: wrapper tiene max-width 980px con padding 16px cada lado = 948px disponible
+        // Como box-container está fuera del wrapper, necesita max-width de 948px para igualar
+        max-width: 948px;
+        margin: 16px auto 8px auto;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
         padding: 20px 24px;
-        margin-bottom: 8px;
         background: #fff;
         border-radius: 8px;
 
@@ -296,6 +293,12 @@ $stepper-gray: #c5ced8;
             }
 
             .step {
+                // Ocultar pseudo-elementos - usamos step-separator en su lugar
+                &::before,
+                &::after {
+                    display: none !important;
+                }
+                
                 .icon {
                     width: 28px;
                     height: 28px;
@@ -311,34 +314,33 @@ $stepper-gray: #c5ced8;
                     border-radius: 999px;
                     overflow: hidden;
 
-                    &.beginning {
+                    // No crear pseudo-elementos - usamos solo el elemento div
+                    &::before,
+                    &::after {
+                        display: none !important;
+                    }
+
+                    &.beginning:not(.green-line) {
                         border-radius: 999px 0 0 999px;
                         background: linear-gradient(90deg, rgba(197, 206, 216, 0) 0%, rgba(197, 206, 216, 0.3) 20%, rgba(197, 206, 216, 1) 50%);
                     }
 
-                    &.end {
+                    &.end:not(.green-line) {
                         border-radius: 0 999px 999px 0;
                         background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
                     }
-
-                    &::after {
-                        content: '';
-                        position: absolute;
-                        inset: 0;
-                        background: transparent;
+                    
+                    // Cuando es green-line, eliminar cualquier background
+                    &.green-line {
+                        background-color: transparent !important;
+                        background: none !important;
+                        overflow: visible !important;
                     }
                 }
 
                 &.in-progress {
                     .step-separator {
                         background-color: transparent;
-
-                        &::after {
-                            background-image: radial-gradient(circle, $stepper-green 40%, transparent 42%);
-                            background-size: 14px 6px;
-                            background-repeat: repeat-x;
-                            background-position: center;
-                        }
                     }
 
                     &.last:not(.completed) {
@@ -356,7 +358,7 @@ $stepper-gray: #c5ced8;
                 }
 
                 &.completed {
-                    .step-separator {
+                    .step-separator:not(.green-line) {
                         background-color: $stepper-blue;
 
                         &.beginning {
@@ -366,38 +368,23 @@ $stepper-gray: #c5ced8;
                         &.end {
                             background: linear-gradient(90deg, rgba(11, 76, 143, 1) 50%, rgba(11, 76, 143, 0.3) 80%, rgba(11, 76, 143, 0) 100%);
                         }
-
-                        &::after {
-                            background-image: none;
-                        }
                     }
 
                     &.in-progress {
                         .step-separator {
-                            &.from {
+                            &.from:not(.green-line) {
                                 background-color: $stepper-blue !important;
                                 border: 0;
                                 margin: 0 auto;
-
-                                &::after {
-                                    background-image: none;
-                                }
                             }
                         }
 
                         &.last {
                             .step-separator {
-                                &.to:not(.end) {
+                                &.to:not(.end):not(.green-line) {
                                     background-color: transparent !important;
                                     border-radius: 0;
                                     margin: 0 2px;
-
-                                    &::after {
-                                        background-image: radial-gradient(circle, $stepper-green 40%, transparent 42%);
-                                        background-size: 14px 6px;
-                                        background-repeat: repeat-x;
-                                        background-position: center;
-                                    }
                                 }
                             }
                         }
@@ -409,29 +396,28 @@ $stepper-gray: #c5ced8;
                     .step-separator {
                         &.to {
                             background-color: $stepper-gray;
+                            
+                            // Gradiente gris para el último paso pendiente
+                            &.end:not(.green-line) {
+                                background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
+                            }
 
                             &::after {
                                 background-image: none;
                             }
                         }
                     }
+                    
                 }
-
-                // Línea punteada verde cuando el paso completado va seguido de uno pendiente
-                // Esta regla debe tener máxima especificidad para sobrescribir .last y .completed
-                &.completed.last:not(.in-progress) {
-                    .step-separator.to:not(.end) {
-                        background-color: transparent !important;
-                        background-image: none !important;
-                        
-                        &::after {
-                            content: '' !important;
-                            background-image: radial-gradient(circle, $stepper-green 40%, transparent 42%) !important;
-                            background-size: 14px 6px !important;
-                            background-repeat: repeat-x !important;
-                            background-position: center !important;
-                        }
-                    }
+                
+                // Gradiente azul para el último paso completado (sin green-line)
+                &.last.completed:not(.in-progress) .step-separator.to.end:not(.green-line) {
+                    background: linear-gradient(90deg, rgba(11, 76, 143, 1) 50%, rgba(11, 76, 143, 0.3) 80%, rgba(11, 76, 143, 0) 100%) !important;
+                }
+                
+                // Asegurar que el gradiente gris tenga suficiente especificidad
+                &.last:not(.completed) .step-separator.to.end:not(.green-line) {
+                    background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%) !important;
                 }
             }
         }
@@ -895,4 +881,43 @@ $stepper-gray: #c5ced8;
     .pedido-summary-card .sku-inline {
         font-size: 11px;
     }
+}
+// Estilos para l�neas verdes punteadas (pendientes despu�s de completados)
+// ============================================================================
+// REGLAS PARA LÍNEAS VERDES PUNTEADAS (consistentes con mis-compras)
+// ============================================================================
+.step-separator.green-line {
+    // Línea punteada verde con espaciado mejorado
+    // Usar 6px en lugar de 4px para que los puntos sean más grandes y espaciados
+    border-top: 3px dotted #00aa00 !important;
+    margin-right: 3px;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    background-color: transparent !important;
+    background: none !important;
+    background-image: none !important;
+    height: 0 !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
+    z-index: 5 !important;
+    
+    // Los gradientes no deben aplicarse a líneas verdes
+    &.beginning,
+    &.end {
+        background: none !important;
+        background-image: none !important;
+        border-radius: 0 !important;
+    }
+}
+
+// REGLA FINAL: Asegurar que NO haya ningún background en green-line, incluso de reglas más específicas
+.stepper-view-container .step .step-separator.green-line,
+.stepper-view-container .step-container .step .step-separator.green-line,
+.stepper-view-container .step.completed .step-separator.green-line,
+.stepper-view-container .step.in-progress .step-separator.green-line,
+.stepper-view-container .step.last .step-separator.green-line {
+    background-color: transparent !important;
+    background: none !important;
+    background-image: none !important;
 }

@@ -1,0 +1,39 @@
+// ============================================================================
+// STEP SEPARATORS - Lineas entre pasos (usando elementos div)
+// ============================================================================
+.step-separator {
+    position: absolute;
+    height: 2px;
+    background-color: $stepper-gray;
+    top: 14px;
+    z-index: 1;
+
+    &.from {
+        left: 0;
+        right: 50%;
+    }
+
+    &.to {
+        left: 50%;
+        right: 0;
+    }
+
+    // Linea verde punteada
+    &.green-line {
+        border-top: 4px dotted #00aa00 !important;
+        background-color: transparent !important;
+        background: none !important;
+        height: 0 !important;
+        z-index: 5 !important;
+    }
+}
+
+// Paso completado: separadores azules
+.step.completed .step-separator:not(.green-line) {
+    background-color: $stepper-blue;
+}
+
+// Paso in-progress: from azul
+.step.in-progress .step-separator.from:not(.green-line) {
+    background-color: $stepper-blue;
+}

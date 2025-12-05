@@ -358,15 +358,26 @@ $stepper-gray: #c5ced8;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10; /* Aumentado para asegurar que esté por encima de las líneas */
+  z-index: 10;
+  /* Aumentado para asegurar que esté por encima de las líneas */
 }
 
 .step .icon.ok {
   width: 28px;
   height: 28px;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   z-index: 2;
+}
+
+// Asegurar que las imágenes dentro de los iconos del stepper tengan 28px para igualar con Detalle de Documento
+.step .icon-wrapper img.icon,
+.step .icon-wrapper .icon {
+  width: 28px !important;
+  height: 28px !important;
+  display: block !important;
 }
 
 .step .icon.pending {
@@ -387,6 +398,83 @@ $stepper-gray: #c5ced8;
 .step.active .label {
   color: #2b3e63;
   font-weight: 600;
+}
+
+// ============================================================================
+// STEP SEPARATORS - Lineas entre pasos (usando elementos div)
+// ============================================================================
+.step-separator {
+    position: absolute;
+    height: 2px;
+    background-color: $stepper-gray;
+    top: 14px;
+    z-index: 1;
+
+    &.from {
+        left: 0;
+        right: 50%;
+    }
+
+    &.to {
+        left: 50%;
+        right: 0;
+    }
+
+    // Gradiente a la izquierda del primer paso (Pedido Ingresado)
+    &.beginning {
+        border-radius: 999px 0 0 999px;
+    }
+
+    // Gradiente a la derecha del último paso (Pedido Entregado)
+    &.end {
+        border-radius: 0 999px 999px 0;
+    }
+
+    // Linea verde punteada
+    &.green-line {
+        border-top: 3px dotted #00aa00 !important;
+        margin-right: 3px;
+        background-color: transparent !important;
+        background: none !important;
+        height: 0 !important;
+        z-index: 5 !important;
+        
+        // Los gradientes no deben aplicarse a líneas verdes
+        &.beginning,
+        &.end {
+            background: none !important;
+            border-radius: 0 !important;
+        }
+    }
+}
+
+// Paso completado: separadores azules
+.step.completed .step-separator:not(.green-line) {
+    background-color: $stepper-blue;
+    
+    // Gradiente azul para el primer paso completado
+    &.beginning {
+        background: linear-gradient(90deg, rgba(0, 60, 105, 0) 0%, rgba(0, 60, 105, 0.3) 20%, rgba(0, 60, 105, 1) 50%);
+    }
+    
+    // Gradiente azul para el último paso completado
+    &.end {
+        background: linear-gradient(90deg, rgba(0, 60, 105, 1) 50%, rgba(0, 60, 105, 0.3) 80%, rgba(0, 60, 105, 0) 100%);
+    }
+}
+
+// Gradientes grises para pasos pendientes en el primer y último paso
+.step-separator.beginning:not(.green-line) {
+    background: linear-gradient(90deg, rgba(197, 206, 216, 0) 0%, rgba(197, 206, 216, 0.3) 20%, rgba(197, 206, 216, 1) 50%);
+}
+
+.step-separator.end:not(.green-line) {
+    background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
+}
+
+// Paso in-progress: from azul
+.step.in-progress .step-separator.from:not(.green-line) {
+    background-color: $stepper-blue;
 }
 
 /* Línea base - se dibuja desde el centro hacia la derecha */
@@ -440,17 +528,19 @@ $stepper-gray: #c5ced8;
 }
 
 /* Línea desde la izquierda es azul si el paso anterior estaba completado Y el actual también */
-.step.completed + .step.completed::after {
+.step.completed+.step.completed::after {
   background-color: $stepper-blue;
 }
 
 /* Si un paso no completado sigue a uno completado, la línea desde la izquierda debe ser azul hasta el centro, luego gris */
 /* Esta línea se extiende más allá del borde izquierdo para cubrir la línea azul del paso anterior */
-.step.completed + .step:not(.completed)::after {
-  left: -50%; /* Extender hacia atrás para cubrir la línea del paso anterior */
+.step.completed+.step:not(.completed):not(.in-progress):not(.has-pending-from)::after {
+  left: -50%;
+  /* Extender hacia atrás para cubrir la línea del paso anterior */
   right: 50%;
   background: linear-gradient(90deg, $stepper-blue 0%, $stepper-blue 50%, $stepper-gray 50%, $stepper-gray 100%);
-  z-index: 1; /* Asegurar que esté sobre la línea del paso anterior */
+  z-index: 1;
+  /* Asegurar que esté sobre la línea del paso anterior */
 }
 
 .step.completed:first-child::before {
@@ -463,10 +553,105 @@ $stepper-gray: #c5ced8;
   background: linear-gradient(90deg, rgba(0, 60, 105, 1) 50%, rgba(0, 60, 105, 0.3) 80%, rgba(0, 60, 105, 0) 100%);
 }
 
-/* Pasos activos */
+/* Pasos activos - REGLA GENERAL primero */
 .step.active::before,
 .step.active::after {
   background-color: $stepper-blue;
+}
+
+// ============================================================================
+// REGLAS PARA PASOS EN PROGRESO (más específicas)
+// ============================================================================
+
+/* Paso en progreso: azul desde la izquierda, verde punteada hacia la derecha */
+.step.in-progress {
+
+  // La línea desde la izquierda (::after) es azul (viene de completado)
+  &::after {
+    background-color: $stepper-blue !important;
+  }
+
+  // La línea hacia la derecha (::before) es verde punteada SOLO si hay pendientes después
+  &::before {
+    border-top: 4px dotted #00aa00 !important;
+    background-color: transparent !important;
+    background: none !important;
+    background-image: none !important;
+    border-radius: 0 !important;
+    height: 0 !important;
+    border-bottom: none !important;
+    z-index: 2 !important;
+  }
+}
+
+// ============================================================================
+// REGLAS PARA LÍNEAS VERDES PUNTEADAS (las MÁS específicas al final)
+// ============================================================================
+
+// Cuando un paso completado tiene pasos pendientes después
+.step.completed.has-pending-after::before {
+  border-top: 4px dotted #00aa00 !important;
+  background-color: transparent !important;
+  background: none !important;
+  background-image: none !important;
+  border-radius: 0 !important;
+  height: 0 !important;
+  border-bottom: none !important;
+  z-index: 2 !important;
+}
+
+// Cuando un paso pendiente viene después de completado/en progreso
+.step.has-pending-from {
+
+  // La línea desde la izquierda (::after) debe ser verde punteada
+  &::after {
+    border-top: 4px dotted #00aa00 !important;
+    background-color: transparent !important;
+    background: none !important;
+    background-image: none !important;
+    border-radius: 0 !important;
+    height: 0 !important;
+    border-bottom: none !important;
+    z-index: 2 !important;
+    left: 0 !important;
+    right: 50% !important;
+  }
+
+  // Si NO es el último paso, la línea hacia la derecha (::before) también debe ser verde
+  &:not(:last-child)::before {
+    border-top: 4px dotted #00aa00 !important;
+    background-color: transparent !important;
+    background: none !important;
+    background-image: none !important;
+    border-radius: 0 !important;
+    height: 0 !important;
+    border-bottom: none !important;
+    z-index: 2 !important;
+  }
+}
+
+// IMPORTANTE: Sobrescribir el gradiente que se aplica por defecto a pasos pendientes después de completados
+.step.completed+.step.has-pending-from::after {
+  left: 0 !important;
+  right: 50% !important;
+  background: none !important;
+  background-image: none !important;
+  border-top: 4px dotted #00aa00 !important;
+  background-color: transparent !important;
+  height: 0 !important;
+  z-index: 3 !important;
+}
+
+// Sobrescribir líneas entre dos pasos pendientes consecutivos
+.step.has-pending-from+.step.has-pending-from::after {
+  left: 0 !important;
+  right: 50% !important;
+  background: none !important;
+  background-image: none !important;
+  border-top: 4px dotted #00aa00 !important;
+  background-color: transparent !important;
+  height: 0 !important;
+  z-index: 3 !important;
 }
 
 /* remove legacy dot, use icon-wrapper */
@@ -857,4 +1042,9 @@ $stepper-gray: #c5ced8;
 
 .sku {
   white-space: nowrap;
+}
+// Ocultar pseudo-elementos - usamos step-separator en su lugar
+.step::before,
+.step::after {
+  display: none !important;
 }

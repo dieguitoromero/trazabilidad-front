@@ -1,6 +1,6 @@
 <div class="tracking-wrapper">
   <h2 class="tracking-title">Detalle de documento</h2>
-  
+
   <div class="tracking-back-row" *ngIf="invoice">
     <button class="back-badge" (click)="volver()">
       <span class="arrow">←</span>
@@ -25,7 +25,9 @@
         <div class="step-title order-1" [ngClass]="{'order-2': false, 'beginning': i <= 0, 'order-md-0': true}"
           [ngStyle]="{ 'color': step.title.color }">
           <p class="title" [matBadge]="numberOfItemsOnStatus(step.title, i)" matBadgeOverlap="false"
-            matBadgeColor="warn" [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0 || isDeliveredTitle(step.title?.text)">{{step.title.text}}</p>
+            matBadgeColor="warn"
+            [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0 || isDeliveredTitle(step.title?.text)">
+            {{step.title.text}}</p>
           <p class="sub-title d-block d-md-none" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</p>
           <span class="date d-block d-md-none">{{ step.date ? (step.date | date: 'dd-MM-yy') : '-' }}</span>
         </div>
@@ -33,7 +35,8 @@
         <div class="step d-block order-0"
           [ngClass]="{'order-1': false, 'beginning': i <= 0, 'd-md-flex order-md-1': true,'in-progress': isStepInProgress(step, i), 'completed': isStepCompleted(step), 'last': isLastStepCompleted(i)}">
           <div class="step-separator from align-self-center flex-grow-1" *ngIf="i > 0 || true"
-            [ngClass]="{ 'beginning': i <= 0, 'd-none d-md-block': (i == 0)}"></div>
+            [ngClass]="{ 'beginning': i <= 0, 'd-none d-md-block': (i == 0), 'green-line': hasPendingFrom(step, i) }">
+          </div>
           <div class="icon-wrapper">
             <ng-container *ngIf="step.icon !== 'pending'; else pendingIcon">
               <img class="icon" [src]="step.icon" alt="step icon" />
@@ -45,7 +48,7 @@
           </div>
           <div class="step-separator to align-self-center flex-grow-1"
             *ngIf="i < (displaySteps ? displaySteps.length - 1 : 0) || true"
-            [ngClass]="{ 'end': i >= (displaySteps ? displaySteps.length - 1 : 0), 'd-none d-md-block': i >= (displaySteps ? displaySteps.length - 1 : 0)}">
+            [ngClass]="{ 'end': i >= (displaySteps ? displaySteps.length - 1 : 0), 'd-none d-md-block': i >= (displaySteps ? displaySteps.length - 1 : 0), 'green-line': (hasPendingAfter(step, i) || hasPendingFrom(step, i)) && i < (displaySteps ? displaySteps.length - 1 : 0) }">
           </div>
         </div>
 

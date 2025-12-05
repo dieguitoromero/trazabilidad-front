@@ -4,14 +4,16 @@
   <div class="search-row" *ngIf="!clienteNoEncontrado">
     <input type="text" placeholder="Buscar por N° de pedido" [(ngModel)]="searchTerm" (keyup.enter)="buscar()"
       (input)="onInputChange()" />
-    <button type="button" class="search-btn" aria-label="Buscar" (click)="buscar(); $event.preventDefault(); $event.stopPropagation();">
+    <button type="button" class="search-btn" aria-label="Buscar"
+      (click)="buscar(); $event.preventDefault(); $event.stopPropagation();">
       🔍
     </button>
   </div>
 
   <div class="loading" *ngIf="loading">Cargando compras...</div>
-  <div class="error" *ngIf="!loading && error && !clienteNoEncontrado">No se pudo cargar desde el servicio, mostrando datos locales.</div>
-  
+  <div class="error" *ngIf="!loading && error && !clienteNoEncontrado">No se pudo cargar desde el servicio, mostrando
+    datos locales.</div>
+
   <!-- Vista cuando no se encuentra el cliente -->
   <div class="cliente-no-encontrado" *ngIf="!loading && clienteNoEncontrado">
     <div class="cliente-no-encontrado__icon">⚠</div>
@@ -23,7 +25,7 @@
       Por favor, verifica que el RUT sea correcto e intenta nuevamente.
     </p>
   </div>
-  
+
   <div class="empty" *ngIf="hasNoResults && !loading && !clienteNoEncontrado">
     <div class="info-icon">i</div>
     <div class="text">No se encontró documento</div>
@@ -52,8 +54,7 @@
 
       <div class="entrega-row" *ngIf="c.tipoEntrega">
         <span class="icon" *ngIf="c.tipoEntrega">
-          <img [src]="isRetiroEnTienda(c) ? 'assets/tienda-icon.svg' : 'assets/domicilio-icon.svg'"
-            alt="Entrega" />
+          <img [src]="isRetiroEnTienda(c) ? 'assets/tienda-icon.svg' : 'assets/domicilio-icon.svg'" alt="Entrega" />
         </span>
         <span class="entrega-text">
           {{ getTipoEntregaLabel(c) }}{{ c.direccionEntrega ? ': ' + c.direccionEntrega : '' }}
@@ -64,16 +65,25 @@
       <div class="hide-on-mobile">
         <div class="stepper">
           <div class="step" *ngFor="let step of stepperSnapshot(c); let i = index" [class.active]="step.isActive"
-            [class.completed]="step.isCompleted">
+            [class.completed]="step.isCompleted" [class.in-progress]="step.isInProgress"
+            [class.has-pending-after]="step.hasPendingAfter" [class.has-pending-from]="step.hasPendingFrom"
+            [class.last]="i === stepperSnapshot(c).length - 1">
+            <div class="step-separator from" *ngIf="i >= 0" [class.beginning]="i === 0"
+              [class.green-line]="step.hasPendingFrom"></div>
             <div class="icon-wrapper">
-              <ng-container *ngIf="step.isCompleted; else pendingIcon">
-                <img src="assets/timeline_complete_icon.svg" alt="ok" class="icon ok" />
+              <ng-container *ngIf="step.icon && step.icon !== 'pending' && step.icon.trim() !== ''; else pendingIcon">
+                <img class="icon" [src]="step.icon" alt="step icon" />
               </ng-container>
               <ng-template #pendingIcon>
                 <div class="icon pending"></div>
               </ng-template>
             </div>
-            <div class="label">{{ step.label }}</div>
+            <div class="step-separator to" *ngIf="i < stepperSnapshot(c).length - 1 || step.isInProgress || i === stepperSnapshot(c).length - 1"
+              [class.end]="i === stepperSnapshot(c).length - 1"
+              [class.green-line]="(step.hasPendingAfter || step.isInProgress || step.hasPendingFrom) && i !== stepperSnapshot(c).length - 1"></div>
+            <div class="label"
+              [ngStyle]="{ 'color': step.color || '#667085', 'font-weight': step.isBold ? '600' : 'normal' }">{{
+              step.label }}</div>
           </div>
         </div>
       </div>
@@ -115,11 +125,11 @@
     <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
       ‹
     </button>
-    <button class="page-box" *ngFor="let p of getVisiblePages()" [class.active]="p === page" 
+    <button class="page-box" *ngFor="let p of getVisiblePages()" [class.active]="p === page"
       [class.ellipsis]="p === '...'" [disabled]="p === '...'" (click)="handlePageClick(p)">
       {{ p }}
     </button>
-    <button class="pagination-arrow" [class.disabled]="page === totalPages" (click)="goToPage(page + 1)" 
+    <button class="pagination-arrow" [class.disabled]="page === totalPages" (click)="goToPage(page + 1)"
       [disabled]="page === totalPages">
       ›
     </button>
@@ -134,7 +144,7 @@
       [class.neighbor]="isPagerNeighbor(p)" (click)="goToPage(p)">
       <span>{{ p }}</span>
     </div>
-    <button class="pagination-arrow" [class.disabled]="page === totalPages" (click)="goToPage(page + 1)" 
+    <button class="pagination-arrow" [class.disabled]="page === totalPages" (click)="goToPage(page + 1)"
       [disabled]="page === totalPages">
       ›
     </button>
