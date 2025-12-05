@@ -1,12 +1,12 @@
 <div class="tracking-wrapper">
-  <h2 class="tracking-title">Detalle de documento</h2>
-
   <div class="tracking-back-row" *ngIf="invoice">
     <button class="back-badge" (click)="volver()">
       <span class="arrow">←</span>
       <span class="text">Volver</span>
     </button>
   </div>
+  
+  <h2 class="tracking-title">Detalle de documento</h2>
 
   <div class="document-header" *ngIf="invoice && getDocumentNumber()">
     <span class="document-label">{{ getDocumentType() }} N° : {{ getDocumentNumber() }}</span>
