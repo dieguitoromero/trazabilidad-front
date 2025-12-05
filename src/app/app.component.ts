@@ -15,8 +15,8 @@ export class AppComponent implements OnInit {
     loading = true;
 
     constructor(private loadingService: LoadingService,
-                private router: Router,
-                private misComprasService: MisComprasService) {
+        private router: Router,
+        private misComprasService: MisComprasService) {
 
     }
 
@@ -102,18 +102,18 @@ export class AppComponent implements OnInit {
 
     private buildHostBaseUrl(): string {
         // Construir la URL pública base a la que redirigir cuando no hay compras.
-        // Por defecto usar el host esperado '/trazabilidad-app' en el mismo origin si coincide,
+        // Por defecto usar el host esperado '/MisCompras-app' en el mismo origin si coincide,
         // o usar el origin que aparece en la URL objetivo indicada por el usuario.
         try {
             const origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
             // Si la app está servida en localhost, preferir la URL pública conocida
             if (origin.indexOf('localhost') >= 0 || origin.indexOf('127.0.0.1') >= 0) {
-                return 'https://soa-qa-iis.imperial.cl/trazabilidad-app';
+                return 'https://soa-qa-iis.imperial.cl/MisCompras-app';
             }
             // Si ya estamos en el host público, devolver la misma origin + path
-            return origin.replace(/\/$/, '') + '/trazabilidad-app';
+            return origin.replace(/\/$/, '') + '/MisCompras-app';
         } catch (e) {
-            return 'https://soa-qa-iis.imperial.cl/trazabilidad-app';
+            return 'https://soa-qa-iis.imperial.cl/MisCompras-app';
         }
     }
 

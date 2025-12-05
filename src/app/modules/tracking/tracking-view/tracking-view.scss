@@ -521,42 +521,186 @@ $stepper-gray: #c5ced8;
     }
 }
 
-// Mobile vertical alignment and continuous line
+// ============================================================================
+// Mobile vertical alignment - NUEVA IMPLEMENTACIÓN CON FLEXBOX
+// Las líneas salen del icono hacia arriba (from) y hacia abajo (to)
+// ============================================================================
 @media (max-width: 768px) {
     :host {
         .stepper-view-container.mobile-vertical {
             box-shadow: none;
-            padding: 4px 0 12px 0;
+            padding: 4px 16px 12px 16px;
             position: relative;
-
-            &:before {
-                content: '';
-                position: absolute;
-                top: 12px;
-                bottom: 12px;
-                left: 42px;
-                width: 2px;
-                background: #003c69;
-            }
-
+            display: flex;
+            flex-direction: column;
+            
             .step-container {
+                display: flex;
+                flex-direction: row;
+                align-items: stretch;
+                min-height: 80px;
+
+                // ========================================================================
+                // COLUMNA DEL ICONO Y LÍNEAS (step)
+                // Estructura flex-column: [from] [icono] [to]
+                // ========================================================================
+                .step {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    min-width: 50px;
+                    padding: 0 !important;
+                    position: relative;
+                    
+                    .icon-wrapper {
+                        position: relative;
+                        z-index: 10;
+                        flex-shrink: 0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        order: 1; // Icono en el medio
+                    }
+                    
+                    .icon {
+                        margin: 0 !important;
+                        width: 28px;
+                        height: 28px;
+                        flex-shrink: 0;
+                    }
+                    
+                    // ========================================================================
+                    // SEPARADORES VERTICALES - flex-grow para llenar el espacio
+                    // ========================================================================
+                    .step-separator {
+                        width: 2px;
+                        flex: 1 1 auto;
+                        min-height: 20px;
+                        background-color: $stepper-gray;
+                        margin: 0;
+                        position: relative;
+                        display: block !important;
+                        
+                        &.from {
+                            order: 0; // Arriba del icono
+                        }
+                        
+                        &.to {
+                            order: 2; // Abajo del icono
+                        }
+                        
+                        // Primer paso: difuminar hacia arriba
+                        &.beginning:not(.green-line) {
+                            background: linear-gradient(
+                                to bottom,
+                                rgba(197, 206, 216, 0) 0%,
+                                rgba(197, 206, 216, 0.3) 30%,
+                                rgba(197, 206, 216, 1) 100%
+                            );
+                        }
+                        
+                        // Último paso: difuminar hacia abajo
+                        &.end:not(.green-line) {
+                            background: linear-gradient(
+                                to bottom,
+                                rgba(197, 206, 216, 1) 0%,
+                                rgba(197, 206, 216, 0.3) 70%,
+                                rgba(197, 206, 216, 0) 100%
+                            );
+                        }
+                        
+                        // ========================================================================
+                        // LÍNEA VERDE PUNTEADA
+                        // ========================================================================
+                        &.green-line {
+                            background-color: transparent !important;
+                            background: none !important;
+                            border-left: 3px dotted #00aa00 !important;
+                            border-top: none !important;
+                            border-right: none !important;
+                            border-bottom: none !important;
+                            width: 0 !important;
+                            margin-left: 1px !important;
+                            
+                            &.beginning,
+                            &.end {
+                                background: none !important;
+                            }
+                        }
+                    }
+                    
+                    // ========================================================================
+                    // PASO COMPLETADO: líneas azules
+                    // ========================================================================
+                    &.completed {
+                        .step-separator:not(.green-line) {
+                            background-color: $stepper-blue;
+                        }
+                        
+                        .step-separator.from.beginning:not(.green-line) {
+                            background: linear-gradient(
+                                to bottom,
+                                rgba(11, 76, 143, 0) 0%,
+                                rgba(11, 76, 143, 0.3) 30%,
+                                rgba(11, 76, 143, 1) 100%
+                            ) !important;
+                        }
+                        
+                        &.last .step-separator.to.end:not(.green-line) {
+                            background: linear-gradient(
+                                to bottom,
+                                rgba(11, 76, 143, 1) 0%,
+                                rgba(11, 76, 143, 0.3) 70%,
+                                rgba(11, 76, 143, 0) 100%
+                            ) !important;
+                        }
+                    }
+                    
+                    // Paso en progreso: from azul
+                    &.completed.in-progress {
+                        .step-separator.from:not(.green-line) {
+                            background-color: $stepper-blue !important;
+                        }
+                    }
+                    
+                    // Último paso pendiente: gradiente gris
+                    &.last:not(.completed) {
+                        .step-separator.to.end:not(.green-line) {
+                            background: linear-gradient(
+                                to bottom,
+                                rgba(197, 206, 216, 1) 0%,
+                                rgba(197, 206, 216, 0.3) 70%,
+                                rgba(197, 206, 216, 0) 100%
+                            ) !important;
+                        }
+                    }
+                }
+
+                // ========================================================================
+                // COLUMNA DEL TEXTO (step-title)
+                // ========================================================================
                 .step-title {
                     text-align: left;
                     margin: 0;
-                    padding: 0;
+                    padding: 0 0 0 12px;
                     overflow-x: hidden;
-                    min-width: 160px;
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
 
                     .title {
                         color: #4d4f57;
                         font-weight: bold;
                         margin-bottom: 2px;
+                        font-size: 14px;
                     }
 
                     .sub-title {
                         font-size: 12px;
                         color: #606060;
                         margin-bottom: 2px;
+                        line-height: 1.25;
                     }
 
                     .date {
@@ -565,83 +709,6 @@ $stepper-gray: #c5ced8;
                         color: #959494;
                     }
                 }
-
-                .step {
-                    position: relative;
-                    display: flex;
-                    flex-direction: row;
-                    align-items: center;
-                    padding: 12px 0;
-
-                    .icon {
-                        margin-left: 24px;
-                        position: relative;
-                        z-index: 2;
-                    }
-
-                    &.in-progress {
-                        .step-separator {
-                            min-height: 45px;
-                        }
-
-                        .step-separator.to:not(.end),
-                        .step-separator.from {
-                            border-left: 4px dotted #00aa00;
-                            border-top: 0;
-                            margin: 2px auto;
-                        }
-                    }
-
-                    &.completed.in-progress {
-                        .step-separator.from {
-                            background-color: #003c69 !important;
-                            border: 0;
-                            margin: 0 auto;
-                        }
-
-                        &.last .step-separator.to:not(.end) {
-                            border-left: 4px dotted #00aa00;
-                            border-top: 0;
-                            margin: 2px auto;
-                        }
-                    }
-                }
-            }
-
-            .step-separator {
-                width: 2px;
-                min-height: 45px;
-                margin: -5px auto 0;
-                height: auto;
-            }
-
-            .step-container .step.beginning .step-separator.from {
-                margin-top: 0;
-            }
-
-            .step-container .step .step-separator {
-                display: none;
-            }
-
-            .step-container {
-                display: flex;
-                flex-direction: row;
-                align-items: stretch;
-            }
-
-            .step-container .step-title {
-                margin-left: 8px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
-
-            .step-container .step .icon {
-                margin-left: 24px;
-            }
-
-            .step-container .step-title .sub-title {
-                line-height: 1.25;
             }
 
             .product-count-badge {
@@ -658,6 +725,7 @@ $stepper-gray: #c5ced8;
                 text-align: center;
                 font-weight: 600;
                 box-shadow: 0 0 0 2px #fff;
+                z-index: 20;
             }
         }
     }

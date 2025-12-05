@@ -20,7 +20,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist/trazabilidad-app",
+            "outputPath": "dist/MisCompras-app",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
@@ -40,7 +40,7 @@
           },
           "configurations": {
             "production": {
-              "baseHref": "/trazabilidad-app/",
+              "baseHref": "/MisCompras-app/",
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
