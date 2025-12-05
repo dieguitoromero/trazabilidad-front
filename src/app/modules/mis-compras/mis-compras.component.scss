@@ -899,8 +899,12 @@ $stepper-gray: #c5ced8;
   transition: all .15s ease;
 
   &.active {
-    background: #344054;
+    background: #003c69;
     color: #fff;
+    
+    &:hover {
+      background: darken(#003c69, 10%);
+    }
   }
 
   &.ellipsis {
@@ -945,7 +949,7 @@ $stepper-gray: #c5ced8;
 }
 
 .mobile-condensed-pager .pager-node.active {
-  background: #d32f2f;
+  background: #003c69;
   color: #fff;
 }
 
