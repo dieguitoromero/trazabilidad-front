@@ -467,7 +467,21 @@ export class TrackingViewComponent implements OnInit {
     }
 
     public volver(): void {
-        this.router.navigate(['/mis-compras']);
+        const params = this.activeRoute.snapshot.queryParams || {};
+        // Intentar preservar el identificador de cliente (rut/clienteId) y la paginación de origen
+        const clienteIdToSend = this.clienteId || params.clienteId || null;
+        const query: any = {};
+
+        if (clienteIdToSend) {
+            query.clienteId = clienteIdToSend;
+            // MisCompras acepta rut o clienteId
+            query.rut = clienteIdToSend;
+        }
+        if (params.page) query.page = params.page;
+        if (params.perPage) query.perPage = params.perPage;
+        if (params.buscar) query.buscar = params.buscar;
+
+        this.router.navigate(['/mis-compras'], { queryParams: query });
     }
 
     ngOnDestroy(): void {
