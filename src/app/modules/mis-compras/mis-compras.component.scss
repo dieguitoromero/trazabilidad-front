@@ -26,9 +26,11 @@
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
+  justify-content: flex-start;
 
   input[type="text"] {
-    flex: 1;
+    flex: 0 0 320px;
+    max-width: 100%;
     padding: 10px 14px;
     border: 1px solid #d0d5dd;
     border-radius: 20px;
@@ -53,10 +55,24 @@
   }
 }
 
+@media (max-width: 640px) {
+  .search-row {
+    input[type="text"] {
+      flex: 1 1 100%;
+      width: 100%;
+    }
+  }
+}
+
 .cards {
   display: flex;
   flex-direction: column;
   gap: 0;
+
+  &.loading-state {
+    pointer-events: none;
+    // Opacidad removida durante búsqueda - solo aplicar durante carga inicial
+  }
 }
 
 .show-on-mobile {
@@ -363,21 +379,25 @@
 .entrega-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: #344054;
   margin: 8px 0 12px;
   font-size: 14px;
 }
 
-.icon {
+// Unificar dimensiones con Detalle de Documento (tracking) donde el ícono de entrega es grande
+.entrega-row .icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
 }
 
-.icon img {
-  width: 16px;
-  height: 16px;
+.entrega-row .icon img {
+  width: 46px;
+  height: 46px;
   display: block;
 }
 
@@ -482,7 +502,7 @@ $stepper-gray: #c5ced8;
         border-radius: 0 999px 999px 0;
     }
 
-    // Linea verde punteada
+    // Linea verde punteada (legacy)
     &.green-line {
         border-top: 3px dotted #00aa00 !important;
         margin-right: 3px;
@@ -715,6 +735,215 @@ $stepper-gray: #c5ced8;
   line-height: 1.2;
   font-weight: normal;
 }
+
+// =============================================================================
+// STEPPER VIEW CONTAINER - UNIFICADO con tracking-stepper-view
+// =============================================================================
+.stepper-view-container {
+  margin-top: 0;
+  position: relative;
+  margin-bottom: 0;
+  padding: 8px 0 16px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+
+  .step-container {
+    text-align: center;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .icon-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    // Badge de productos - IGUAL que tracking-stepper-view
+    .product-count-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #d32f2f;
+      color: #fff;
+      font-size: 10px;
+      line-height: 14px;
+      width: 14px;
+      height: 14px;
+      border-radius: 7px;
+      text-align: center;
+      font-weight: 600;
+      box-shadow: 0 0 0 1.5px #fff;
+      z-index: 15;
+    }
+
+    // Título - IGUAL que tracking-stepper-view (font-size: 13px)
+    .step-title {
+      margin: 8px 0 4px !important;
+      color: #2b3e63;
+      font-weight: 600 !important;
+      font-size: 13px !important; // IGUAL que tracking-stepper-view
+      text-align: center !important;
+
+      // Color verde cuando el paso está en progreso
+      &.in-progress {
+        color: #00aa00 !important;
+
+        p, p.title {
+          color: #00aa00 !important;
+        }
+      }
+
+      p, p.title {
+        white-space: nowrap !important;
+        text-overflow: ellipsis !important;
+        display: inline-block !important;
+        margin: 0 !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: inherit;
+
+        &.bold {
+          font-weight: 700 !important;
+        }
+      }
+    }
+
+    // Detalles - IGUAL que tracking-stepper-view
+    .step-details {
+      padding: 4px 8px 0;
+      text-align: center;
+
+      p {
+        padding: 0;
+        font-size: 11px;
+        color: #606060;
+        margin: 0 0 2px;
+      }
+
+      span {
+        font-weight: normal;
+        font-size: 11px;
+        color: #959494;
+      }
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+
+      // Icono - IGUAL que tracking-stepper-view (28px)
+      .icon {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .icon.pending {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        border-radius: 50%;
+        background: #e5e8ed;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: #9ca3af;
+        border: 1px solid #d1d5db;
+      }
+
+      // Separadores - IGUAL que tracking-stepper-view
+      .step-separator {
+        height: 2px;
+        background-color: #c5ced8;
+
+        &.beginning {
+          border-radius: 5px 0 0 5px;
+          background: linear-gradient(90deg, rgba(197, 206, 216, 0) 0%, rgba(197, 206, 216, 0.3) 20%, rgba(197, 206, 216, 1) 50%);
+        }
+
+        &.end {
+          border-radius: 0 5px 5px 0;
+          background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
+        }
+      }
+
+      // Paso solo en progreso (sin completed) - ambas líneas verde punteado
+      &.in-progress:not(.completed) {
+        .step-separator {
+          &.to:not(.end), &.from {
+            border-top: 4px dotted #00aa00;
+            background-color: transparent !important;
+            border-radius: 0;
+            margin: 0 2px;
+          }
+        }
+
+        &.last {
+          .step-separator {
+            &.to {
+              background-color: transparent;
+              border: 0;
+              margin: 0;
+            }
+          }
+        }
+      }
+
+      // Paso completado (incluye los que también están in-progress)
+      &.completed {
+        .step-separator {
+          background-color: #003c69;
+          border: 0; // Resetear border
+
+          &.beginning {
+            border-radius: 5px 0 0 5px;
+            background: linear-gradient(90deg, rgba(0, 60, 105, 0) 0%, rgba(0, 60, 105, 0.3) 20%, rgba(0, 60, 105, 1) 50%);
+          }
+
+          &.end {
+            border-radius: 0 5px 5px 0;
+            background: linear-gradient(90deg, rgba(0, 60, 105, 1) 50%, rgba(0, 60, 105, 0.3) 80%, rgba(0, 60, 105, 0) 100%);
+          }
+        }
+
+        // Cuando también está in-progress, la línea .to va hacia pasos pendientes (gris)
+        &.in-progress {
+          .step-separator {
+            &.from {
+              background-color: #003c69 !important;
+              border: 0;
+            }
+            &.to {
+              background-color: #c5ced8 !important; // Gris hacia pendientes
+              border: 0;
+            }
+          }
+        }
+      }
+
+      // Último paso completado - línea .to gris
+      &.last {
+        .step-separator {
+          &.to {
+            background-color: #c5ced8;
+          }
+        }
+      }
+    }
+  }
+}
+
 
 /* Responsive */
 @media (max-width: 640px) {
@@ -1015,6 +1244,50 @@ $stepper-gray: #c5ced8;
   }
 }
 
+// ============================================================================
+// RESPONSIVIDAD DEL STEPPER - Ocultar cuando el texto se superpone
+// ============================================================================
+
+// En pantallas medianas (tablets), reducir tamaño de texto
+@media (max-width: 900px) {
+  .stepper-view-container {
+    .step-container {
+      .step-title {
+        font-size: 11px !important;
+
+        p, p.title {
+          font-size: 11px !important;
+        }
+      }
+
+      .step-details {
+        p {
+          font-size: 10px !important;
+        }
+
+        span {
+          font-size: 10px !important;
+        }
+      }
+    }
+  }
+}
+
+// En pantallas pequeñas, ocultar el stepper completamente
+@media (max-width: 768px) {
+  .stepper-wrapper {
+    display: none !important;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .show-on-mobile {
+    display: flex !important;
+  }
+}
+
 /* Productos dentro de Mis Compras */
 .productos-wrapper {
   margin-top: 12px;
@@ -1104,3 +1377,4 @@ $stepper-gray: #c5ced8;
 .step::after {
   display: none !important;
 }
+

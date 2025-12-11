@@ -5,27 +5,13 @@
         .stepper-view-container {
             &.mobile-vertical {
                 box-shadow: none;
-                padding: 4px 0 12px 0;
-                position: relative;
-                
-                // Línea azul de fondo para pasos completados
-                &:before {
-                    content: '';
-                    position: absolute;
-                    top: 12px;
-                    bottom: 12px;
-                    left: 42px;
-                    width: 2px;
-                    background: #003c69;
-                    z-index: 0; // Detrás de todo
-                }
 
                 .step-container {
 
                     .step-title {
                         text-align: left;
-                        margin: 0; // se alinea mediante flex padre
-                        padding: 0;
+                        margin: 0 0 0 15px;
+                        padding: 31px 0 0 0;
                         overflow-x: hidden;
                         min-width: 160px;
 
@@ -56,25 +42,15 @@
                     }
 
                     .step {
-                        position: relative;
-                        display: flex;
-                        flex-direction: row;
-                        align-items: center;
-                        padding: 12px 0;
-                        .icon {
-                            margin-left: 24px; // espacio del borde + línea
-                            position: relative;
-                            z-index: 2;
+                        &.beginning {
+                            margin-top: 10px;
                         }
-                        // &.beginning {
-                        //     margin-top: 10px;
-                        // }
 
                         &.in-progress {
                             .step-separator {
                                 min-height: 45px;
 
-                                &.to:not(.end):not(.green-line), &.from:not(.green-line) {
+                                &.to:not(.end), &.from {
                                     border-left: 4px dotted #00aa00;
                                     border-top: 0;
                                     margin: 2px auto;
@@ -95,7 +71,7 @@
                         &.completed {
                             &.in-progress {
                                 .step-separator {
-                                    &.from:not(.green-line) {
+                                    &.from {
                                         background-color: #003c69 !important;
                                         border: 0;
                                         margin: 0 auto;
@@ -104,7 +80,7 @@
 
                                 &.last {
                                     .step-separator {
-                                        &.to:not(.end):not(.green-line) {
+                                        &.to:not(.end) {
                                             border-left: 4px dotted #00aa00;
                                             border-top: 0;
                                             margin:2px auto;
@@ -147,109 +123,6 @@
                     &.end {
                         border-radius: 0 0 5px 5px;
                     }
-                }
-
-                // Alinear la columna visual como en screenshot
-                .step-container .step.beginning .step-separator.from { margin-top: 0; }
-                
-                // ============================================================================
-                // SOPORTE PARA LÍNEAS VERDES PUNTEADAS EN MOBILE (patrón "Mis compras")
-                // ============================================================================
-                // Mostrar separadores cuando tienen clase green-line (pasos pendientes después de completados)
-                .step-container .step .step-separator:not(.green-line) { 
-                    display: none; 
-                }
-                
-                // Estilos específicos para líneas verdes punteadas en mobile (vertical)
-                .step-container .step .step-separator.green-line {
-                    display: block !important;
-                    position: absolute !important;
-                    left: 41px !important; // alineado con la línea principal
-                    top: 0 !important; // empezar desde arriba del step
-                    width: 2px !important;
-                    height: 100% !important;
-                    min-height: 45px !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    
-                    // Línea punteada vertical verde
-                    border-left: 2px dotted #00aa00 !important;
-                    border-top: none !important;
-                    border-right: none !important;
-                    border-bottom: none !important;
-                    
-                    // Eliminar cualquier background
-                    background: transparent !important;
-                    background-color: transparent !important;
-                    background-image: none !important;
-                    border-radius: 0 !important;
-                    
-                    z-index: 10 !important; // Por encima de la línea azul (z-index: 0)
-                }
-                
-                // Asegurar que completed + green-line no tenga background azul
-                .step-container .step.completed .step-separator.green-line,
-                .step-container .step.in-progress .step-separator.green-line {
-                    background: transparent !important;
-                    background-color: transparent !important;
-                    background-image: none !important;
-                }
-                
-                .step-container .step .icon { margin-left: 12px; }
-                .step-container { display: flex; flex-direction: row; align-items: stretch; }
-                .step-container .step-title { margin-left: 8px; display: flex; flex-direction: column; justify-content: center; }
-                .step-container .step .icon { margin-left: 24px; }
-                .step-container .step-title .sub-title { line-height: 1.25; }
-
-                // Badge en último paso
-                .step-container:last-child .icon {
-                    position: relative;
-                }
-                .product-count-badge {
-                    position: absolute;
-                    top: -6px;
-                    right: -6px;
-                    background: #d32f2f;
-                    color: #fff;
-                    font-size: 11px;
-                    line-height: 16px;
-                    width: 16px;
-                    height: 16px;
-                    border-radius: 8px;
-                    text-align: center;
-                    font-weight: 600;
-                    box-shadow: 0 0 0 2px #fff;
-                }
-                // Pager condensado
-                .condensed-pager {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 10px;
-                    margin-top: 8px;
-                    padding: 4px 0 0;
-                }
-                .condensed-pager .pager-node {
-                    width: 26px;
-                    height: 26px;
-                    border-radius: 13px;
-                    background: #d9dee6;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 11px;
-                    font-weight: 600;
-                    color: #4d4f57;
-                    cursor: pointer;
-                    transition: all .25s;
-                }
-                .condensed-pager .pager-node.neighbor {
-                    background: #003c69;
-                    color: #fff;
-                }
-                .condensed-pager .pager-node.active {
-                    background: #d32f2f;
-                    color: #fff;
                 }
             }
         }

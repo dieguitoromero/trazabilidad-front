@@ -12,7 +12,7 @@
                    matBadgeColor="warn"
                    [matBadgeHidden]="numberOfItemsOnStatus(step.title, i) <= 0">{{step.title.text}}</p>
                 <p class="sub-title" [ngClass]="{'d-block d-md-none': !vertical}">{{step.description}}</p>
-                            <span class="date" [ngClass]="{'d-block d-md-none': !vertical}">{{ step.date ? (step.date | date: 'dd-MM-yy') : '-' }}</span>
+                <span class="date" [ngClass]="{'d-block d-md-none': !vertical}">{{step.date | date: 'shortDate'}}</span>
             </div>
 
             <div class="step d-block order-0"
@@ -20,24 +20,19 @@
                 <div class="step-separator from align-self-center flex-grow-1"
                      *ngIf="i > 0 || !vertical"
                      [ngClass]="{ 'beginning': i <= 0, 'd-none d-md-block': (i == 0 && !vertical)}"></div>
-                                <div class="icon-wrapper">
-                                    <ng-container *ngIf="step.icon !== 'pending'; else pendingIcon">
-                                        <img class="icon" [src]="step.icon" alt="step icon" />
-                                    </ng-container>
-                                    <ng-template #pendingIcon>
-                                        <div class="icon pending"></div>
-                                    </ng-template>
-                                    <span class="product-count-badge" *ngIf="showDeliveredBadge(step)">{{ productCount() }}</span>
-                                </div>
+                <img class="icon" src="{{step.icon}}" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                     [style.display]="step.icon && step.icon.indexOf('pending') < 0 ? 'block' : 'none'"/>
+                <div class="icon pending" 
+                     [style.display]="!step.icon || step.icon.indexOf('pending') >= 0 ? 'flex' : 'none'"></div>
                 <div class="step-separator to align-self-center flex-grow-1"
                      *ngIf="i < (steps ? steps.length - 1 : 0) || !vertical"
                      [ngClass]="{ 'end': i >= (steps ? steps.length - 1 : 0), 'd-none d-md-block': !vertical && i >= (steps ? steps.length - 1 : 0)}"></div>
             </div>
 
             <div class="step-details d-none d-md-block" *ngIf="!vertical">
-                <div class="alcanzado-text" *ngIf="step.icon !== 'pending'">{{ step.description || '-' }}</div>
-                <p>{{ step.description }}</p>
-                <span>{{ step.date ? (step.date | date: 'dd-MM-yy') : '-' }}</span>
+                <p>{{step.description}}</p>
+                <span>{{step.date | date: 'shortDate'}}</span>
             </div>
         </div>
     </ng-container>

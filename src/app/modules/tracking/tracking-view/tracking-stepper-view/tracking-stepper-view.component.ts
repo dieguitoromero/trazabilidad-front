@@ -1,40 +1,43 @@
-import {Component, Input, OnChanges, SimpleChanges} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {TrackingStepModel} from '../../../../core/models/tracking-step.model';
 import {OrderDetailsModel} from '../../../../core/models/order-details.model';
 import {TrackingStepTitleModel} from '../../../../core/models/tracking-step-title.model';
+import { normalizeGlosa } from '../../../../core/helpers/glosa-normalizer';
 
 @Component({
     selector: 'app-tracking-stepper-view',
     templateUrl: './tracking-stepper-view.template.html',
     styleUrls: ['./tracking-stepper-view.scss', 'tracking-stepper-view.mobile.scss']
 })
-export class TrackingStepperViewComponent implements OnChanges {
+export class TrackingStepperViewComponent {
     @Input() steps: TrackingStepModel[] | undefined = [];
     @Input() orderDetails: OrderDetailsModel[] | undefined;
     @Input() vertical = false;
-    @Input() rawData: any; // objeto completo del servicio para impresión única
-    private hasLogged = false;
 
-    constructor() {}
-
-
-    ngOnChanges(changes: SimpleChanges): void {
-        if (!this.hasLogged && (changes['steps'] || changes['rawData'])) {
-            // eslint-disable-next-line no-console
-            this.hasLogged = true;
-        }
-    }
-
+    // Mapa de estados de productos por paso (para calcular el badge)
+    // NOTA: Este mapa debería actualizarse para usar los estados reales que envía el backend
+    // en lugar de estados canónicos hardcodeados. El backend debería enviar esta información.
     private status: any = {
+        // Estados canónicos (mantener para compatibilidad)
         'Pedido Ingresado': ['Pendiente', 'Pendiente de despacho'],
         'Pedido Aprobado': [],
-        'Pedido pagado': ['Pendiente', 'Pendiente de despacho'],
         'Preparacion de Pedido': ['Pendiente'],
         'Pendiente de Envío': ['Pendiente de despacho'],
         'Pedido en Ruta': ['En Ruta'],
+        'Pedido Entregado': ['Entregado', 'Producto Entregado'],
+        // Variaciones que el backend puede enviar
+        'Pedido pagado': ['Pendiente', 'Pendiente de despacho'],
         'Disponible para retiro': ['Producto Listo para Retiro'],
-        'Pedido Entregado': ['Entregado', 'Producto Entregado']
+        'Proceso de fabricacion': ['Pendiente'],
+        // Agregar más variaciones según los estados reales que envía el backend
     };
+
+    /**
+     * Normaliza un texto para comparación (minúsculas, sin acentos, etc.)
+     */
+    private normalize(s: string): string {
+        return (normalizeGlosa(s) || '').toLowerCase();
+    }
 
     public isStepCompleted(step: TrackingStepModel): boolean {
 
@@ -94,10 +97,36 @@ export class TrackingStepperViewComponent implements OnChanges {
             return 0;
         }
 
-        const allowedStatus = this.status[stepTitle.text];
+        // Buscar en statusMap usando el label exacto o variaciones normalizadas
+        let allowedStatus = this.status[stepTitle.text];
+        if (!allowedStatus) {
+            // Intentar con variaciones normalizadas
+            const normalizedLabel = this.normalize(stepTitle.text);
+            for (const [key, states] of Object.entries(this.status)) {
+                if (this.normalize(key) === normalizedLabel) {
+                    allowedStatus = states;
+                    break;
+                }
+            }
+        }
+
+        if (!allowedStatus || allowedStatus.length === 0) {
+            return 0;
+        }
 
         if (index > 0) {
-            const prevStepAllowedStatus = this.status[this.steps[index - 1].title.text];
+            const prevStepTitle = this.steps[index - 1].title.text;
+            let prevStepAllowedStatus = this.status[prevStepTitle];
+            if (!prevStepAllowedStatus) {
+                // Intentar con variaciones normalizadas
+                const normalizedPrevLabel = this.normalize(prevStepTitle);
+                for (const [key, states] of Object.entries(this.status)) {
+                    if (this.normalize(key) === normalizedPrevLabel) {
+                        prevStepAllowedStatus = states;
+                        break;
+                    }
+                }
+            }
             const isInProgress = this.steps[index - 1].icon.indexOf('in_progress') > 0;
             
             if (prevStepAllowedStatus && prevStepAllowedStatus[0] === allowedStatus[0]  && allowedStatus.length === prevStepAllowedStatus.length && isInProgress) {
@@ -109,17 +138,5 @@ export class TrackingStepperViewComponent implements OnChanges {
             return allowedStatus.indexOf(p.stateDescription) >= 0;
         }).length;
     }
-
-    // Cantidad total de productos
-    public productCount(): number {
-        return this.orderDetails ? this.orderDetails.length : 0;
-    }
-
-    // Mostrar badge solo en paso con título 'Pedido Entregado' (independiente del estado del icono)
-    public showDeliveredBadge(step: TrackingStepModel): boolean {
-        const title = (step.title?.text || '').toLowerCase();
-        return title === 'pedido entregado' && this.productCount() > 0;
-    }
-
 
 }

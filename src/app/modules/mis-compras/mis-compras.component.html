@@ -43,7 +43,7 @@
     <div class="text">No se encontró documento</div>
   </div>
 
-  <div class="cards" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido">
+  <div class="cards" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido" [class.loading-state]="loading">
     <div class="card" *ngFor="let c of filteredCompras">
       <div class="card-header">
         <div class="doc-title">
@@ -74,14 +74,23 @@
       </div>
 
 
-      <div class="hide-on-mobile">
-        <div class="stepper">
-          <div class="step" *ngFor="let step of stepperSnapshot(c); let i = index" [class.active]="step.isActive"
-            [class.completed]="step.isCompleted" [class.in-progress]="step.isInProgress"
-            [class.has-pending-after]="step.hasPendingAfter" [class.has-pending-from]="step.hasPendingFrom"
-            [class.last]="i === stepperSnapshot(c).length - 1">
-            <div class="step-separator from" *ngIf="i >= 0" [class.beginning]="i === 0"
-              [class.green-line]="step.hasPendingFrom"></div>
+      <!-- Stepper - oculto en móvil y cuando el texto se superpone -->
+      <div class="hide-on-mobile stepper-wrapper">
+        <div class="stepper-view-container d-flex">
+          <ng-container *ngFor="let step of stepperSnapshot(c); let i = index">
+            <div class="step-container d-flex flex-column">
+              <div class="step-title"
+                [class.in-progress]="step.isInProgress"
+                [ngStyle]="{ 'color': step.isInProgress ? '#00aa00' : (step.color || '#2b3e63') }">
+                <p class="title" [class.bold]="step.isBold || step.isInProgress">{{ step.label }}</p>
+              </div>
+              <div class="step d-flex"
+                [class.in-progress]="step.isInProgress"
+                [class.completed]="step.isCompleted"
+                [class.last]="isLastCompleted(stepperSnapshot(c), i)"
+                [class.beginning]="i === 0">
+                <div class="step-separator from align-self-center flex-grow-1"
+                  [class.beginning]="i === 0"></div>
             <div class="icon-wrapper">
               <ng-container *ngIf="step.icon && step.icon !== 'pending' && step.icon.trim() !== ''; else pendingIcon">
                 <img class="icon" [src]="step.icon" alt="step icon" />
@@ -89,14 +98,17 @@
               <ng-template #pendingIcon>
                 <div class="icon pending"></div>
               </ng-template>
+                  <span class="product-count-badge" *ngIf="step.productCount && step.productCount > 0">{{ step.productCount }}</span>
+                </div>
+                <div class="step-separator to align-self-center flex-grow-1"
+                  [class.end]="i === stepperSnapshot(c).length - 1"></div>
             </div>
-            <div class="step-separator to" *ngIf="i < stepperSnapshot(c).length - 1 || step.isInProgress || i === stepperSnapshot(c).length - 1"
-              [class.end]="i === stepperSnapshot(c).length - 1"
-              [class.green-line]="(step.hasPendingAfter || step.isInProgress || step.hasPendingFrom) && i !== stepperSnapshot(c).length - 1"></div>
-            <div class="label"
-              [ngStyle]="{ 'color': step.color || '#667085', 'font-weight': step.isBold ? '600' : 'normal' }">{{
-              step.label }}</div>
+              <div class="step-details">
+                <p>{{ step.observacion || '-' }}</p>
+                <span>{{ step.fecha ? (step.fecha | date:'dd-MM-yy') : '-' }}</span>
           </div>
+            </div>
+          </ng-container>
         </div>
       </div>
 

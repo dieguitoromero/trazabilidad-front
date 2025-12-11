@@ -5,30 +5,64 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
+// Interfaz para machinable (dimensionado)
+export interface MachinableOrderDto {
+  title?: { text: string; color?: string; isBold?: boolean };
+  description?: string;
+  color?: string;
+  date?: string;
+  machinable_steps?: Array<{
+    title?: { text: string; color?: string; isBold?: boolean };
+    description?: string;
+    date?: string;
+    icon?: string;
+  }>;
+  Boards?: Array<{
+    quantity?: number;
+    code?: string | number;
+    code_unimed?: string;
+    image?: string;
+    description?: string;
+    description_unimed?: string;
+    state_description?: string;
+  }>;
+}
+
+export interface MachinableDto {
+  text?: string;
+  color?: string;
+  icon?: string;
+  orders?: MachinableOrderDto[];
+}
+
+export interface TrazabilidadDto {
+  etapa?: string;
+  glosa: string;
+  observacion?: string;
+  fechaRegistro: string;
+  estado: string;
+  orden?: number;
+  indProcesado?: number | null; // 1 = completado, 0 = en progreso, null = pendiente
+  // Campos calculados del backend (preferir usar estos cuando estén disponibles)
+  title?: {
+    text: string;
+    color: string;
+    isBold: boolean;
+  };
+  description?: string;
+  date?: string | null; // Fecha ISO 8601 con milisegundos o null
+  icon?: string; // URL del ícono
+  // Machinable (dimensionado) - viene cuando el producto tiene corte/optimización
+  machinable?: MachinableDto;
+}
+
 export interface CompraApiDto {
   tipoDocumento: string;
   numeroDocumento: string;
   fechaCompra: string;
   tipoEntrega: string;
   direccionEntrega: string;
-  trazabilidad: Array<{
-    etapa?: string;
-    glosa: string;
-    observacion?: string;
-    fechaRegistro: string;
-    estado: string;
-    orden?: number;
-    indProcesado?: number | null; // 1 = completado, 0 = en progreso, null = pendiente
-    // Campos calculados del backend (preferir usar estos cuando estén disponibles)
-    title?: {
-      text: string;
-      color: string;
-      isBold: boolean;
-    };
-    description?: string;
-    date?: string | null; // Fecha ISO 8601 con milisegundos o null
-    icon?: string; // URL del ícono
-  }>;
+  trazabilidad: TrazabilidadDto[];
   esDimensionado: boolean;
   total: number;
   facturasAsociadas?: Array<{ numeroFactura: string; fechaEmision: string; idFactura: number }>; // optional
@@ -66,18 +100,114 @@ export class MisComprasService {
   /**
    * Busca un documento específico (BLV, FCV, NVV) usando parámetro ?buscar= en la API.
    * Sanitiza el número removiendo prefijos N°, Nº y ceros a la izquierda.
+   * La API puede devolver un documento único o un array de documentos.
    */
   public buscarDocumento(rut: string | number, numero: string, page: number = 1, limit: number = environment.limitDefault): Observable<MisComprasResponseDto> {
     const r = typeof rut === 'number' ? rut.toString() : rut;
     const sanitized = this.sanitizeNumero(numero);
     const url = `${this.baseUrl}/clients/${r}/documents?buscar=${encodeURIComponent(sanitized)}&page=${page}&limit=${limit}`;
     return this.getToken().pipe(
-      switchMap(() => this.http.get<any>(url).pipe(map(resp => this.mapResponse(resp)))),
+      switchMap(() => this.http.get<any>(url).pipe(map(resp => this.mapBuscarResponse(resp, page, limit)))),
       catchError(err => {
         console.error('[MisComprasService] Error buscando documento', err);
         return of({ compras: [], page, perPage: limit, totalPages: 1 } as MisComprasResponseDto);
       })
     );
+  }
+
+  /**
+   * Mapea la respuesta de búsqueda que puede ser un documento único o un array.
+   * La API devuelve un objeto con number_printed, type_document, etc. cuando es un solo documento.
+   */
+  private mapBuscarResponse(resp: any, page: number, limit: number): MisComprasResponseDto {
+    if (!resp) { return { compras: [], page, perPage: limit, totalPages: 1 }; }
+
+    // Si la respuesta tiene number_printed, es un documento único
+    if (resp.number_printed || resp.type_document) {
+      const compra = this.mapSingleDocument(resp);
+      return {
+        compras: compra ? [compra] : [],
+        total: compra ? 1 : 0,
+        page: 1,
+        perPage: limit,
+        totalPages: 1
+      };
+    }
+
+    // Si no, usar el mapeo estándar
+    return this.mapResponse(resp);
+  }
+
+  /**
+   * Mapea un documento único de la API al formato CompraApiDto.
+   */
+  private mapSingleDocument(doc: any): CompraApiDto | null {
+    if (!doc) return null;
+
+    // Mapear traceability.steps a trazabilidad
+    const trazabilidad: TrazabilidadDto[] = (doc.traceability?.steps || []).map((step: any) => ({
+      etapa: step.title?.text || '',
+      glosa: step.title?.text || '',
+      observacion: step.description || '',
+      fechaRegistro: step.date || '',
+      estado: step.icon?.includes('complete') ? 'activo' : 'pendiente',
+      title: step.title ? {
+        text: step.title.text || '',
+        color: step.title.color || '',
+        isBold: step.title.isBold !== undefined ? step.title.isBold : false
+      } : undefined,
+      description: step.description,
+      date: step.date,
+      icon: step.icon,
+      machinable: step.machinable ? {
+        text: step.machinable.text || 'Dimensionado',
+        color: step.machinable.color || '#eb414a',
+        icon: step.machinable.icon || '',
+        orders: (step.machinable.orders || []).map((o: any) => ({
+          title: o.title,
+          description: o.description || '',
+          machinable_steps: o.machinable_steps || [],
+          Boards: o.Boards || []
+        }))
+      } : undefined
+    }));
+
+    // Determinar tipo de entrega
+    const tipoEntrega = doc.pickup?.title || 'Despacho';
+    const direccionEntrega = doc.pickup?.text || '';
+
+    // Mapear productos
+    const productos = (doc.DetailsProduct || []).map((p: any) => ({
+      cantidad: p.quantity || 1,
+      codigo: p.code || '',
+      descripcion: p.description || '',
+      estado: p.state_description || '',
+      imagen: p.image || '',
+      nombre: p.description || '',
+      sku: p.code?.toString() || '',
+      unidadMedida: p.description_unimed || '',
+      state_description: p.state_description || ''
+    }));
+
+    // Mapear tipo de documento a label legible
+    const tipoDocMap: { [key: string]: string } = {
+      'FCV': 'Factura',
+      'BLV': 'Boleta',
+      'NVV': 'Nota de Venta'
+    };
+
+    return {
+      tipoDocumento: tipoDocMap[doc.type_document] || doc.label_document || doc.type_document || '',
+      numeroDocumento: (doc.number_printed || '').replace(/^0+/, ''),
+      fechaCompra: doc.date_issue || '',
+      tipoEntrega: tipoEntrega,
+      direccionEntrega: direccionEntrega,
+      trazabilidad,
+      esDimensionado: trazabilidad.some(t => t.machinable),
+      total: doc.total || 0,
+      facturasAsociadas: [],
+      productos
+    };
   }
 
   private getToken(): Observable<string | undefined> {
@@ -116,24 +246,66 @@ export class MisComprasService {
       return isNaN(t) ? 0 : t;
     };
     const comprasRaw: CompraApiDto[] = (resp.compras || resp.documents || []).map((c: any) => {
-      const trazabilidad = (c.trazabilidad || c.traceability || []).map((t: any) => ({
-        etapa: t.etapa || t.stage || t.scope || '',
-        glosa: t.glosa || t.label || '',
-        observacion: t.observacion || t.observation || t.descripcion || t.description || '',
-        fechaRegistro: t.fechaRegistro || t.date || '',
-        estado: t.estado || t.state || '',
-        orden: typeof t.orden === 'number' ? t.orden : (typeof t.order === 'number' ? t.order : undefined),
-        indProcesado: t.indProcesado !== undefined ? (t.indProcesado === null ? null : Number(t.indProcesado)) : undefined,
-        // Campos calculados del backend (preferir usar estos cuando estén disponibles)
-        title: t.title ? {
-          text: t.title.text || t.etapa || '',
-          color: t.title.color || '',
-          isBold: t.title.isBold !== undefined ? t.title.isBold : false
-        } : undefined,
-        description: t.description !== undefined ? t.description : undefined,
-        date: t.date !== undefined ? t.date : undefined,
-        icon: (t.icon && t.icon.trim()) ? t.icon.trim() : undefined
-      }));
+      const trazabilidad: TrazabilidadDto[] = (c.trazabilidad || c.traceability?.steps || c.traceability || []).map((t: any) => {
+        // Mapear machinable si existe
+        let machinable: MachinableDto | undefined = undefined;
+        if (t.machinable && t.machinable.orders && t.machinable.orders.length > 0) {
+          machinable = {
+            text: t.machinable.text || 'Dimensionado',
+            color: t.machinable.color || '#eb414a',
+            icon: t.machinable.icon || 'https://dvimperial.blob.core.windows.net/traceability/dimensioned_icon.svg',
+            orders: (t.machinable.orders || []).map((order: any) => ({
+              title: order.title ? {
+                text: order.title.text || '',
+                color: order.title.color || '',
+                isBold: order.title.isBold !== undefined ? order.title.isBold : false
+              } : undefined,
+              description: order.description || '',
+              color: order.color || '#000000',
+              date: order.date || undefined,
+              machinable_steps: (order.machinable_steps || []).map((ms: any) => ({
+                title: ms.title ? {
+                  text: ms.title.text || '',
+                  color: ms.title.color || '',
+                  isBold: ms.title.isBold !== undefined ? ms.title.isBold : false
+                } : undefined,
+                description: ms.description || '',
+                date: ms.date || undefined,
+                icon: ms.icon || ''
+              })),
+              Boards: (order.Boards || []).map((b: any) => ({
+                quantity: b.quantity || 1,
+                code: b.code || '',
+                code_unimed: b.code_unimed || '',
+                image: b.image || '',
+                description: b.description || '',
+                description_unimed: b.description_unimed || '',
+                state_description: b.state_description || ''
+              }))
+            }))
+          };
+        }
+
+        return {
+          etapa: t.etapa || t.stage || t.scope || '',
+          glosa: t.glosa || t.label || t.title?.text || '',
+          observacion: t.observacion || t.observation || t.descripcion || t.description || '',
+          fechaRegistro: t.fechaRegistro || t.date || '',
+          estado: t.estado || t.state || '',
+          orden: typeof t.orden === 'number' ? t.orden : (typeof t.order === 'number' ? t.order : undefined),
+          indProcesado: t.indProcesado !== undefined ? (t.indProcesado === null ? null : Number(t.indProcesado)) : undefined,
+          // Campos calculados del backend (preferir usar estos cuando estén disponibles)
+          title: t.title ? {
+            text: t.title.text || t.etapa || '',
+            color: t.title.color || '',
+            isBold: t.title.isBold !== undefined ? t.title.isBold : false
+          } : undefined,
+          description: t.description !== undefined ? t.description : undefined,
+          date: t.date !== undefined ? t.date : undefined,
+          icon: (t.icon && t.icon.trim()) ? t.icon.trim() : undefined,
+          machinable
+        };
+      });
 
       type Asociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
       const asociadas: Asociada[] = (c.facturasAsociadas || c.associatedInvoices || [])

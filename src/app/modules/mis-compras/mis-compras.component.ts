@@ -7,6 +7,35 @@ import { TrackingDataService } from '../../services/tracking-data.service';
 import { environment } from '../../../environments/environment';
 import { normalizeGlosa } from '../../core/helpers/glosa-normalizer';
 
+type MachinableOrder = {
+  title?: { text: string; color?: string; isBold?: boolean };
+  description?: string;
+  color?: string;
+  date?: string;
+  machinable_steps?: Array<{
+    title?: { text: string; color?: string; isBold?: boolean };
+    description?: string;
+    date?: string;
+    icon?: string;
+  }>;
+  Boards?: Array<{
+    quantity?: number;
+    code?: string | number;
+    code_unimed?: string;
+    image?: string;
+    description?: string;
+    description_unimed?: string;
+    state_description?: string;
+  }>;
+};
+
+type Machinable = {
+  text?: string;
+  color?: string;
+  icon?: string;
+  orders?: MachinableOrder[];
+};
+
 type Trazabilidad = {
   etapa?: string;
   glosa: string;
@@ -24,6 +53,8 @@ type Trazabilidad = {
   description?: string;
   date?: string | null; // Fecha ISO 8601 con milisegundos o null
   icon?: string; // URL del ícono
+  // Machinable (dimensionado) - viene cuando el producto tiene corte/optimización
+  machinable?: Machinable;
 };
 
 type StepSnapshot = {
@@ -39,6 +70,7 @@ type StepSnapshot = {
   icon?: string; // URL del ícono o 'pending'
   hasPendingAfter?: boolean; // Si hay pasos pendientes después de este paso
   hasPendingFrom?: boolean; // Si este paso pendiente viene después de un paso completado/en progreso
+  productCount?: number; // Cantidad de productos en este estado
 };
 type FacturaAsociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
 
@@ -86,6 +118,24 @@ export class MisComprasComponent implements OnInit {
   // RUT del cliente - se obtiene de query params (requerido)
   rut: string | null = null;
   private rutProporcionadoExplicitamente = false;
+  
+  // Mapa de estados de productos por paso (para calcular el badge)
+  // NOTA: Este mapa debería actualizarse para usar los estados reales que envía el backend
+  // en lugar de estados canónicos hardcodeados. El backend debería enviar esta información.
+  private statusMap: { [key: string]: string[] } = {
+    // Estados canónicos (mantener para compatibilidad)
+    'Pedido Ingresado': ['Pendiente', 'Pendiente de despacho'],
+    'Pedido Aprobado': [],
+    'Preparacion de Pedido': ['Pendiente'],
+    'Pendiente de Envío': ['Pendiente de despacho'],
+    'Pedido en Ruta': ['En Ruta'],
+    'Pedido Entregado': ['Entregado', 'Producto Entregado'],
+    // Variaciones que el backend puede enviar
+    'Pedido pagado': ['Pendiente', 'Pendiente de despacho'],
+    'Disponible para retiro': ['Producto Listo para Retiro'],
+    'Proceso de fabricacion': ['Pendiente'],
+    // Agregar más variaciones según los estados reales que envía el backend
+  };
 
   constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService, private trackingDataService: TrackingDataService) { }
 
@@ -400,11 +450,37 @@ export class MisComprasComponent implements OnInit {
   }
 
   private buildPlaceholderSnapshot(): StepSnapshot[] {
-    return this.canonicalPasos.map(label => ({
-      label,
-      estado: 'pendiente',
-      isActive: false,
-      isCompleted: false
+    // Retornar array vacío si no hay datos, ya que usamos los estados reales del backend
+    // Si necesitamos un placeholder, el backend debería enviar al menos un paso
+    return [];
+  }
+
+  // Determina si el paso actual es el último completado antes de pasos pendientes
+  public isLastCompleted(steps: StepSnapshot[], index: number): boolean {
+    if (!steps || !steps[index]) return false;
+    const current = steps[index];
+    const next = steps[index + 1];
+    
+    // Es el último completado si: está completado/en progreso Y el siguiente es pendiente (o no hay siguiente)
+    if (current.isCompleted || current.isInProgress) {
+      if (!next) return true; // Es el último paso
+      return !next.isCompleted && !next.isInProgress; // El siguiente es pendiente
+    }
+    return false;
+  }
+
+  // Convierte stepperSnapshot al formato de TrackingStepModel para usar tracking-stepper-view
+  public getTrackingSteps(compra: Compra): any[] {
+    const snapshot = this.stepperSnapshot(compra);
+    return snapshot.map(step => ({
+      title: {
+        text: step.label,
+        color: step.color || '#2b3e63',
+        isBold: step.isBold || false
+      },
+      description: step.observacion || '-',
+      date: step.fecha || null,
+      icon: step.icon || 'pending'
     }));
   }
 
@@ -419,12 +495,26 @@ export class MisComprasComponent implements OnInit {
 
   private buildCanonicalSnapshots(compra: Compra): StepSnapshot[] {
     const entries = this.sortTrazabilidad(Array.isArray(compra?.trazabilidad) ? [...compra.trazabilidad] : []);
-    const snapshots = this.canonicalPasos.map((label) => {
-      const canonicalKey = this.normalize(label);
-      const match = this.findCanonicalMatch(entries, canonicalKey);
-      if (match) {
-        // Siempre usar el label canónico para mantener consistencia
-        const indProcesado = match.indProcesado;
+    // Filtrar "Pedido en Ruta" si es retiro en tienda
+    const isRetiro = this.isRetiroEnTienda(compra);
+    
+    // Usar directamente los estados que vienen del backend
+    // Filtrar "Pedido en Ruta" si es retiro en tienda
+    let filteredEntries = entries;
+    if (isRetiro) {
+      filteredEntries = entries.filter(t => {
+        const titleText = t.title?.text || t.etapa || t.glosa || '';
+        return this.normalize(titleText) !== this.normalize('Pedido en Ruta');
+      });
+    }
+    
+    // Mapear directamente los estados del backend
+    const snapshots = filteredEntries.map((entry) => {
+      // Usar el título del backend si está disponible, sino usar etapa o glosa
+      const label = entry.title?.text || entry.etapa || entry.glosa || '';
+      const match = entry;
+      // Usar directamente los datos del backend
+      const indProcesado = match.indProcesado;
 
         // Si no hay indProcesado ni estado válido, el paso es pendiente
         const hasValidState = indProcesado !== undefined && indProcesado !== null;
@@ -461,15 +551,18 @@ export class MisComprasComponent implements OnInit {
         }
 
         // Determinar estado completado y en progreso basado en indProcesado (mutuamente excluyentes)
-        // IMPORTANTE: Si indProcesado es null/undefined, el paso SIEMPRE es pendiente
-        // indProcesado = 0 → en progreso
-        // indProcesado = 1 → completado  
-        // indProcesado = null/undefined → pendiente (IGNORA el campo 'estado')
+        // IMPORTANTE: Lógica igual que tracking-stepper-view
+        // Un paso con icono real (no pending) tiene completed = true
+        // indProcesado = 0 → en progreso (tiene icono, así que completed = true también)
+        // indProcesado = 1 → completado
+        // indProcesado = null/undefined → pendiente (sin icono)
         if (indProcesado === 1) {
           isCompleted = true;
           isInProgress = false;
         } else if (indProcesado === 0) {
-          isCompleted = false;
+          // En progreso: tiene icono real, así que completed = true
+          // Esto es igual a tracking-stepper-view donde isStepCompleted verifica si icono !== 'pending'
+          isCompleted = true;
           isInProgress = true;
         } else {
           // indProcesado es null o undefined → paso pendiente
@@ -489,28 +582,22 @@ export class MisComprasComponent implements OnInit {
           isBold = this.computeIsBold(indProcesado, match.estado);
         }
 
-        return {
-          label: label, // Usar siempre el label canónico
-          estado: match.estado || '',
-          fecha: fecha,
-          observacion: match.description !== undefined ? match.description : match.observacion,
-          isActive: isInProgress || this.isActiveEstado(match.estado),
-          isCompleted: isCompleted, // true solo si está completado (indProcesado === 1)
-          isInProgress: isInProgress, // true si está en progreso (indProcesado === 0)
-          icon: icon, // URL del ícono o 'pending'
-          color: color,
-          isBold: isBold
-        };
-      }
+      // Calcular productCount basado en los productos de la compra
+      // Usar el label real del backend para buscar en statusMap
+      const productCount = this.calculateProductCount(compra, label, isCompleted, isInProgress);
+
       return {
-        label,
-        estado: 'pendiente',
-        isActive: false,
-        isCompleted: false,
-        isInProgress: false,
-        icon: 'pending', // Siempre mostrar ícono pendiente (círculo gris)
-        color: '#575962', // gris medio para pendiente
-        isBold: false
+        label: label, // Usar el label real del backend
+        estado: match.estado || '',
+        fecha: fecha,
+        observacion: match.description !== undefined ? match.description : match.observacion,
+        isActive: isInProgress || this.isActiveEstado(match.estado),
+        isCompleted: isCompleted, // true solo si está completado (indProcesado === 1)
+        isInProgress: isInProgress, // true si está en progreso (indProcesado === 0)
+        icon: icon, // URL del ícono o 'pending'
+        color: color,
+        isBold: isBold,
+        productCount: productCount
       };
     });
 
@@ -559,6 +646,44 @@ export class MisComprasComponent implements OnInit {
     return finalSnapshots;
   }
 
+  // Calcula el número de productos en un estado específico
+  // stepLabel puede ser un estado canónico o un estado real del backend
+  private calculateProductCount(compra: Compra, stepLabel: string, isCompleted: boolean, isInProgress: boolean): number {
+    if (!compra.productos || compra.productos.length === 0) {
+      return 0;
+    }
+
+    // Buscar en statusMap usando el label exacto o variaciones normalizadas
+    let allowedStates = this.statusMap[stepLabel];
+    if (!allowedStates) {
+      // Intentar con variaciones normalizadas
+      const normalizedLabel = this.normalize(stepLabel);
+      for (const [key, states] of Object.entries(this.statusMap)) {
+        if (this.normalize(key) === normalizedLabel) {
+          allowedStates = states;
+          break;
+        }
+      }
+    }
+    
+    if (!allowedStates || allowedStates.length === 0) {
+      return 0;
+    }
+
+    // Solo mostrar badge si el paso está en progreso o es el último completado antes de pendientes
+    if (!isInProgress && !isCompleted) {
+      return 0;
+    }
+
+    // Contar productos que tienen un estado en allowedStates
+    const count = compra.productos.filter(p => {
+      const stateDesc = p.state_description || '';
+      return allowedStates.includes(stateDesc);
+    }).length;
+
+    return count;
+  }
+
   private findCanonicalMatch(entries: Trazabilidad[], canonicalKey: string): Trazabilidad | undefined {
     // Primero intentar match directo
     let match = entries.find(t => this.matchesCanonicalEntry(t, canonicalKey));
@@ -597,19 +722,31 @@ export class MisComprasComponent implements OnInit {
     return glosaKey === canonicalKey;
   }
 
-  private legacyTraceabilitySteps(trazabilidad: Trazabilidad[]): any[] {
+  private legacyTraceabilitySteps(trazabilidad: Trazabilidad[], isRetiroEnTienda: boolean = false): any[] {
     const entries = this.sortTrazabilidad(Array.isArray(trazabilidad) ? [...trazabilidad] : []);
-    return this.canonicalPasos.map((label) => {
-      const canonicalKey = this.normalize(label);
-      const match = this.findCanonicalMatch(entries, canonicalKey);
-      const hasMatch = !!match;
-      const etapaLabel = (match?.etapa || match?.glosa || label).trim();
+    // Filtrar "Pedido en Ruta" si es retiro en tienda
+    let filteredEntries = entries;
+    if (isRetiroEnTienda) {
+      filteredEntries = entries.filter(t => {
+        const titleText = t.title?.text || t.etapa || t.glosa || '';
+        return this.normalize(titleText) !== this.normalize('Pedido en Ruta');
+      });
+    }
+    
+    // Usar directamente los estados del backend
+    return filteredEntries.map((entry) => {
+      const match = entry;
+      const hasMatch = true; // Siempre hay match porque estamos iterando sobre entries
+      // Usar el título del backend si está disponible, sino usar etapa o glosa
+      const etapaLabel = (match.title?.text || match.etapa || match.glosa || '').trim();
+      const label = etapaLabel;
 
       // Preferir campos calculados del backend si están disponibles
       let icon = 'pending';
       let color = '#575962'; // gris medio para pendiente
       let isBold = false;
       let fecha: string | undefined = undefined;
+      let machinable: any = null;
 
       if (hasMatch && match) {
         const indProcesado = match.indProcesado;
@@ -651,33 +788,57 @@ export class MisComprasComponent implements OnInit {
             ? match.fechaRegistro
             : undefined;
         }
+
+        // Mapear machinable si existe (para productos dimensionados)
+        if ((match as any).machinable && (match as any).machinable.orders && (match as any).machinable.orders.length > 0) {
+          const m = (match as any).machinable;
+          machinable = {
+            text: m.text || 'Dimensionado',
+            color: m.color || '#eb414a',
+            icon: m.icon || 'https://dvimperial.blob.core.windows.net/traceability/dimensioned_icon.svg',
+            orders: (m.orders || []).map((order: any) => ({
+              title: order.title || { text: '', color: '', isBold: false },
+              description: order.description || '',
+              color: order.color || '#000000',
+              date: order.date,
+              machinable_steps: order.machinable_steps || [],
+              Boards: order.Boards || []
+            }))
+          };
+        }
       }
 
       return {
-        title: { text: label, color: color, isBold: isBold }, // Usar siempre el label canónico
+        title: { text: label, color: color, isBold: isBold }, // Usar el label real del backend
         description: hasMatch && match
           ? (match.description !== undefined ? match.description : (match.observacion || ''))
           : '',
         date: fecha,
         icon: icon,
-        canonicalKey,
-        machinable: null
+        machinable: machinable
       };
-    }).slice(0, this.maxStepperSteps);
+    });
   }
 
   lastReachedIndex(compra: Compra): number {
-    // Último índice alcanzado según 'etapa' reportada
+    // Último índice alcanzado según los estados reales del backend
+    const entries = this.sortTrazabilidad(Array.isArray(compra?.trazabilidad) ? [...compra.trazabilidad] : []);
+    // Filtrar "Pedido en Ruta" si es retiro en tienda
+    const isRetiro = this.isRetiroEnTienda(compra);
+    let filteredEntries = entries;
+    if (isRetiro) {
+      filteredEntries = entries.filter(t => {
+        const titleText = t.title?.text || t.etapa || t.glosa || '';
+        return this.normalize(titleText) !== this.normalize('Pedido en Ruta');
+      });
+    }
+    // Retornar el índice del último paso que tiene indProcesado !== null/undefined
     let last = -1;
-    // Incluir tanto etapa como glosa normalizadas para el set de alcanzados
-    const reached = new Set<string>();
-    compra.trazabilidad.forEach(t => {
-      const e = this.normalize((t.etapa || '').trim());
-      const g = this.normalize((t.glosa || '').trim());
-      if (e) reached.add(e);
-      if (g) reached.add(g);
+    filteredEntries.forEach((t, idx) => {
+      if (t.indProcesado !== null && t.indProcesado !== undefined) {
+        last = idx;
+      }
     });
-    this.canonicalPasos.forEach((p, idx) => { if (reached.has(this.normalize(p))) last = idx; });
     return last;
   }
 
@@ -863,7 +1024,20 @@ export class MisComprasComponent implements OnInit {
     const c = compraContext || (encontrado as any as Compra);
     // Construcción invoice legacy genérica tomando datos disponibles
     // Construcción invoice legacy genérica tomando datos disponibles
-    const traceabilitySteps = this.legacyTraceabilitySteps((encontrado?.trazabilidad || c?.trazabilidad) || []);
+    const rawTrace = (encontrado?.trazabilidad || c?.trazabilidad || []) as any[];
+    // Si la trazabilidad ya viene con machinable u ordenada desde la API, úsala tal cual para no perder datos (Boards)
+    const hasRichTrace = rawTrace.some(t => t?.machinable && t.machinable.orders && t.machinable.orders.length > 0);
+    // Determinar si es retiro en tienda para filtrar "Pedido en Ruta"
+    const isRetiro = this.isRetiroEnTienda(encontrado || c);
+    // Si tiene trazabilidad rica, filtrar "Pedido en Ruta" manualmente si es retiro
+    let traceabilitySteps = hasRichTrace ? rawTrace : this.legacyTraceabilitySteps(rawTrace as any, isRetiro);
+    // Si es trazabilidad rica y es retiro, filtrar el paso "Pedido en Ruta"
+    if (hasRichTrace && isRetiro) {
+      traceabilitySteps = traceabilitySteps.filter((step: any) => {
+        const titleText = step?.title?.text || step?.title || '';
+        return this.normalize(titleText) !== this.normalize('Pedido en Ruta');
+      });
+    }
     const legacyInvoice = {
       number_printed: folioDigits.toString().padStart(10, '0'),
       type_document: tipoDocumentoCode,
@@ -876,7 +1050,10 @@ export class MisComprasComponent implements OnInit {
         text: encontrado?.direccionEntrega || c?.direccionEntrega || '',
         title_date: 'Retira a partir del ',
         date: new Date().toISOString(),
-        icon: 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
+        // Usar icono del backend si está disponible, sino usar el correcto según tipo de entrega
+        icon: (encontrado as any)?.pickup?.icon || (c as any)?.pickup?.icon || (isRetiro 
+          ? 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
+          : 'https://dvimperial.blob.core.windows.net/traceability/delivery_icon.svg')
       },
       traceability: {
         steps: traceabilitySteps
@@ -888,32 +1065,38 @@ export class MisComprasComponent implements OnInit {
         icon_phone: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg',
         icon_mail: 'https://dvimperial.blob.core.windows.net/traceability/phone_icon.svg'
       },
+      // Replicar productos tanto en 'productos' como en 'DetailsProduct' para que Tracking pueda mostrarlos
+      // (InvoiceModel prioriza 'productos' y hace fallback a 'DetailsProduct')
       productos: (encontrado?.productos || c?.productos || []).map(p => ({
         cantidad: p.cantidad,
         codigo: p.codigo,
-        descripcion: p.descripcion,
-        estado: p.estado,
-        imagen: p.imagen,
-        nombre: p.nombre,
-        sku: p.sku,
-        unidadMedida: p.unidadMedida
+        descripcion: p.descripcion || p.nombre || p.descripcion,
+        estado: p.estado || p.state_description,
+        imagen: p.imagen || p.image,
+        nombre: p.nombre || p.descripcion,
+        sku: p.sku || p.codigo,
+        unidadMedida: p.unidadMedida || p.description_unimed,
+        state_description: p.state_description
       })),
-      DetailsProduct: [],
+      DetailsProduct: (encontrado?.productos || c?.productos || []).map(p => ({
+        quantity: p.cantidad,
+        code: p.codigo,
+        description: p.descripcion || p.nombre || p.descripcion,
+        state_description: p.estado || p.state_description,
+        image: p.imagen || p.image,
+        description_unimed: p.unidadMedida || p.description_unimed,
+      })),
       trazabilidad: encontrado?.trazabilidad || c?.trazabilidad || []
     };
     this.trackingDataService.setInvoicePayload(legacyInvoice);
-    const api = 'doc';
+    // URL simplificada: solo los parámetros necesarios para la vista de detalle
     this.router.navigate(['/tracking'], {
       queryParams: {
-        folioDocumento: folioDigits,
-        tipoDocumento: tipoDocumentoCode,
-        api,
-        section: 'details',
-        page: this.page,
-        perPage: this.perPage,
-        clienteId: this.rut // Incluir clienteId para que esté disponible en el tracking view
+        folio: folioDigits,
+        tipo: tipoDocumentoCode,
+        cliente: this.rut,
+        detalle: '1' // Indica que es vista de detalle
       },
-      queryParamsHandling: 'merge',
       state: { compraBuscarDocumentoResp: resp }
     });
   }
@@ -925,8 +1108,24 @@ export class MisComprasComponent implements OnInit {
   }
 
   estadoActual(c: Compra): string {
+    const entries = this.sortTrazabilidad(Array.isArray(c?.trazabilidad) ? [...c.trazabilidad] : []);
+    // Filtrar "Pedido en Ruta" si es retiro en tienda
+    const isRetiro = this.isRetiroEnTienda(c);
+    let filteredEntries = entries;
+    if (isRetiro) {
+      filteredEntries = entries.filter(t => {
+        const titleText = t.title?.text || t.etapa || t.glosa || '';
+        return this.normalize(titleText) !== this.normalize('Pedido en Ruta');
+      });
+    }
     const idx = this.lastReachedIndex(c);
-    return idx >= 0 ? this.canonicalPasos[idx] : this.canonicalPasos[0];
+    if (idx >= 0 && filteredEntries[idx]) {
+      const entry = filteredEntries[idx];
+      return entry.title?.text || entry.etapa || entry.glosa || 'Pedido Ingresado';
+    }
+    return filteredEntries.length > 0 
+      ? (filteredEntries[0].title?.text || filteredEntries[0].etapa || filteredEntries[0].glosa || 'Pedido Ingresado')
+      : 'Pedido Ingresado';
   }
 
   /**
