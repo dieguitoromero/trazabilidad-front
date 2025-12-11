@@ -13,7 +13,6 @@ import {
   registerLocaleData,
 } from "@angular/common";
 import { HttpActivityInterceptor } from "./core/interceptors/http-activity.interceptor";
-import { CacheBusterInterceptor } from "./core/interceptors/cache-buster.interceptor";
 import { LoadingService } from "./services/loading.service";
 import { AuthRepository } from "./repositories/auth.repository";
 import { AuthService } from "./services/auth.service";
@@ -43,8 +42,6 @@ registerLocaleData(localeCL);
       deps: [PlatformLocation],
     },
     { provide: LOCALE_ID, useValue: "es-CL" },
-    // CacheBusterInterceptor debe ir primero para agregar headers anti-caché
-    { provide: HTTP_INTERCEPTORS, useClass: CacheBusterInterceptor, multi: true },
     {
       provide: HTTP_INTERCEPTORS,
       useClass: HttpActivityInterceptor,

@@ -2,7 +2,7 @@ import { environment } from "../../environments/environment";
 // Nota: clienteId ya no se obtiene de environment, debe pasarse como parámetro desde la URL
 import { EMPTY, Observable, of, throwError } from "rxjs";
 import { InvoiceModel } from "../core/models/invoice.model";
-import { HttpClient, HttpErrorResponse, HttpResponse } from "@angular/common/http";
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from "@angular/common/http";
 import { catchError, map, switchMap, tap } from "rxjs/operators";
 import { Injectable } from "@angular/core";
 import { InvoiceTokenModel } from "../core/models/invoice-token.model";
@@ -14,6 +14,12 @@ export class TrackingRepository {
   // Use unified baseUrl (APIM host) and append '/api' for documents endpoint
   private apimBase: string = `${environment.baseUrl}/api`;
 
+  // Headers anti-caché para forzar datos frescos
+  private noCacheHeaders = new HttpHeaders({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache'
+  });
+
   constructor(private http: HttpClient) {}
 
   public getTracking(
@@ -22,7 +28,8 @@ export class TrackingRepository {
   ): Observable<InvoiceModel | undefined> {
     return this.http
       .get(
-        `${this.baseApiUrl}/api/clients/${invoiceId}/${invoiceType}`
+        `${this.baseApiUrl}/api/clients/${invoiceId}/${invoiceType}`,
+        { headers: this.noCacheHeaders }
       )
       .pipe(
         map((o: any) => {
@@ -63,7 +70,7 @@ export class TrackingRepository {
           const tokenVal = InvoiceTokenModel.mapFromObj(response.body);
 
           return this.http
-            .get(`${this.baseApiUrlV2}/traceabilityV2/v1/traceability/${tokenVal!.uuid}`)
+            .get(`${this.baseApiUrlV2}/traceabilityV2/v1/traceability/${tokenVal!.uuid}`, { headers: this.noCacheHeaders })
             .pipe(
               map((objectResponse: any) => {
                 if (!objectResponse) {
@@ -99,7 +106,7 @@ export class TrackingRepository {
     // Requisito: usar URL absoluta con clienteId para facturas (FCV)
     // https://apim-imperial-dev-ues-001.azure-api.net/api/documents/FCV/(numero)/?clienteId=762530058
     const url = `${this.apimBase}/documents/${invoiceType}/${invoiceId}/?clienteId=${clienteId}`;
-    return this.http.get<any>(url).pipe(
+    return this.http.get<any>(url, { headers: this.noCacheHeaders }).pipe(
       map(resp => {
         if (!resp) { return undefined; }
         return InvoiceModel.mapFromObj(resp);
