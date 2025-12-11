@@ -25,5 +25,13 @@
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
     "strictTemplates": true
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "trazabilidad-app-v1.0.5-fuentes",
+    "trazabilidad-app-v1.0.5-fuentes/**/*",
+    "**/*.zip",
+    "**/*.rar"
+  ]
 }
