@@ -176,18 +176,23 @@ export class MisComprasService {
     const tipoEntrega = doc.pickup?.title || 'Despacho';
     const direccionEntrega = doc.pickup?.text || '';
 
-    // Mapear productos
-    const productos = (doc.DetailsProduct || []).map((p: any) => ({
-      cantidad: p.quantity || 1,
-      codigo: p.code || '',
-      descripcion: p.description || '',
-      estado: p.state_description || '',
-      imagen: p.image || '',
-      nombre: p.description || '',
-      sku: p.code?.toString() || '',
-      unidadMedida: p.description_unimed || '',
-      state_description: p.state_description || ''
-    }));
+    // Mapear productos - buscar descripción en múltiples campos posibles
+    const productos = (doc.DetailsProduct || []).map((p: any) => {
+      // Buscar descripción real en múltiples campos posibles
+      const descripcionReal = p.name || p.nombre || p.product_name || p.productName || 
+                              p.titulo || p.title || p.descripcion || p.description || '';
+      return {
+        cantidad: p.quantity || 1,
+        codigo: p.code || '',
+        descripcion: descripcionReal,
+        estado: p.state_description || '',
+        imagen: p.image || '',
+        nombre: descripcionReal,
+        sku: p.code?.toString() || '',
+        unidadMedida: p.description_unimed || p.code_unimed || '',
+        state_description: p.state_description || ''
+      };
+    });
 
     // Mapear tipo de documento a label legible
     const tipoDocMap: { [key: string]: string } = {

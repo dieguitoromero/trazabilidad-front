@@ -29,21 +29,23 @@ export class OrderDetailsModel {
         m.lineNumber = obj.lineNumber;
         m.internalNumber = obj.internalNumber;
         m.documentType = obj.documentType;
-    // quantity: priorizar cantidad si viene de productos raw
-    m.quantity = obj.quantity !== undefined ? obj.quantity : (obj.cantidad !== undefined ? obj.cantidad : undefined);
-        m.codeUnimed = obj.codeUnimed;
-    m.image = obj.image || obj.imagen;
-    m.description = obj.description || obj.nombre || obj.descripcion;
-        m.descriptionUnimed = obj.descriptionUnimed;
-    m.code = obj.code !== undefined ? obj.code : (obj.codigo !== undefined ? obj.codigo : undefined);
+        // quantity: priorizar cantidad si viene de productos raw
+        m.quantity = obj.quantity !== undefined ? obj.quantity : (obj.cantidad !== undefined ? obj.cantidad : undefined);
+        m.codeUnimed = obj.codeUnimed || obj.code_unimed || '';
+        m.image = obj.image || obj.imagen;
+        // Buscar descripción en múltiples campos posibles (el backend puede enviarla en diferentes campos)
+        m.description = obj.name || obj.nombre || obj.product_name || obj.productName || 
+                        obj.titulo || obj.title || obj.descripcion || obj.description || '';
+        m.descriptionUnimed = obj.descriptionUnimed || obj.description_unimed || '';
+        m.code = obj.code !== undefined ? obj.code : (obj.codigo !== undefined ? obj.codigo : undefined);
         m.stateDescription = obj.state_description;
-    // raw extras
-    m.nombre = obj.nombre;
-    m.descripcion = obj.descripcion;
-    m.sku = obj.sku;
-    m.unidadMedida = obj.unidadMedida;
-    m.rawCantidad = obj.cantidad;
-    m.rawCodigo = obj.codigo;
+        // raw extras
+        m.nombre = obj.nombre;
+        m.descripcion = obj.descripcion;
+        m.sku = obj.sku;
+        m.unidadMedida = obj.unidadMedida;
+        m.rawCantidad = obj.cantidad;
+        m.rawCodigo = obj.codigo;
 
         return m;
     }

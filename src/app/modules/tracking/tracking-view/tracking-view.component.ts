@@ -145,16 +145,20 @@ export class TrackingViewComponent implements OnInit {
                 });
         }
 
-        // Productos
-        if (payload.productos && payload.productos.length > 0) {
-            invoice.orderProducts = payload.productos.map((p: any) => ({
+        // Productos - buscar en 'productos' primero, luego fallback a 'DetailsProduct'
+        const rawProducts = payload.productos?.length > 0 
+            ? payload.productos 
+            : (payload.DetailsProduct || []);
+        
+        if (rawProducts.length > 0) {
+            invoice.orderProducts = rawProducts.map((p: any) => ({
                 quantity: p.cantidad || p.quantity || 1,
                 code: p.codigo || p.code || '',
-                codeUnimed: p.unidadMedida || p.codeUnimed || '',
+                codeUnimed: p.unidadMedida || p.codeUnimed || p.code_unimed || '',
                 image: p.imagen || p.image || '',
                 description: p.descripcion || p.description || p.nombre || '',
-                descriptionUnimed: p.unidadMedida || '',
-                stateDescription: p.estado || ''
+                descriptionUnimed: p.unidadMedida || p.description_unimed || '',
+                stateDescription: p.estado || p.state_description || ''
             }));
         }
 
