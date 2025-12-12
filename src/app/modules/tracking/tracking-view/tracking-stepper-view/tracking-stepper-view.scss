@@ -80,7 +80,9 @@
 
                 &.in-progress {
                     .step-separator {
-                        &.to:not(.end), &.from {
+
+                        &.to:not(.end),
+                        &.from {
                             border-top: 4px dotted #00aa00;
                             background-color: transparent !important;
                             border-radius: 0;
@@ -211,7 +213,7 @@
                         width: 23px;
                         height: 23px;
                     }
-                    
+
                     div.icon {
                         position: relative;
                         z-index: 2;
@@ -219,7 +221,7 @@
                         order: 1;
                         width: 23px;
                         height: 23px;
-                        
+
                         &.pending {
                             background: #e5e8ed;
                         }
@@ -256,7 +258,7 @@
 
                     &.beginning {
                         margin-top: 0;
-                        
+
                         .step-separator.from {
                             display: none !important;
                             min-height: 0 !important;
@@ -282,74 +284,104 @@
         right: 0;
         width: 0%;
         background: white;
-        -moz-animation: showHide 5s ease-in alternate; /* Firefox */
-        -webkit-animation: showHide 5s ease-in alternate infinite; /* Safari and Chrome */
-        -ms-animation: showHide 5s ease-in alternate infinite; /* IE10 */
-        -o-animation: showHide 5s ease-in alternate infinite; /* Opera */
+        -moz-animation: showHide 5s ease-in alternate;
+        /* Firefox */
+        -webkit-animation: showHide 5s ease-in alternate infinite;
+        /* Safari and Chrome */
+        -ms-animation: showHide 5s ease-in alternate infinite;
+        /* IE10 */
+        -o-animation: showHide 5s ease-in alternate infinite;
+        /* Opera */
         animation: showHide 1s ease-in alternate infinite;
         animation-iteration-count: 1;
         background: linear-gradient(to right, transparent 0%, white 10%)
     }
-    @-webkit-keyframes showHide { /* Chrome, Safari */
+
+    @-webkit-keyframes showHide {
+
+        /* Chrome, Safari */
         0% {
             width: 100%
         }
+
         40% {
             width: 0%
         }
+
         60% {
             width: 0%;
         }
+
         100% {
             width: 100%;
         }
     }
-    @-moz-keyframes showHide { /* FF */
+
+    @-moz-keyframes showHide {
+
+        /* FF */
         0% {
             width: 100%
         }
+
         40% {
             width: 0%
         }
+
         60% {
             width: 0%;
         }
+
         100% {
             width: 100%;
         }
     }
-    @-ms-keyframes showHide { /* IE10 */
+
+    @-ms-keyframes showHide {
+
+        /* IE10 */
         0% {
             width: 100%
         }
+
         40% {
             width: 0%
         }
+
         60% {
             width: 0%;
         }
+
         100% {
             width: 100%;
         }
     }
-    @-o-keyframes showHide { /* Opera */
+
+    @-o-keyframes showHide {
+
+        /* Opera */
         0% {
             width: 100%
         }
+
         40% {
             width: 0%
         }
+
         60% {
             width: 0%;
         }
+
         100% {
             width: 100%;
         }
     }
+
     @keyframes showHide {
         0% {
             width: 100%
         }
+
         100% {
             width: 0%
         }
@@ -359,32 +391,26 @@
 // ============================================================================
 // Media queries para pantallas medianas - stepper horizontal responsive
 // ============================================================================
-@media (max-width: 1000px) {
+@media (max-width: 990px) {
     :host {
         .stepper-view-container:not(.vertical) {
-            padding: 15px 8px;
-
             .step-container {
                 .step-title {
-                    font-size: 11px;
-                    margin: 8px 0;
+                    font-size: 10px;
 
-                    p, .title {
-                        font-size: 11px !important;
-                        line-height: 1.2;
+                    p,
+                    .title {
+                        font-size: 10px !important;
                     }
                 }
 
                 .step-details {
-                    padding: 4px 4px;
-                    
                     p {
-                        font-size: 10px;
-                        padding: 0 4px;
+                        font-size: 9px;
                     }
 
                     span {
-                        font-size: 10px;
+                        font-size: 9px;
                     }
                 }
             }
@@ -399,7 +425,8 @@
                 .step-title {
                     font-size: 10px;
 
-                    p, .title {
+                    p,
+                    .title {
                         font-size: 10px !important;
                     }
                 }

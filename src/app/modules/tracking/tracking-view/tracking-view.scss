@@ -596,7 +596,7 @@ $stepper-gray: #c5ced8;
 // ============================================================================
 // RESPONSIVIDAD DEL STEPPER - Pantallas medianas
 // ============================================================================
-@media (max-width: 1000px) {
+@media (max-width: 900px) {
     :host {
         .stepper-view-container {
             overflow-x: hidden;

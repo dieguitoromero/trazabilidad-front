@@ -1328,7 +1328,58 @@ $stepper-gray: #c5ced8;
 // ============================================================================
 
 // En pantallas medianas (tablets), permitir wrap pero mantener iconos alineados
-@media (max-width: 1000px) {
+@media (max-width: 990px) {
+  .stepper-view-container {
+    .step-container {
+      min-width: 0;
+      overflow: visible;
+      align-items: center;
+      
+      .step-title {
+        font-size: 11px !important;
+        overflow: visible;
+        // Altura mínima para 2 líneas de texto - mantiene iconos alineados
+        min-height: 32px !important;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        margin-bottom: 4px !important;
+
+        p, p.title {
+          font-size: 11px !important;
+          white-space: normal !important;
+          line-height: 1.2 !important;
+          max-width: 100%;
+          word-break: break-word;
+          text-align: center;
+        }
+      }
+
+      .step {
+        margin: 4px 0 !important;
+        flex-shrink: 0;
+      }
+
+      .step-details {
+        margin-top: 0 !important;
+        padding-top: 4px !important;
+        
+        p {
+          font-size: 10px !important;
+          line-height: 1.2 !important;
+          white-space: normal !important;
+          word-break: break-word;
+        }
+
+        span {
+          font-size: 10px !important;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 900px) {
   .stepper-view-container {
     .step-container {
       min-width: 0;
