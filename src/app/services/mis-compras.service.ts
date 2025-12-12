@@ -332,6 +332,14 @@ export class MisComprasService {
       });
 
       const productos = c.productos || c.items || [];
+      // Determinar si es dimensionado: verificar si viene del backend o si hay machinable en la trazabilidad
+      // Verificar también en la estructura original del backend por si la trazabilidad no se mapeó correctamente
+      const hasMachinableInTrazabilidad = trazabilidad.some(t => t.machinable && t.machinable.orders && t.machinable.orders.length > 0);
+      const hasMachinableInOriginal = (c.trazabilidad || c.traceability?.steps || c.traceability || []).some((t: any) => 
+        t.machinable && t.machinable.orders && t.machinable.orders.length > 0
+      );
+      const esDimensionado = c.esDimensionado || c.dimensionado || hasMachinableInTrazabilidad || hasMachinableInOriginal;
+      
       return {
         tipoDocumento: c.tipoDocumento || c.documentType || '',
         numeroDocumento: sanitizeNumber(c.numeroDocumento || c.number || ''),
@@ -339,7 +347,7 @@ export class MisComprasService {
         tipoEntrega: c.tipoEntrega || c.deliveryType || '',
         direccionEntrega: c.direccionEntrega || c.deliveryAddress || '',
         trazabilidad,
-        esDimensionado: c.esDimensionado || c.dimensionado || false,
+        esDimensionado: esDimensionado,
         total: c.total || c.amount || 0,
         facturasAsociadas: asociadas,
         productos

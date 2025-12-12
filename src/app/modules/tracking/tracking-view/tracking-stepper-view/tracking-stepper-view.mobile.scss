@@ -7,6 +7,7 @@
                 box-shadow: none;
 
                 .step-container {
+                    position: relative;
 
                     .step-title {
                         text-align: left;
@@ -42,8 +43,29 @@
                     }
 
                     .step {
+                        position: relative;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+
+                        // Asegurar que el ícono esté por encima de las líneas
+                        .icon {
+                            position: relative;
+                            z-index: 2;
+                            background: white;
+                            
+                            &.pending {
+                                z-index: 2;
+                                background: #e5e8ed;
+                            }
+                        }
+
                         &.beginning {
-                            margin-top: 10px;
+                            margin-top: 0;
+                            
+                            .step-separator.from {
+                                display: none !important;
+                            }
                         }
 
                         &.in-progress {
@@ -53,7 +75,7 @@
                                 &.to:not(.end), &.from {
                                     border-left: 4px dotted #00aa00;
                                     border-top: 0;
-                                    margin: 2px auto;
+                                    margin: 0 auto;
                                 }
                             }
 
@@ -83,7 +105,7 @@
                                         &.to:not(.end) {
                                             border-left: 4px dotted #00aa00;
                                             border-top: 0;
-                                            margin:2px auto;
+                                            margin: 0 auto;
                                         }
                                     }
                                 }
@@ -92,18 +114,15 @@
 
                         &.completed {
                             .step-separator {
-                                // background-color: #003c69;
-
                                 &.beginning {
-                                    border-radius: 5px 0 0 5px;
-                                    background: rgb(255, 255, 255);
-                                    background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 44%, #003c69 82%);
+                                    border-radius: 5px 5px 0 0;
+                                    background: transparent !important;
+                                    min-height: 0;
+                                    height: 0;
                                 }
 
                                 &.end {
-                                    border-radius: 0 5px 5px 0;
-                                    background: rgb(255, 255, 255);
-                                    background: linear-gradient(90deg, #003c69 0%, rgba(255, 255, 255, 1) 44%, rgba(255, 255, 255, 1) 82%);
+                                    border-radius: 0 0 5px 5px;
                                 }
                             }
                         }
@@ -113,11 +132,16 @@
                 .step-separator {
                     width: 2px;
                     min-height: 45px;
-                    margin: -5px auto 0;
+                    margin: 0 auto;
                     height: auto;
+                    position: relative;
+                    z-index: 1;
 
                     &.beginning {
                         border-radius: 5px 5px 0 0;
+                        min-height: 0;
+                        height: 0;
+                        background: transparent !important;
                     }
 
                     &.end {

@@ -151,13 +151,19 @@
             margin-top: 0px;
 
             .step-container {
+                position: relative;
+                display: flex;
+                flex-direction: row;
+                align-items: flex-start;
 
                 .step-title {
                     text-align: left;
-                    margin: 31px 0 0 15px;
+                    margin: 0 0 0 15px;
+                    padding-top: 35px;
 
                     &.beginning {
                         margin-top: 0;
+                        padding-top: 0;
                     }
 
                     .title {
@@ -184,15 +190,57 @@
                 }
 
                 .step {
+                    position: relative;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    min-width: 30px;
+
+                    // Asegurar que el ícono esté por encima de las líneas
+                    img.icon {
+                        position: relative;
+                        z-index: 2;
+                        background: white;
+                        border-radius: 50%;
+                        flex-shrink: 0;
+                        order: 1;
+                    }
+                    
+                    div.icon {
+                        position: relative;
+                        z-index: 2;
+                        flex-shrink: 0;
+                        order: 1;
+                        
+                        &.pending {
+                            background: #e5e8ed;
+                        }
+                    }
 
                     .step-separator {
                         width: 2px;
-                        min-height: 45px;
-                        margin: -5px auto 0;
+                        min-height: 35px;
+                        margin: 0 auto;
                         height: auto;
+                        position: relative;
+                        z-index: 1;
+                        flex: 1 1 auto;
+
+                        &.from {
+                            order: 0;
+                        }
+
+                        &.to {
+                            order: 2;
+                        }
 
                         &.beginning {
                             border-radius: 5px 5px 0 0;
+                            min-height: 0 !important;
+                            height: 0 !important;
+                            background: transparent !important;
+                            flex: 0 0 0 !important;
+                            display: none !important;
                         }
 
                         &.end {
@@ -201,7 +249,20 @@
                     }
 
                     &.beginning {
-                        margin-top: 10px;
+                        margin-top: 0;
+                        
+                        .step-separator.from {
+                            display: none !important;
+                            min-height: 0 !important;
+                            height: 0 !important;
+                        }
+                    }
+                }
+
+                // Primer paso: alinear correctamente
+                &:first-child {
+                    .step-title {
+                        padding-top: 0;
                     }
                 }
             }
