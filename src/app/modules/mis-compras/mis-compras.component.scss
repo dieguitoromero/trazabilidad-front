@@ -1207,11 +1207,31 @@ $stepper-gray: #c5ced8;
   transition: all .15s ease;
 
   &.active {
-    background: #003c69;
+    background: #E53935; // Rojo imperial para página actual
     color: #fff;
     
     &:hover {
-      background: darken(#003c69, 10%);
+      background: darken(#E53935, 10%);
+    }
+  }
+
+  // Estilo para página siguiente (si está visible y es la siguiente a la actual)
+  &.next-page {
+    background: #001F36; // Azul imperial para página siguiente
+    color: #fff;
+    
+    &:hover {
+      background: darken(#001F36, 10%);
+    }
+  }
+
+  // Estilo para página anterior (si está visible y es la anterior a la actual)
+  &.prev-page {
+    background: #001F36; // Azul imperial para página anterior
+    color: #fff;
+    
+    &:hover {
+      background: darken(#001F36, 10%);
     }
   }
 
@@ -1221,7 +1241,7 @@ $stepper-gray: #c5ced8;
     background: transparent;
   }
 
-  &:hover:not(.active):not(.ellipsis) {
+  &:hover:not(.active):not(.ellipsis):not(.next-page):not(.prev-page) {
     background: #f9fafb;
     color: #344054;
   }
@@ -1252,12 +1272,12 @@ $stepper-gray: #c5ced8;
 }
 
 .mobile-condensed-pager .pager-node.neighbor {
-  background: #0a3d85;
+  background: #001F36; // Azul imperial para página siguiente
   color: #fff;
 }
 
 .mobile-condensed-pager .pager-node.active {
-  background: #003c69;
+  background: #E53935; // Rojo imperial para página actual
   color: #fff;
 }
 

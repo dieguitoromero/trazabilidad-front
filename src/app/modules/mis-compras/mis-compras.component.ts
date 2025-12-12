@@ -1134,12 +1134,15 @@ export class MisComprasComponent implements OnInit, OnDestroy {
     };
     this.trackingDataService.setInvoicePayload(legacyInvoice);
     // URL simplificada: solo los parámetros necesarios para la vista de detalle
+    // Incluir page y perPage para poder volver a la misma página
     this.router.navigate(['/tracking'], {
       queryParams: {
         folio: folioDigits,
         tipo: tipoDocumentoCode,
         cliente: this.rut,
-        detalle: '1' // Indica que es vista de detalle
+        detalle: '1', // Indica que es vista de detalle
+        page: this.page,
+        perPage: this.perPage
       },
       state: { compraBuscarDocumentoResp: resp }
     });

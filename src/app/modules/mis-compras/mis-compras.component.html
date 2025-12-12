@@ -151,7 +151,7 @@
       ‹
     </button>
     <button class="page-box" *ngFor="let p of getVisiblePages(); trackBy: trackByPage" [class.active]="p === page"
-      [class.ellipsis]="p === '...'" [disabled]="p === '...'" (click)="handlePageClick(p)">
+      [class.next-page]="p === page + 1" [class.prev-page]="p === page - 1" [class.ellipsis]="p === '...'" [disabled]="p === '...'" (click)="handlePageClick(p)">
       {{ p }}
     </button>
     <button class="pagination-arrow" [class.disabled]="page === totalPages" (click)="goToPage(page + 1)"
