@@ -146,7 +146,14 @@
     </div>
   </div>
 
-  <div class="pagination-row desktop-only" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1">
+  <!-- Botón "Mostrar más" solo en la primera página -->
+  <div class="show-more-container" *ngIf="shouldShowMoreButton">
+    <button class="show-more-btn" (click)="mostrarMasPrimeraPagina()">
+      Más compras
+    </button>
+  </div>
+
+  <div class="pagination-row desktop-only" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1 && (page !== 1 || showMoreFirstPage)">
     <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
       ‹
     </button>
@@ -161,7 +168,7 @@
   </div>
 
   <!-- Pager condensado móvil -->
-  <div class="mobile-condensed-pager" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1">
+  <div class="mobile-condensed-pager" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1 && (page !== 1 || showMoreFirstPage)">
     <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
       ‹
     </button>

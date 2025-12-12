@@ -1156,6 +1156,38 @@ $stepper-gray: #c5ced8;
 }
 
 /* Paginación */
+.show-more-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 24px 0;
+  width: 100%;
+}
+
+.show-more-btn {
+  background: #E53935; // Rojo imperial
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 160px;
+
+  &:hover {
+    background: darken(#E53935, 10%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(229, 57, 53, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(229, 57, 53, 0.2);
+  }
+}
+
 .pagination-row {
   display: flex;
   justify-content: center;

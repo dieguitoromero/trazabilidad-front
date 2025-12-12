@@ -111,6 +111,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
   showAll = false;
   searchPressed = false;
   isSearching = false; // Indica si estamos en modo búsqueda (buscando documento específico)
+  showMoreFirstPage = false; // Controla si se muestran más de 3 documentos en la primera página
   // Paginación
   page = 1;
   perPage = environment.limitDefault;
@@ -290,7 +291,29 @@ export class MisComprasComponent implements OnInit, OnDestroy {
   get filteredCompras(): Compra[] {
     // Con paginación server-side: el backend ya devolvió sólo la página actual
     // Si estamos en modo búsqueda, los resultados ya vienen filtrados de la API
-    return this.fullFiltered();
+    const allCompras = this.fullFiltered();
+    
+    // En la primera página, mostrar solo 3 documentos inicialmente si no se ha expandido
+    // Solo aplicar si hay más de 3 documentos y no estamos en modo búsqueda
+    if (this.page === 1 && !this.showMoreFirstPage && !this.isSearching && allCompras.length > 3) {
+      return allCompras.slice(0, 3);
+    }
+    
+    // Si se ha expandido, mostrar hasta 10 documentos en la primera página
+    if (this.page === 1 && this.showMoreFirstPage && !this.isSearching) {
+      return allCompras.slice(0, 10);
+    }
+    
+    return allCompras;
+  }
+  
+  // Verifica si se debe mostrar el botón "Mostrar más" en la primera página
+  get shouldShowMoreButton(): boolean {
+    const allCompras = this.fullFiltered();
+    return this.page === 1 && 
+           !this.showMoreFirstPage && 
+           !this.isSearching && 
+           allCompras.length > 3;
   }
 
   get totalFilteredCount(): number { return this.fullFiltered().length; }
@@ -881,6 +904,11 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       this.goToPage(this.page + 1);
     }
   }
+  
+  // Muestra más documentos en la primera página (de 3 a 10)
+  mostrarMasPrimeraPagina(): void {
+    this.showMoreFirstPage = true;
+  }
 
   buscar(): void {
     const term = (this.searchTerm || '').trim();
@@ -891,6 +919,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       this.isSearching = false;
       this.searchPressed = false;
       this.page = 1;
+      this.showMoreFirstPage = false; // Resetear al limpiar búsqueda
       // Limpiar el parámetro 'buscar' de la URL
       const currentParams = this.route.snapshot.queryParams;
       const newParams: any = { page: 1, perPage: this.perPage, rut: this.rut };
@@ -922,6 +951,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
     this.searchPressed = true;
     this.loading = true;
     this.page = 1;
+    this.showMoreFirstPage = false; // Resetear al buscar
 
     this.misComprasService.buscarDocumento(this.rut, term, 1, this.perPage)
       .pipe(takeUntil(this.destroy$))
@@ -1246,6 +1276,10 @@ export class MisComprasComponent implements OnInit, OnDestroy {
   goToPage(p: number): void {
     if (p >= 1 && p <= this.totalPages) {
       this.page = p;
+      // Resetear el estado de "mostrar más" cuando se cambia de página
+      if (p !== 1) {
+        this.showMoreFirstPage = false;
+      }
 
       // Si estamos en modo búsqueda, buscar en la página correspondiente
       if (this.isSearching && this.searchTerm.trim() && this.rut) {
