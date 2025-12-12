@@ -285,4 +285,13 @@ export class TrackingViewComponent implements OnInit {
             step.machinable.orders.length > 0
         );
     }
+
+    /**
+     * Elimina los ceros a la izquierda del número de documento, igual que en Mis Compras
+     */
+    public getFormattedDocumentNumber(): string {
+        if (!this.invoice?.printedNumber) return '';
+        const num = Number(this.invoice.printedNumber);
+        return isNaN(num) ? this.invoice.printedNumber : num.toString();
+    }
 }

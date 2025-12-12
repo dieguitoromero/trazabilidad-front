@@ -8,7 +8,7 @@
 <!-- Header con informacion del documento -->
 <div class="document-header" *ngIf="invoice && isDetailView">
     <h2 class="document-title">Detalle de documento</h2>
-    <p class="document-number">Documento N°: {{ invoice?.printedNumber }}</p>
+    <p class="document-number">Documento N°: {{ getFormattedDocumentNumber() }}</p>
 </div>
 
 <!-- Buscador - solo mostrar si no es vista de detalle -->

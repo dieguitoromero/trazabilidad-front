@@ -1077,7 +1077,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       title: backendPickup.title || (tipoEntregaFromBackend.toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho a Domicilio'),
       text: backendPickup.text || direccionFromBackend,
       title_date: backendPickup.title_date || (isRetiro ? 'Retira a partir del ' : 'Llega a partir del '),
-      date: backendPickup.date || (isRetiro ? (encontrado?.fechaRetiro || c?.fechaRetiro || undefined) : undefined),
+      date: backendPickup.date || undefined,
       icon: backendPickup.icon || (isRetiro 
         ? 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
         : 'https://dvimperial.blob.core.windows.net/traceability/delivery_icon.svg')
@@ -1085,7 +1085,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       title: tipoEntregaFromBackend.toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho a Domicilio',
       text: direccionFromBackend,
       title_date: isRetiro ? 'Retira a partir del ' : 'Llega a partir del ',
-      date: isRetiro ? (encontrado?.fechaRetiro || c?.fechaRetiro || undefined) : undefined,
+      date: undefined,
       icon: isRetiro 
         ? 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
         : 'https://dvimperial.blob.core.windows.net/traceability/delivery_icon.svg'
