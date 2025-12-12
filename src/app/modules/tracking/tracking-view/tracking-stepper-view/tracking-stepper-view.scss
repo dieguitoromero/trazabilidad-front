@@ -191,10 +191,10 @@
 
                 .step {
                     position: relative;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    min-width: 30px;
+                    display: flex !important; // Sobreescribir d-block de Bootstrap
+                    flex-direction: column !important;
+                    align-items: center !important; // Centra todos los hijos (iconos y líneas)
+                    width: 23px; // Mismo ancho que el icono
 
                     // Asegurar que el ícono esté por encima de las líneas
                     img.icon {
@@ -204,6 +204,8 @@
                         border-radius: 50%;
                         flex-shrink: 0;
                         order: 1;
+                        width: 23px;
+                        height: 23px;
                     }
                     
                     div.icon {
@@ -211,6 +213,8 @@
                         z-index: 2;
                         flex-shrink: 0;
                         order: 1;
+                        width: 23px;
+                        height: 23px;
                         
                         &.pending {
                             background: #e5e8ed;
@@ -220,9 +224,7 @@
                     .step-separator {
                         width: 2px;
                         min-height: 35px;
-                        margin: 0 auto;
                         height: auto;
-                        position: relative;
                         z-index: 1;
                         flex: 1 1 auto;
 

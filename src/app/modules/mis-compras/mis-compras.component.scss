@@ -427,11 +427,14 @@ $stepper-gray: #c5ced8;
 .step .icon-wrapper {
   position: relative;
   height: 28px;
+  width: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  /* Aumentado para asegurar que esté por encima de las líneas */
+  /* Fondo circular blanco para que la línea no pase por detrás del icono */
+  background: white;
+  border-radius: 50%;
 }
 
 .step .icon.ok {
@@ -450,6 +453,8 @@ $stepper-gray: #c5ced8;
   width: 28px !important;
   height: 28px !important;
   display: block !important;
+  position: relative;
+  z-index: 2;
 }
 
 .step .icon.pending {

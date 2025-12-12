@@ -56,6 +56,14 @@ export interface TrazabilidadDto {
   machinable?: MachinableDto;
 }
 
+export interface PickupDto {
+  title?: string; // "Retiro en Tienda" o "Despacho a Domicilio"
+  text?: string; // Dirección de entrega o tienda
+  title_date?: string; // "Retira a partir del " o "Llega a partir del "
+  date?: string; // Fecha ISO 8601
+  icon?: string; // URL del ícono
+}
+
 export interface CompraApiDto {
   tipoDocumento: string;
   numeroDocumento: string;
@@ -67,6 +75,7 @@ export interface CompraApiDto {
   total: number;
   facturasAsociadas?: Array<{ numeroFactura: string; fechaEmision: string; idFactura: number }>; // optional
   productos?: any[]; // incluir productos crudos para tracking
+  pickup?: PickupDto; // Datos completos de entrega/retiro del backend
 }
 
 export interface MisComprasResponseDto {
@@ -261,7 +270,15 @@ export class MisComprasService {
       esDimensionado: trazabilidad.some(t => t.machinable),
       total: doc.total || 0,
       facturasAsociadas: asociadas,
-      productos
+      productos,
+      // Preservar objeto pickup completo del backend si está disponible
+      pickup: doc.pickup ? {
+        title: doc.pickup.title,
+        text: doc.pickup.text,
+        title_date: doc.pickup.title_date,
+        date: doc.pickup.date,
+        icon: doc.pickup.icon
+      } : undefined
     };
   }
 
@@ -412,7 +429,15 @@ export class MisComprasService {
         esDimensionado: esDimensionado,
         total: c.total || c.amount || 0,
         facturasAsociadas: asociadas,
-        productos
+        productos,
+        // Preservar objeto pickup completo del backend si está disponible
+        pickup: c.pickup ? {
+          title: c.pickup.title,
+          text: c.pickup.text,
+          title_date: c.pickup.title_date,
+          date: c.pickup.date,
+          icon: c.pickup.icon
+        } : undefined
       } as CompraApiDto;
     });
 

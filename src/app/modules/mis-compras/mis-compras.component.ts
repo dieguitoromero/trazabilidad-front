@@ -76,6 +76,14 @@ type StepSnapshot = {
 };
 type FacturaAsociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
 
+type Pickup = {
+  title?: string; // "Retiro en Tienda" o "Despacho a Domicilio"
+  text?: string; // Dirección de entrega o tienda
+  title_date?: string; // "Retira a partir del " o "Llega a partir del "
+  date?: string; // Fecha ISO 8601
+  icon?: string; // URL del ícono
+};
+
 type Compra = {
   tipoDocumento: string;
   numeroDocumento: string;
@@ -87,6 +95,7 @@ type Compra = {
   total: number;
   facturasAsociadas?: FacturaAsociada[];
   productos?: any[]; // agregado para mostrar lista de productos
+  pickup?: Pickup; // Datos completos de entrega/retiro del backend
 };
 
 @Component({
@@ -1056,6 +1065,32 @@ export class MisComprasComponent implements OnInit, OnDestroy {
         return this.normalize(titleText) !== this.normalize('Pedido en Ruta');
       });
     }
+    // Construir pickup: usar datos del backend si están disponibles, sino hacer fallback
+    // El backend ahora envía pickup correctamente con title, text, title_date, date e icon
+    const backendPickup = (encontrado as any)?.pickup || (c as any)?.pickup;
+    const tipoEntregaFromBackend = encontrado?.tipoEntrega || c?.tipoEntrega || '';
+    const direccionFromBackend = encontrado?.direccionEntrega || c?.direccionEntrega || '';
+    
+    // Si el backend envió pickup completo, usarlo directamente
+    // Si no, construir desde tipoEntrega y direccionEntrega (fallback)
+    const pickup = backendPickup ? {
+      title: backendPickup.title || (tipoEntregaFromBackend.toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho a Domicilio'),
+      text: backendPickup.text || direccionFromBackend,
+      title_date: backendPickup.title_date || (isRetiro ? 'Retira a partir del ' : 'Llega a partir del '),
+      date: backendPickup.date || (isRetiro ? (encontrado?.fechaRetiro || c?.fechaRetiro || undefined) : undefined),
+      icon: backendPickup.icon || (isRetiro 
+        ? 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
+        : 'https://dvimperial.blob.core.windows.net/traceability/delivery_icon.svg')
+    } : {
+      title: tipoEntregaFromBackend.toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho a Domicilio',
+      text: direccionFromBackend,
+      title_date: isRetiro ? 'Retira a partir del ' : 'Llega a partir del ',
+      date: isRetiro ? (encontrado?.fechaRetiro || c?.fechaRetiro || undefined) : undefined,
+      icon: isRetiro 
+        ? 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
+        : 'https://dvimperial.blob.core.windows.net/traceability/delivery_icon.svg'
+    };
+
     const legacyInvoice = {
       number_printed: folioDigits.toString().padStart(10, '0'),
       type_document: tipoDocumentoCode,
@@ -1063,16 +1098,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       total: encontrado?.total || c?.total || 0,
       date_issue: new Date().toISOString(),
       id_pay: 0,
-      pickup: {
-        title: (encontrado?.tipoEntrega || c?.tipoEntrega || '').toLowerCase().includes('retiro') ? 'Retiro en Tienda' : 'Despacho',
-        text: encontrado?.direccionEntrega || c?.direccionEntrega || '',
-        title_date: 'Retira a partir del ',
-        date: new Date().toISOString(),
-        // Usar icono del backend si está disponible, sino usar el correcto según tipo de entrega
-        icon: (encontrado as any)?.pickup?.icon || (c as any)?.pickup?.icon || (isRetiro 
-          ? 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
-          : 'https://dvimperial.blob.core.windows.net/traceability/delivery_icon.svg')
-      },
+      pickup: pickup,
       traceability: {
         steps: traceabilitySteps
       },
