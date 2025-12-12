@@ -200,9 +200,59 @@ export class MisComprasService {
       'BLV': 'Boleta',
       'NVV': 'Nota de Venta'
     };
+    const tipoDocumento = tipoDocMap[doc.type_document] || doc.label_document || doc.type_document || '';
+    const esNotaVenta = doc.type_document === 'NVV' || tipoDocumento === 'Nota de Venta';
+
+    // Mapear facturas asociadas (SOLO para Notas de Venta según especificación del backend)
+    type Asociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
+    let asociadas: Asociada[] = [];
+    
+    // Solo procesar facturas asociadas si es Nota de Venta
+    if (esNotaVenta && (doc.facturasAsociadas || doc.associatedInvoices)) {
+      const sanitizeNumber = (val: any): string => {
+        const raw = (val == null ? '' : String(val)).trim();
+        return raw.replace(/^N[°º]?\s*/i, '').trim();
+      };
+      const parseDateDMY = (s: any): number => {
+        if (!s) return 0;
+        const str = String(s).trim();
+        const m = str.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (m) {
+          const d = parseInt(m[1], 10);
+          const mo = parseInt(m[2], 10) - 1;
+          const y = parseInt(m[3], 10);
+          return new Date(y, mo, d).getTime();
+        }
+        const t = Date.parse(str);
+        return isNaN(t) ? 0 : t;
+      };
+      
+      // El backend puede enviar null, undefined o array vacío
+      const facturasRaw = doc.facturasAsociadas || doc.associatedInvoices || [];
+      asociadas = (Array.isArray(facturasRaw) ? facturasRaw : [])
+        .map((f: any) => ({
+          numeroFactura: sanitizeNumber(f?.numeroFactura ?? f?.number ?? ''),
+          fechaEmision: String(f?.fechaEmision ?? f?.fecha ?? '').trim(),
+          idFactura: Number(f?.idFactura ?? f?.id ?? 0)
+        }))
+        .filter((f: Asociada) => (f.numeroFactura?.length || 0) > 0 || (f.fechaEmision?.length || 0) > 0);
+
+      // Ordenar: el backend dice que viene ordenado ascendente, pero mantenemos ordenamiento
+      // consistente con mapResponse (más reciente primero)
+      asociadas.sort((a: Asociada, b: Asociada) => {
+        const aNonZero = a.numeroFactura && a.numeroFactura !== '0' ? 1 : 0;
+        const bNonZero = b.numeroFactura && b.numeroFactura !== '0' ? 1 : 0;
+        if (aNonZero !== bNonZero) return bNonZero - aNonZero; // no-cero primero
+        const ta = parseDateDMY(a.fechaEmision);
+        const tb = parseDateDMY(b.fechaEmision);
+        if (tb !== ta) return tb - ta; // más reciente primero
+        return (b.idFactura || 0) - (a.idFactura || 0);
+      });
+    }
+    // Para BLV y FCV, facturasAsociadas será [] (array vacío)
 
     return {
-      tipoDocumento: tipoDocMap[doc.type_document] || doc.label_document || doc.type_document || '',
+      tipoDocumento,
       numeroDocumento: (doc.number_printed || '').replace(/^0+/, ''),
       fechaCompra: doc.date_issue || '',
       tipoEntrega: tipoEntrega,
@@ -210,7 +260,7 @@ export class MisComprasService {
       trazabilidad,
       esDimensionado: trazabilidad.some(t => t.machinable),
       total: doc.total || 0,
-      facturasAsociadas: [],
+      facturasAsociadas: asociadas,
       productos
     };
   }
@@ -312,24 +362,36 @@ export class MisComprasService {
         };
       });
 
+      // Verificar si es Nota de Venta (SOLO NVV tiene facturas asociadas según especificación del backend)
+      const tipoDoc = c.tipoDocumento || c.documentType || '';
+      const esNotaVenta = tipoDoc === 'Nota de Venta' || tipoDoc.includes('Nota de Venta');
+      
       type Asociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
-      const asociadas: Asociada[] = (c.facturasAsociadas || c.associatedInvoices || [])
-        .map((f: any) => ({
-          numeroFactura: sanitizeNumber(f?.numeroFactura ?? f?.number ?? ''),
-          fechaEmision: String(f?.fechaEmision ?? f?.fecha ?? '').trim(),
-          idFactura: Number(f?.idFactura ?? f?.id ?? 0)
-        }))
-        .filter((f: Asociada) => (f.numeroFactura?.length || 0) > 0 || (f.fechaEmision?.length || 0) > 0);
+      let asociadas: Asociada[] = [];
+      
+      // Solo procesar facturas asociadas si es Nota de Venta
+      if (esNotaVenta && (c.facturasAsociadas || c.associatedInvoices)) {
+        // El backend puede enviar null, undefined o array vacío
+        const facturasRaw = c.facturasAsociadas || c.associatedInvoices || [];
+        asociadas = (Array.isArray(facturasRaw) ? facturasRaw : [])
+          .map((f: any) => ({
+            numeroFactura: sanitizeNumber(f?.numeroFactura ?? f?.number ?? ''),
+            fechaEmision: String(f?.fechaEmision ?? f?.fecha ?? '').trim(),
+            idFactura: Number(f?.idFactura ?? f?.id ?? 0)
+          }))
+          .filter((f: Asociada) => (f.numeroFactura?.length || 0) > 0 || (f.fechaEmision?.length || 0) > 0);
 
-      asociadas.sort((a: Asociada, b: Asociada) => {
-        const aNonZero = a.numeroFactura && a.numeroFactura !== '0' ? 1 : 0;
-        const bNonZero = b.numeroFactura && b.numeroFactura !== '0' ? 1 : 0;
-        if (aNonZero !== bNonZero) return bNonZero - aNonZero; // no-cero primero
-        const ta = parseDateDMY(a.fechaEmision);
-        const tb = parseDateDMY(b.fechaEmision);
-        if (tb !== ta) return tb - ta; // más reciente primero
-        return (b.idFactura || 0) - (a.idFactura || 0);
-      });
+        asociadas.sort((a: Asociada, b: Asociada) => {
+          const aNonZero = a.numeroFactura && a.numeroFactura !== '0' ? 1 : 0;
+          const bNonZero = b.numeroFactura && b.numeroFactura !== '0' ? 1 : 0;
+          if (aNonZero !== bNonZero) return bNonZero - aNonZero; // no-cero primero
+          const ta = parseDateDMY(a.fechaEmision);
+          const tb = parseDateDMY(b.fechaEmision);
+          if (tb !== ta) return tb - ta; // más reciente primero
+          return (b.idFactura || 0) - (a.idFactura || 0);
+        });
+      }
+      // Para BLV y FCV, facturasAsociadas será [] (array vacío)
 
       const productos = c.productos || c.items || [];
       // Determinar si es dimensionado: verificar si viene del backend o si hay machinable en la trazabilidad

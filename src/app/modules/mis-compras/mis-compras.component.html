@@ -44,7 +44,7 @@
   </div>
 
   <div class="cards" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido" [class.loading-state]="loading">
-    <div class="card" *ngFor="let c of filteredCompras">
+    <div class="card" *ngFor="let c of filteredCompras; trackBy: trackByCompra">
       <div class="card-header">
         <div class="doc-title">
           {{ c.tipoDocumento }} N° {{ c.numeroDocumento }}
@@ -77,7 +77,7 @@
       <!-- Stepper - oculto en móvil y cuando el texto se superpone -->
       <div class="hide-on-mobile stepper-wrapper">
         <div class="stepper-view-container d-flex">
-          <ng-container *ngFor="let step of stepperSnapshot(c); let i = index">
+          <ng-container *ngFor="let step of stepperSnapshot(c); let i = index; trackBy: trackByStep">
             <div class="step-container d-flex flex-column">
               <div class="step-title"
                 [class.in-progress]="step.isInProgress"
@@ -119,13 +119,14 @@
         <span class="estado-text">Estado: {{ estadoActual(c) }}</span>
       </div>
 
-      <div class="facturas-asociadas-link" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
+      <!-- Facturas asociadas: SOLO para Notas de Venta (NVV) según especificación del backend -->
+      <div class="facturas-asociadas-link" *ngIf="c.tipoDocumento === 'Nota de Venta' && c.facturasAsociadas && c.facturasAsociadas.length > 0">
         <a (click)="toggleAsociadas(c)">Ver facturas asociadas ({{ c.facturasAsociadas.length }})</a>
       </div>
 
-      <div class="asociadas" *ngIf="c.facturasAsociadas && c.facturasAsociadas.length > 0">
+      <div class="asociadas" *ngIf="c.tipoDocumento === 'Nota de Venta' && c.facturasAsociadas && c.facturasAsociadas.length > 0">
         <div class="asociadas-list" *ngIf="isAsociadasOpen(c)">
-          <ng-container *ngFor="let f of c.facturasAsociadas">
+          <ng-container *ngFor="let f of c.facturasAsociadas; trackBy: trackByFactura">
             <div class="asociada-item" *ngIf="f && (f.numeroFactura || f.fechaEmision)">
               <span class="dot-bullet">•</span>
               <span class="asociada-text">Factura N° {{ f.numeroFactura }}<ng-container *ngIf="f.fechaEmision"> - {{
@@ -149,7 +150,7 @@
     <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
       ‹
     </button>
-    <button class="page-box" *ngFor="let p of getVisiblePages()" [class.active]="p === page"
+    <button class="page-box" *ngFor="let p of getVisiblePages(); trackBy: trackByPage" [class.active]="p === page"
       [class.ellipsis]="p === '...'" [disabled]="p === '...'" (click)="handlePageClick(p)">
       {{ p }}
     </button>
@@ -164,7 +165,7 @@
     <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
       ‹
     </button>
-    <div class="pager-node" *ngFor="let p of condensedPager" [class.active]="isPagerActive(p)"
+    <div class="pager-node" *ngFor="let p of condensedPager; trackBy: trackByPage" [class.active]="isPagerActive(p)"
       [class.neighbor]="isPagerNeighbor(p)" (click)="goToPage(p)">
       <span>{{ p }}</span>
     </div>

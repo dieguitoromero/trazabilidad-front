@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { ADMIN_MOCK_DATA } from './mock-admin-data';
 import { MisComprasService, MisComprasResponseDto } from '../../services/mis-compras.service';
 import { TrackingDataService } from '../../services/tracking-data.service';
@@ -90,9 +92,11 @@ type Compra = {
 @Component({
   selector: 'app-mis-compras',
   templateUrl: './mis-compras.component.html',
-  styleUrls: ['./mis-compras.component.scss']
+  styleUrls: ['./mis-compras.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MisComprasComponent implements OnInit {
+export class MisComprasComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   compras: Compra[] = [];
   searchTerm = '';
   showAll = false;
@@ -137,7 +141,13 @@ export class MisComprasComponent implements OnInit {
     // Agregar más variaciones según los estados reales que envía el backend
   };
 
-  constructor(private router: Router, private route: ActivatedRoute, private misComprasService: MisComprasService, private trackingDataService: TrackingDataService) { }
+  constructor(
+    private router: Router, 
+    private route: ActivatedRoute, 
+    private misComprasService: MisComprasService, 
+    private trackingDataService: TrackingDataService,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
     // Restaurar estado de paginación desde query params si existen
@@ -210,6 +220,7 @@ export class MisComprasComponent implements OnInit {
           this.clienteNoEncontrado = false;
         }
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (err: any) => {
         console.error('[MisComprasComponent] Error API', err);
@@ -238,6 +249,7 @@ export class MisComprasComponent implements OnInit {
           }
         }
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -848,9 +860,11 @@ export class MisComprasComponent implements OnInit {
     }
     const tipo = this.mapTipoDocumentoToCode(c.tipoDocumento);
     // Búsqueda y navegación unificada
-    this.misComprasService.buscarDocumento(this.rut, c.numeroDocumento, 1, this.perPage).subscribe(resp => {
-      this.handleBuscarDocumentoResponse(resp, tipo, c.numeroDocumento, c);
-    });
+    this.misComprasService.buscarDocumento(this.rut, c.numeroDocumento, 1, this.perPage)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(resp => {
+        this.handleBuscarDocumentoResponse(resp, tipo, c.numeroDocumento, c);
+      });
   }
 
   verMas(): void {
@@ -900,43 +914,47 @@ export class MisComprasComponent implements OnInit {
     this.loading = true;
     this.page = 1;
 
-    this.misComprasService.buscarDocumento(this.rut, term, 1, this.perPage).subscribe({
-      next: (resp: MisComprasResponseDto) => {
-        console.log('[MisComprasComponent] Respuesta de buscarDocumento:', resp);
-        const hasData = !!resp.compras && resp.compras.length > 0;
-        this.compras = (resp.compras || []) as Compra[];
-        this.resetStepperCache();
-        this.perPage = resp.perPage || environment.limitDefault;
-        this.page = resp.page || 1;
-        // Usar el totalPages real de la respuesta para permitir paginación
-        // si hay múltiples resultados de búsqueda
-        this.totalPages = resp.totalPages || 1;
-        this.error = false;
-        this.loading = false;
-        // Asegurar que searchPressed esté en true para mostrar mensaje si no hay resultados
-        if (!hasData) {
-          this.searchPressed = true;
-        }
+    this.misComprasService.buscarDocumento(this.rut, term, 1, this.perPage)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resp: MisComprasResponseDto) => {
+          console.log('[MisComprasComponent] Respuesta de buscarDocumento:', resp);
+          const hasData = !!resp.compras && resp.compras.length > 0;
+          this.compras = (resp.compras || []) as Compra[];
+          this.resetStepperCache();
+          this.perPage = resp.perPage || environment.limitDefault;
+          this.page = resp.page || 1;
+          // Usar el totalPages real de la respuesta para permitir paginación
+          // si hay múltiples resultados de búsqueda
+          this.totalPages = resp.totalPages || 1;
+          this.error = false;
+          this.loading = false;
+          // Asegurar que searchPressed esté en true para mostrar mensaje si no hay resultados
+          if (!hasData) {
+            this.searchPressed = true;
+          }
 
-        // Actualizar URL con el término de búsqueda y la página
-        if (this.rut) {
-          this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: { page: this.page, perPage: this.perPage, rut: this.rut, buscar: term },
-            queryParamsHandling: 'merge'
-          });
+          // Actualizar URL con el término de búsqueda y la página
+          if (this.rut) {
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { page: this.page, perPage: this.perPage, rut: this.rut, buscar: term },
+              queryParamsHandling: 'merge'
+            });
+          }
+          this.cdr.markForCheck();
+        },
+        error: (err: any) => {
+          console.error('[MisComprasComponent] Error buscando documento', err);
+          this.error = true;
+          this.compras = [];
+          this.resetStepperCache();
+          this.totalPages = 1;
+          this.loading = false;
+          this.searchPressed = true; // Asegurar que se muestre el mensaje de error
+          this.cdr.markForCheck();
         }
-      },
-      error: (err: any) => {
-        console.error('[MisComprasComponent] Error buscando documento', err);
-        this.error = true;
-        this.compras = [];
-        this.resetStepperCache();
-        this.totalPages = 1;
-        this.loading = false;
-        this.searchPressed = true; // Asegurar que se muestre el mensaje de error
-      }
-    });
+      });
   }
 
   onInputChange(): void {
@@ -1204,29 +1222,33 @@ export class MisComprasComponent implements OnInit {
       if (this.isSearching && this.searchTerm.trim() && this.rut) {
         const term = this.searchTerm.trim();
         this.loading = true;
-        this.misComprasService.buscarDocumento(this.rut, term, p, this.perPage).subscribe({
-          next: (resp: MisComprasResponseDto) => {
-            this.compras = (resp.compras || []) as Compra[];
-            this.resetStepperCache();
-            this.perPage = resp.perPage || environment.limitDefault;
-            this.page = resp.page || p;
-            this.totalPages = resp.totalPages || 1;
-            this.error = false;
-            this.loading = false;
+        this.misComprasService.buscarDocumento(this.rut, term, p, this.perPage)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (resp: MisComprasResponseDto) => {
+              this.compras = (resp.compras || []) as Compra[];
+              this.resetStepperCache();
+              this.perPage = resp.perPage || environment.limitDefault;
+              this.page = resp.page || p;
+              this.totalPages = resp.totalPages || 1;
+              this.error = false;
+              this.loading = false;
 
-            // Actualizar URL con el término de búsqueda y la página
-            this.router.navigate([], {
-              relativeTo: this.route,
-              queryParams: { page: this.page, perPage: this.perPage, rut: this.rut, buscar: term },
-              queryParamsHandling: 'merge'
-            });
-          },
-          error: (err: any) => {
-            console.error('[MisComprasComponent] Error buscando documento en página', err);
-            this.error = true;
-            this.loading = false;
-          }
-        });
+              // Actualizar URL con el término de búsqueda y la página
+              this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: { page: this.page, perPage: this.perPage, rut: this.rut, buscar: term },
+                queryParamsHandling: 'merge'
+              });
+              this.cdr.markForCheck();
+            },
+            error: (err: any) => {
+              console.error('[MisComprasComponent] Error buscando documento en página', err);
+              this.error = true;
+              this.loading = false;
+              this.cdr.markForCheck();
+            }
+          });
       } else {
         // Actualizar URL para persistir estado y permitir volver con la misma página
         this.router.navigate([], {
@@ -1237,5 +1259,27 @@ export class MisComprasComponent implements OnInit {
         this.fetchComprasReal();
       }
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // TrackBy functions para optimizar *ngFor
+  trackByCompra(index: number, compra: Compra): string {
+    return compra.numeroDocumento || index.toString();
+  }
+
+  trackByStep(index: number, step: any): string {
+    return step.label || step.title?.text || index.toString();
+  }
+
+  trackByFactura(index: number, factura: FacturaAsociada): string {
+    return factura.numeroFactura || index.toString();
+  }
+
+  trackByPage(index: number, page: number | string): string {
+    return typeof page === 'number' ? page.toString() : page;
   }
 }
