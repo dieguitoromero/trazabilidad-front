@@ -908,6 +908,8 @@ export class MisComprasComponent implements OnInit, OnDestroy {
   // Muestra más documentos en la primera página (de 3 a 10)
   mostrarMasPrimeraPagina(): void {
     this.showMoreFirstPage = true;
+    // Scroll al inicio cuando se expanden los documentos
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   buscar(): void {
@@ -1280,6 +1282,9 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       if (p !== 1) {
         this.showMoreFirstPage = false;
       }
+      
+      // Scroll al inicio de la página al cambiar de página
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
       // Si estamos en modo búsqueda, buscar en la página correspondiente
       if (this.isSearching && this.searchTerm.trim() && this.rut) {
