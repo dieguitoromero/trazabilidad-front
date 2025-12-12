@@ -909,7 +909,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
   mostrarMasPrimeraPagina(): void {
     this.showMoreFirstPage = true;
     // Scroll al inicio cuando se expanden los documentos
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    //window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   buscar(): void {
