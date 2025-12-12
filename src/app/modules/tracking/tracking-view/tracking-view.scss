@@ -184,6 +184,15 @@ $stepper-gray: #c5ced8;
         padding: 20px 24px;
         background: #fff;
         border-radius: 8px;
+        overflow: hidden;
+        
+        // Forzar que el contenido no exceda el contenedor
+        app-tracking-stepper-view {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
 
         &.no-padding {
             padding: 0;
@@ -272,6 +281,17 @@ $stepper-gray: #c5ced8;
         padding: 8px 0 16px;
         display: flex;
         flex-direction: column;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+        
+        // Para el row de los steps en modo horizontal
+        &.flex-md-row {
+            @media (min-width: 768px) {
+                flex-wrap: nowrap;
+                overflow-x: hidden;
+            }
+        }
 
         .step-container {
             text-align: center;
@@ -570,6 +590,85 @@ $stepper-gray: #c5ced8;
         font-size: 10px;
         color: #9ca3af;
         border: 1px solid #d1d5db;
+    }
+}
+
+// ============================================================================
+// RESPONSIVIDAD DEL STEPPER - Pantallas medianas
+// ============================================================================
+@media (max-width: 1000px) {
+    :host {
+        .stepper-view-container {
+            overflow-x: hidden;
+            
+            .step-container {
+                min-width: 0;
+                flex-shrink: 1;
+                
+                .step-title {
+                    font-size: 11px !important;
+                    // Altura mínima para mantener iconos alineados
+                    min-height: 32px;
+                    display: flex;
+                    align-items: flex-end;
+                    justify-content: center;
+                    margin-bottom: 4px !important;
+                    overflow: hidden;
+
+                    p, .title {
+                        font-size: 11px !important;
+                        white-space: normal !important;
+                        line-height: 1.2 !important;
+                        word-break: break-word;
+                        text-align: center;
+                    }
+                }
+
+                .step-details {
+                    padding: 4px 4px 0 !important;
+                    
+                    p {
+                        font-size: 10px !important;
+                        line-height: 1.2 !important;
+                        white-space: normal !important;
+                        word-break: break-word;
+                    }
+
+                    span {
+                        font-size: 10px !important;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 900px) {
+    :host {
+        .stepper-view-container {
+            .step-container {
+                .step-title {
+                    font-size: 10px !important;
+                    min-height: 28px;
+
+                    p, .title {
+                        font-size: 10px !important;
+                    }
+                }
+
+                .step-details {
+                    padding: 2px 2px 0 !important;
+                    
+                    p {
+                        font-size: 9px !important;
+                    }
+
+                    span {
+                        font-size: 9px !important;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1159,12 +1258,14 @@ $stepper-gray: #c5ced8;
 @media (max-width: 768px) {
     :host {
         .back-button-container {
-            padding: 0 12px;
+            padding: 0 16px;
             margin-top: 12px;
+            max-width: 100%;
         }
 
         .document-header {
-            padding: 0 12px 12px;
+            padding: 0 16px 12px;
+            max-width: 100%;
 
             .document-title {
                 font-size: 18px;
@@ -1179,6 +1280,12 @@ $stepper-gray: #c5ced8;
         .error-container {
             margin: 16px;
             padding: 32px 16px;
+            max-width: calc(100% - 32px);
+        }
+
+        .tracking-content {
+            padding-bottom: 16px;
         }
     }
 }
+

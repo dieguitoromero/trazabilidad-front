@@ -4,9 +4,13 @@
         position: relative;
         margin-bottom: 20px;
         padding: 15px 0;
+        max-width: 100%;
+        overflow: hidden;
 
         .step-container {
             text-align: center;
+            min-width: 0;
+            flex-shrink: 1;
 
             .step-title {
                 margin: 16px 0;
@@ -14,8 +18,8 @@
                 font-weight: bold;
 
                 p {
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
+                    white-space: normal;
+                    word-break: break-word;
                     display: inline-block;
                 }
             }
@@ -348,6 +352,68 @@
         }
         100% {
             width: 0%
+        }
+    }
+}
+
+// ============================================================================
+// Media queries para pantallas medianas - stepper horizontal responsive
+// ============================================================================
+@media (max-width: 1000px) {
+    :host {
+        .stepper-view-container:not(.vertical) {
+            padding: 15px 8px;
+
+            .step-container {
+                .step-title {
+                    font-size: 11px;
+                    margin: 8px 0;
+
+                    p, .title {
+                        font-size: 11px !important;
+                        line-height: 1.2;
+                    }
+                }
+
+                .step-details {
+                    padding: 4px 4px;
+                    
+                    p {
+                        font-size: 10px;
+                        padding: 0 4px;
+                    }
+
+                    span {
+                        font-size: 10px;
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 900px) {
+    :host {
+        .stepper-view-container:not(.vertical) {
+            .step-container {
+                .step-title {
+                    font-size: 10px;
+
+                    p, .title {
+                        font-size: 10px !important;
+                    }
+                }
+
+                .step-details {
+                    p {
+                        font-size: 9px;
+                    }
+
+                    span {
+                        font-size: 9px;
+                    }
+                }
+            }
         }
     }
 }
