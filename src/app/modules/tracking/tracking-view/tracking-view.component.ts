@@ -71,8 +71,24 @@ export class TrackingViewComponent implements OnInit {
                     // Usar los datos transportados desde mis-compras
                     this.processInvoicePayload(invoicePayload);
                 } else if (this.returnRut) {
-                    // Usar el nuevo endpoint de documentos
-                    this.loadFromDocumentApi(Number(folioDocumento), tipoDocumento, this.returnRut);
+                    // Nuevo flujo: usar búsqueda de documentos en Mis Compras
+                    this.working = true;
+                    this.trackingService.getInvoiceFromDocumentsSearch(Number(folioDocumento), tipoDocumento, this.returnRut)
+                        .pipe(take(1))
+                        .subscribe({
+                            next: (invoice) => {
+                                if (invoice) {
+                                    this.onSuccess(invoice);
+                                } else {
+                                    // Si no hay resultado, usar API legacy
+                                    this.onSearch(this.searchModel!);
+                                }
+                            },
+                            error: () => {
+                                // En caso de error, mantener compatibilidad con API legacy
+                                this.onSearch(this.searchModel!);
+                            }
+                        });
                 } else {
                     // Fallback: cargar desde API antigua
                     this.onSearch(this.searchModel!);
@@ -176,40 +192,6 @@ export class TrackingViewComponent implements OnInit {
         }
 
         this.onSuccess(invoice);
-    }
-
-    /**
-     * Carga los datos desde el nuevo endpoint de documentos
-     */
-    private loadFromDocumentApi(invoiceId: number, invoiceType: string, clienteId: string): void {
-        this.working = true;
-        this.trackingService.getInvoiceDocument(invoiceId, invoiceType, clienteId)
-            .pipe(take(1))
-            .subscribe({
-                next: (invoice) => {
-                    if (invoice) {
-                        this.onSuccess(invoice);
-                    } else {
-                        // Fallback a V2
-                        this.loadFromV2Api(invoiceId, invoiceType);
-                    }
-                },
-                error: () => {
-                    this.loadFromV2Api(invoiceId, invoiceType);
-                }
-            });
-    }
-
-    /**
-     * Fallback a la API V2
-     */
-    private loadFromV2Api(invoiceId: number, invoiceType: string): void {
-        this.trackingService.getInvoiceTrackingV2(invoiceId, invoiceType)
-            .pipe(take(1))
-            .subscribe({
-                next: this.onSuccess.bind(this),
-                error: this.onError.bind(this)
-            });
     }
 
     public onSearch(search: SearchModel): void {

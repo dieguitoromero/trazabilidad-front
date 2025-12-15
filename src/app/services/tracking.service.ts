@@ -20,9 +20,6 @@ export class TrackingService {
     public getInvoiceTracking(invoiceId: number, invoiceType: string): Observable<InvoiceModel | undefined> {
         return this.trackingRepository.getTracking(this.padInvoiceNumber(invoiceId, 10), invoiceType);
     }
-    public getInvoiceTrackingV2(invoiceId: number, invoiceType: string): Observable<InvoiceModel | undefined> {
-        return this.trackingRepository.getTrackingV2(this.padInvoiceNumber(invoiceId, 10), invoiceType);
-    }
 
     /**
      * Nuevo flujo: usar endpoint de búsqueda de documentos para obtener data y mapear a InvoiceModel.
@@ -36,11 +33,11 @@ export class TrackingService {
                 const mapped = this.mapCompraDtoToInvoice(doc);
                 const hasSteps = mapped.trackingSteps && mapped.trackingSteps.length > 0;
                 if (hasSteps) { return of(mapped); }
-                // Fallback a V2 sólo si no hay pasos
-                return this.getInvoiceTrackingV2(invoiceId, invoiceType).pipe(
-                    map(v2 => {
-                        if (v2?.trackingSteps?.length) {
-                            mapped.trackingSteps = v2.trackingSteps;
+                // Fallback a API legacy solo si no hay pasos
+                return this.getInvoiceTracking(invoiceId, invoiceType).pipe(
+                    map(v1 => {
+                        if (v1?.trackingSteps?.length) {
+                            mapped.trackingSteps = v1.trackingSteps;
                         }
                         return mapped;
                     }),
@@ -102,28 +99,6 @@ export class TrackingService {
         if (t.includes('nota') && t.includes('venta')) return 'NVV';
         return 'BLV';
     }
-
-    public getInvoiceDocument(invoiceId: number, invoiceType: string, clienteId: string): Observable<InvoiceModel | undefined> {
-        const padded = this.padInvoiceNumber(invoiceId, 10);
-        return this.trackingRepository.getDocument(padded, invoiceType, clienteId).pipe(
-            switchMap(doc => {
-                if (!doc) { return of(undefined); }
-                // Si el documento no trae pasos de trazabilidad, intentamos obtenerlos vía V2
-                const hasSteps = doc.trackingSteps && doc.trackingSteps.length > 0;
-                if (hasSteps) { return of(doc); }
-                return this.trackingRepository.getTrackingV2(padded, invoiceType).pipe(
-                    map(v2 => {
-                        if (v2 && v2.trackingSteps && v2.trackingSteps.length > 0) {
-                            doc.trackingSteps = v2.trackingSteps;
-                        }
-                        return doc;
-                    }),
-                    catchError(() => of(doc))
-                );
-            })
-        );
-    }
-
 
     private padInvoiceNumber(invoiceId: number, lenght: number): string {
         let num = invoiceId.toString();

@@ -9,10 +9,9 @@ import { InvoiceTokenModel } from "../core/models/invoice-token.model";
 
 @Injectable()
 export class TrackingRepository {
-  public baseApiUrl: string = environment.baseApiUrl;
-  baseApiUrlV2: string = environment.baseApiUrlV2;
-  // Use unified baseUrl (APIM host) and append '/api' for documents endpoint
-  private apimBase: string = `${environment.baseUrl}/api`;
+  // Usar base relativa para aprovechar el proxy de Angular (`proxy.conf.json`)
+  // y evitar dependencias directas a hosts externos (APIM).
+  private readonly baseApiUrl: string = '/MisCompras';
 
   // Headers anti-caché para forzar datos frescos
   private noCacheHeaders = new HttpHeaders({
@@ -49,74 +48,5 @@ export class TrackingRepository {
     invoiceType: string
   ): Observable<boolean> {
     return this.getTracking(invoiceId, invoiceType).pipe(map((i) => i != null));
-  }
-
-  public getTrackingV2(invoiceId: string, invoiceType: string): Observable<InvoiceModel | undefined> {
-    const body = {
-      Number_Printed: invoiceId,
-      Document_Type: invoiceType,
-    };
-
-    return this.http
-      .post(`${this.baseApiUrlV2}/traceabilityV2/v1/traceability`, body, {
-        observe: "response",
-      })
-      .pipe(
-        switchMap((response: HttpResponse<any>) => {
-          if (response.status !== 200 || !response.body) {
-            return of(undefined);
-          }
-
-          const tokenVal = InvoiceTokenModel.mapFromObj(response.body);
-
-          return this.http
-            .get(`${this.baseApiUrlV2}/traceabilityV2/v1/traceability/${tokenVal!.uuid}`, { headers: this.noCacheHeaders })
-            .pipe(
-              map((objectResponse: any) => {
-                if (!objectResponse) {
-                  return undefined;
-                }
-                return InvoiceModel.mapFromObj(objectResponse);
-              })
-            );
-        }),
-        catchError((error: any) => {
-          if (error instanceof HttpErrorResponse) {
-            if (error.status === 404) {
-              return of(undefined);
-            }
-          }
-
-          if (
-            error.message
-              .toLowerCase()
-              .includes(
-                "you provided an invalid object where a stream was expected"
-              )
-          ) {
-            return of(undefined);
-          }
-
-          return throwError(() => error);
-        })
-      );
-  }
-
-  public getDocument(invoiceId: string, invoiceType: string, clienteId: string): Observable<InvoiceModel | undefined> {
-    // Requisito: usar URL absoluta con clienteId para facturas (FCV)
-    // https://apim-imperial-dev-ues-001.azure-api.net/api/documents/FCV/(numero)/?clienteId=762530058
-    const url = `${this.apimBase}/documents/${invoiceType}/${invoiceId}/?clienteId=${clienteId}`;
-    return this.http.get<any>(url, { headers: this.noCacheHeaders }).pipe(
-      map(resp => {
-        if (!resp) { return undefined; }
-        return InvoiceModel.mapFromObj(resp);
-      }),
-      catchError(err => {
-        if (err instanceof HttpErrorResponse && err.status === 404) {
-          return of(undefined);
-        }
-        return throwError(() => err);
-      })
-    );
   }
 }

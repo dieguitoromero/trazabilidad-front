@@ -25,7 +25,8 @@ export class AuthInterceptor implements HttpInterceptor {
     req: HttpRequest<any>,
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
-    if (this.excludedUrls.some(url => url.includes(req.url))) {
+    // No interceptar la obtención del token (evita bucles y errores)
+    if (this.excludedUrls.some(url => req.url.includes(url))) {
       return next.handle(req);
     }
     return this.authService.getToken().pipe(
