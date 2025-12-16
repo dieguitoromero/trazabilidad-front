@@ -46,7 +46,7 @@ export class TrackingStepperViewComponent {
     }
 
     public isStepInProgress(step: TrackingStepModel, index: number): boolean {
-
+        // CASO 1: Si NO es un paso completado (no tiene check) y NO es el último completado, no está en progreso
         if (this.isStepCompleted(step) && !this.isLastStepCompleted(index)) {
             return false;
         }
@@ -55,6 +55,28 @@ export class TrackingStepperViewComponent {
             return false;
         }
 
+        // CASO 2: Si el ícono del paso actual es 'in_progress' (círculo verde),
+        // entonces este paso está activamente en progreso y debe mostrar línea verde
+        if (step.icon.indexOf('in_progress') > 0) {
+            return true;
+        }
+
+        // CASO 2B: BRIDGE - Puente visual para saltos en el proceso.
+        // Si hay ALGÚN paso futuro con ícono 'in_progress' (activo), y estamos:
+        // A) En el último paso completado (para iniciar el puente)
+        // B) O en un paso pendiente (para continuar el puente)
+        // Entonces mostramos la línea verde.
+        const futureSteps = this.steps.slice(index + 1);
+        const hasInProgressFuture = futureSteps.some(s => s.icon.indexOf('in_progress') > 0);
+
+        if (hasInProgressFuture) {
+            // Si soy el último completado O soy un paso intermedio pendiente
+            if (this.isLastStepCompleted(index) || step.icon.indexOf('pending') > 0) {
+                return true;
+            }
+        }
+
+        // CASO 3: Lógica tradicional basada en orderDetails (si hay productos)
         const nextStepsItems = this.steps?.slice(index + 1);
 
         const itemsNextSteps = nextStepsItems.filter(s => {

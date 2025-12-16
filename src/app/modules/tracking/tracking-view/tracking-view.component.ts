@@ -1,12 +1,13 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {InvoiceModel} from '../../../core/models/invoice.model';
-import {SearchModel} from '../models/search-model';
-import {take} from 'rxjs/operators';
-import {TrackingService} from '../../../services/tracking.service';
-import {ActivatedRoute, Router} from '@angular/router';
-import {TrackingDataService} from '../../../services/tracking-data.service';
-import {TrackingStepModel} from '../../../core/models/tracking-step.model';
-import {MachinableProcessModel} from '../../../core/models/machinable-process.model';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { InvoiceModel } from '../../../core/models/invoice.model';
+import { SearchModel } from '../models/search-model';
+import { take } from 'rxjs/operators';
+import { TrackingService } from '../../../services/tracking.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { TrackingDataService } from '../../../services/tracking-data.service';
+import { TrackingStepModel } from '../../../core/models/tracking-step.model';
+import { MachinableProcessModel } from '../../../core/models/machinable-process.model';
+import { OrderDetailsModel } from '../../../core/models/order-details.model';
 
 @Component({
     selector: 'app-tracking-view',
@@ -24,6 +25,7 @@ export class TrackingViewComponent implements OnInit {
 
     @ViewChild('trackingStepperView')
     public trackingStepperView: ElementRef | undefined;
+    public stepperOrderDetails: OrderDetailsModel[] | undefined;
 
     // Para navegar de vuelta a mis-compras
     private returnPage: number = 1;
@@ -31,9 +33,9 @@ export class TrackingViewComponent implements OnInit {
     private returnRut: string | null = null;
 
     constructor(private trackingService: TrackingService,
-                private router: Router,
-                private activeRoute: ActivatedRoute,
-                private trackingDataService: TrackingDataService) {
+        private router: Router,
+        private activeRoute: ActivatedRoute,
+        private trackingDataService: TrackingDataService) {
     }
 
     ngOnInit(): void {
@@ -63,10 +65,10 @@ export class TrackingViewComponent implements OnInit {
 
             if (folioDocumento || tipoDocumento) {
                 this.searchModel = new SearchModel(folioDocumento, tipoDocumento);
-                
+
                 // Intentar obtener datos del servicio de datos primero
                 const invoicePayload = this.trackingDataService.consumeInvoicePayload();
-                
+
                 if (invoicePayload) {
                     // Usar los datos transportados desde mis-compras
                     this.processInvoicePayload(invoicePayload);
@@ -102,14 +104,14 @@ export class TrackingViewComponent implements OnInit {
      */
     private processInvoicePayload(payload: any): void {
         const invoice = new InvoiceModel();
-        
+
         invoice.printedNumber = payload.number_printed || '';
         invoice.documentType = payload.type_document || '';
         invoice.documentLabel = payload.label_document || '';
         invoice.total = payload.total || 0;
         invoice.issueDate = payload.date_issue ? new Date(payload.date_issue) : new Date();
         invoice.payId = payload.id_pay || 0;
-        
+
         // Pickup
         if (payload.pickup) {
             invoice.pickup = {
@@ -129,8 +131,8 @@ export class TrackingViewComponent implements OnInit {
         if (payload.traceability?.steps || payload.trackingSteps) {
             const rawSteps = payload.traceability?.steps || payload.trackingSteps || [];
             // Determinar si es retiro en tienda para filtrar "Pedido en Ruta"
-            const isRetiroEnTienda = payload.pickup?.title?.toLowerCase().includes('retiro') || 
-                                     payload.pickup?.title?.toLowerCase().includes('tienda');
+            const isRetiroEnTienda = payload.pickup?.title?.toLowerCase().includes('retiro') ||
+                payload.pickup?.title?.toLowerCase().includes('tienda');
             invoice.trackingSteps = rawSteps
                 .filter((step: any) => {
                     // Filtrar "Pedido en Ruta" si es retiro en tienda
@@ -151,21 +153,21 @@ export class TrackingViewComponent implements OnInit {
                     trackingStep.description = step.description || '';
                     trackingStep.date = step.date ? new Date(step.date) : undefined as any;
                     trackingStep.icon = step.icon || '';
-                    
+
                     // Procesar machinable si existe
                     if (step.machinable && step.machinable.orders && step.machinable.orders.length > 0) {
                         trackingStep.machinable = MachinableProcessModel.MapFromObj(step.machinable);
                     }
-                    
+
                     return trackingStep;
                 });
         }
 
         // Productos - buscar en 'productos' primero, luego fallback a 'DetailsProduct'
-        const rawProducts = payload.productos?.length > 0 
-            ? payload.productos 
+        const rawProducts = payload.productos?.length > 0
+            ? payload.productos
             : (payload.DetailsProduct || []);
-        
+
         if (rawProducts.length > 0) {
             invoice.orderProducts = rawProducts.map((p: any) => ({
                 quantity: p.cantidad || p.quantity || 1,
@@ -198,7 +200,7 @@ export class TrackingViewComponent implements OnInit {
         this.working = true;
         this.trackingService.getInvoiceTracking(search.invoiceId, search.invoiceType)
             .pipe(take(1))
-            .subscribe({next: this.onSuccess.bind(this), error: this.onError.bind(this)});
+            .subscribe({ next: this.onSuccess.bind(this), error: this.onError.bind(this) });
 
         const snapshot = this.activeRoute.snapshot;
 
@@ -232,7 +234,63 @@ export class TrackingViewComponent implements OnInit {
         }
 
         this.invoice = invoice;
+
+        // Simulación inteligente para el Stepper (PDP)
+        // Generamos una copia de los productos para manipular el estado visual del stepper sin afectar la lista real.
+        this.stepperOrderDetails = invoice?.orderProducts ? [...invoice.orderProducts] : [];
+
+        // NO hacer correcciones a los íconos del frontend.
+        // Confiar 100% en los datos que envía el backend.
+        // El backend (TraceabilityMapper.vb o ComprasMapper.vb) ya aplica la lógica correcta:
+        //   - indProcesado = -1 -> pending icon
+        //   - indProcesado = 0 -> in_progress icon (verde)
+        //   - indProcesado = 1 -> complete icon (check)
+
         this.working = false;
+    }
+
+    private isOlderThanMonths(dateInput: string | Date, months: number): boolean {
+        if (!dateInput) return false;
+
+        let date: Date;
+
+        if (dateInput instanceof Date) {
+            date = dateInput;
+        } else {
+            // Parser string
+            try {
+                // Normalizar fecha: eliminar "de", "del", espacios extra, y pasar a minúsculas
+                let cleanDate = dateInput.toLowerCase()
+                    .replace(/ de /g, ' ')
+                    .replace(/ del /g, ' ')
+                    .replace(/\s+/g, ' ') // Unificar espacios
+                    .trim();
+
+                // Mapeo meses español a inglés para Date.parse
+                const monthsEs = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                const monthsEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+                monthsEs.forEach((m, i) => {
+                    if (cleanDate.includes(m)) {
+                        cleanDate = cleanDate.replace(m, monthsEn[i]);
+                    }
+                });
+
+                date = new Date(cleanDate);
+            } catch (e) {
+                return false;
+            }
+        }
+
+        if (isNaN(date.getTime())) return false; // Fecha inválida
+
+        const today = new Date();
+        // Calcular diferencia en meses
+        let diffMonths = (today.getFullYear() - date.getFullYear()) * 12;
+        diffMonths -= date.getMonth();
+        diffMonths += today.getMonth();
+
+        return diffMonths > months;
     }
 
     private onError(err: any): void {
@@ -248,7 +306,7 @@ export class TrackingViewComponent implements OnInit {
             page: this.returnPage,
             perPage: this.returnPerPage
         };
-        
+
         if (this.returnRut) {
             queryParams.rut = this.returnRut;
         }
@@ -261,9 +319,9 @@ export class TrackingViewComponent implements OnInit {
      */
     public hasMachinableData(): boolean {
         if (!this.invoice?.trackingSteps) return false;
-        return this.invoice.trackingSteps.some(step => 
-            step.machinable && 
-            step.machinable.orders && 
+        return this.invoice.trackingSteps.some(step =>
+            step.machinable &&
+            step.machinable.orders &&
             step.machinable.orders.length > 0
         );
     }

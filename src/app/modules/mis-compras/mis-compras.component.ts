@@ -544,16 +544,15 @@ export class MisComprasComponent implements OnInit, OnDestroy {
     // Ordenar por orden si está disponible
     steps = this.sortTrazabilidad([...steps]);
 
-    // Mapear directamente al formato TrackingStepModel (igual que tracking-view)
-    let stepsMapped = steps.map(t => {
-      // CORRECCIÓN CRÍTICA: El backend envía 'timeline_complete_icon.svg' incluso para pasos pendientes (indProcesado: null).
-      // Si indProcesado es null/undefined, FORZAMOS el ícono de pending para que la lógica visual funcione correctamente.
-      let icon = t.icon;
-      if (t.indProcesado === null || t.indProcesado === undefined) {
-        icon = 'https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg';
-      } else if (!icon) {
-        icon = 'https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg';
-      }
+    // Mapear directamente al formato TrackingStepModel
+    // USAR LOS ÍCONOS DEL BACKEND SIN CORRECCIONES
+    // El backend (ComprasMapper.vb) ya aplica la lógica correcta basada en indProcesado:
+    //   - indProcesado = -1 -> pending icon
+    //   - indProcesado = 0 -> in_progress icon (verde)
+    //   - indProcesado = 1 -> complete icon (check)
+    const stepsMapped = steps.map(t => {
+      // Usar el ícono exacto del backend
+      const icon = t.icon || 'https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg';
 
       return {
         title: t.title || {
@@ -574,7 +573,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
   // Convierte compra.productos al formato OrderDetailsModel[] que espera tracking-stepper-view
   // El componente usa stateDescription para calcular numberOfItemsOnStatus
   public getOrderDetails(compra: Compra): any[] {
-    // 1. Si hay productos reales, usarlos
+    // 1. Si hay productos reales del backend, usarlos directamente
     if (compra && compra.productos && Array.isArray(compra.productos) && compra.productos.length > 0) {
       return compra.productos.map(p => ({
         quantity: p.cantidad || 1,
@@ -587,144 +586,67 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       }));
     }
 
-    // 2. Si NO hay productos (común en listado resumen), generar un dummy para activar la visualización
-    // de la línea verde (in-progress) que depende de numberOfItemsOnStatus > 0
-    // Inferimos el estado necesario basándonos en el último paso completado del tracking
-    const steps = this.getTrackingSteps(compra);
-    let stateToSimulate = '';
-
-    // Buscar el último paso completado (ícono sin 'pending')
-    // Iteramos en reverso para encontrar el último completado
-    let lastCompletedStepTitle = '';
-    for (let i = steps.length - 1; i >= 0; i--) {
-      if (steps[i].icon && steps[i].icon.indexOf('pending') < 0) {
-        lastCompletedStepTitle = steps[i].title.text;
-        break;
-      }
-    }
-
-    // Mapeo simple basado en el mapa interno de tracking-stepper-view.component.ts
-    // para activar la línea verde en el paso correcto
-    if (lastCompletedStepTitle) {
-      const titleLower = this.normalize(lastCompletedStepTitle);
-      // Prioridad a estados finales
-      if (titleLower.includes('entregado') || titleLower.includes('recibido')) {
-        stateToSimulate = 'Entregado';
-      } else if (titleLower.includes('ruta')) {
-        stateToSimulate = 'En Ruta';
-      } else if (titleLower.includes('retiro') || titleLower.includes('listo')) {
-        stateToSimulate = 'Producto Listo para Retiro';
-      } else if (titleLower.includes('pagado') || titleLower.includes('ingresado')) {
-        // Lógica diferenciada para Dimensionado vs Normal
-        if (compra.trazabilidad) {
-          compra.trazabilidad.forEach(step => {
-            const text = step.title?.text?.toLowerCase(); // Validación segura
-            if (text && (text.includes('entregado') || text.includes('recibido'))) {
-              if (step.icon && !step.icon.includes('complete')) { // Validación segura
-                step.icon = 'step_complete';
-              }
-            }
-          });
-        }
-
-        if (compra.esDimensionado) {
-          // Para dimensionados, si retornamos un estado activo como 'Pendiente' o 'Pendiente de despacho',
-          // el stepper activará líneas verdes hacia pasos futuros (Fabricación o Envío).
-          // El PDP muestra que la línea se detiene en seco en 'Pagado'.
-          // Para lograr esto, NO debemos simular ningún producto activo.
-          // Al retornar vacío, el stepper confiará solo en los checks azules del backend y no dibujará progreso futuro.
-          return [];
-        } else {
-          // Lógica para pedidos NORMALES
-
-          // VERIFICACIÓN CRÍTICA: Si el paso "Pedido Entregado" ya está completado visualmente (ícono verde/azul),
-          // NO debemos simular el producto 'Entregado'.
-          // Si lo simulamos, activamos la lógica de "In Progress" (líneas punteadas verdes) retroactivamente,
-          // lo cual se ve incorrecto en pedidos históricos que saltaron pasos (Pagado -> Entregado).
-          // Al retornar [], dejamos que el componente use solo los estilos de "Completed" (Línea Azul Sólida).
-
-          const entregadoStep = compra.trazabilidad?.find(t =>
-            t.title && (t.title.text.toLowerCase().includes('entregado') || t.title.text.toLowerCase().includes('recibido'))
-          );
-
-          // Eliminamos el bloqueo restrictivo. 
-          // Permitimos que fluya la simulación de 'Entregado' por antigüedad, 
-          // lo cual activará las líneas verdes punteadas que el usuario desea ver consistentes.
-          // El componente stepper se encargará de renderizarlo.
-
-          // Si NO está completado visualmente, entonces aplicamos la lógica de antigüedad
-          // para "rellenar" la línea verde si el pedido es muy viejo.
-          const isOldOrder = this.isOlderThanMonths(compra.fechaCompra, 6);
-          if (isOldOrder) {
-            stateToSimulate = 'Entregado';
-          } else {
-            stateToSimulate = 'Pendiente';
-          }
-        }
-      } else {
-        stateToSimulate = 'Pendiente';
-      }
-    }
-
-    if (stateToSimulate) {
-      return [{
-        quantity: 1,
-        stateDescription: stateToSimulate,
-        description: 'Producto Referencial'
-      }];
-    }
-
+    // 2. Si NO hay productos (común en listado resumen), retornar vacío
+    // NO simular productos porque esto causa inconsistencias en la visualización del stepper.
+    // Sin productos, el stepper mostrará la línea basándose únicamente en los íconos 
+    // (pending, in_progress, complete) que envía el backend.
+    // Esto garantiza consistencia entre PLP y PDP.
     return [];
   }
 
   // Función auxiliar para verificar antigüedad
   private isOlderThanMonths(dateStr: string, months: number): boolean {
     if (!dateStr) return false;
-    // Intentar parsear "dd de Mes del yyyy" o formatos estándar
-    // Como fechaCompra viene formateada, mejor usamos date_buy si existe o intentamos parsear
-    // Por simplicidad, asumimos que si fallamos en parsear, no es antigua.
+
     try {
-      // Mapeo básico de meses español
+      let date: Date | null = null;
+
+      // 1. PRIMERO: Intentar parsear como fecha ISO (2019-05-24T00:00:16.253)
+      // Las fechas ISO deben tener el formato YYYY-MM-DD o YYYY-MM-DDTHH:MM:SS
+      if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+        date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+          const limitDate = new Date();
+          limitDate.setMonth(limitDate.getMonth() - months);
+          return date < limitDate;
+        }
+      }
+
+      // 2. SEGUNDO: Intentar parsear formato español ("24 de Mayo del 2022")
       const monthMap: { [key: string]: string } = {
         'Enero': '01', 'Febrero': '02', 'Marzo': '03', 'Abril': '04', 'Mayo': '05', 'Junio': '06',
-        'Julio': '07', 'Agosto': '08', 'Septiembre': '09', 'Octubre': '10', 'Noviembre': '11', 'Diciembre': '12'
+        'Julio': '07', 'Agosto': '08', 'Septiembre': '09', 'Octubre': '10', 'Noviembre': '11', 'Diciembre': '12',
+        'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04', 'mayo': '05', 'junio': '06',
+        'julio': '07', 'agosto': '08', 'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
       };
 
-      let cleanDate = dateStr.replace(/ de /g, ' ').replace(/ del /g, ' ').trim(); // "24 Mayo 2016"
+      let cleanDate = dateStr.replace(/ de /g, ' ').replace(/ del /g, ' ').trim();
       const parts = cleanDate.split(' ');
 
-      // Buscar el año (4 dígitos) para ser más robusto
       let day = '01';
       let monthName = '';
       let year = '';
 
       if (parts.length >= 3) {
-        // Asumimos formato Dia Mes Año o similar
-        // Buscamos cuál parte parece un año
         const yearIndex = parts.findIndex(p => /^\d{4}$/.test(p));
         if (yearIndex > -1) {
           year = parts[yearIndex];
-          // Asumimos que el mes está antes del año
           if (yearIndex > 0) monthName = parts[yearIndex - 1];
-          // Y el día antes del mes
           if (yearIndex > 1) day = parts[yearIndex - 2];
         } else {
-          // Fallback a posición fija
           day = parts[0];
           monthName = parts[1];
           year = parts[2];
         }
 
         const month = monthMap[monthName] || '01';
-
-        // Limpiar día de posibles caracteres extra
         day = day.replace(/\D/g, '').padStart(2, '0');
 
-        const d = new Date(`${year}-${month}-${day}`);
-        if (!isNaN(d.getTime())) {
+        date = new Date(`${year}-${month}-${day}`);
+        if (!isNaN(date.getTime())) {
           const limitDate = new Date();
           limitDate.setMonth(limitDate.getMonth() - months);
-          return d < limitDate;
+          return date < limitDate;
         }
       }
     } catch (e) {
