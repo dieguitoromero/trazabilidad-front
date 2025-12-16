@@ -14,14 +14,14 @@ export class TrackingStepperViewComponent {
     @Input() vertical = false;
 
     private status: any = {
-        'Pedido Ingresado': ['Pendiente', 'Pendiente de despacho'],
-        'Pedido Aprobado': [], // No tiene items asociados
-        'Pedido pagado': ['Pendiente', 'Pendiente de despacho'],
-        'Preparacion de Pedido': ['Pendiente'],
-        'Proceso de fabricacion': ['Pendiente'], // Agregado para soportar dimensionados
-        'Pendiente de Envío': ['Pendiente de despacho'],
-        'Pedido en Ruta': ['En Ruta'],
-        'Disponible para retiro': ['Producto Listo para Retiro'],
+        'Pedido Ingresado': [],
+        'Pedido Aprobado': [],
+        'Pedido pagado': [],
+        'Preparacion de Pedido': [],
+        'Proceso de fabricacion': [],
+        'Pendiente de Envío': [],
+        'Pedido en Ruta': [],
+        'Disponible para retiro': [],
         'Pedido Entregado': ['Entregado', 'Producto Entregado']
     };
 
@@ -127,8 +127,10 @@ export class TrackingStepperViewComponent {
             }
         }
 
+        // Comparación robusta usando trim() para evitar fallos por espacios en blanco y some() para comparar contra array
         return this.orderDetails.filter(p => {
-            return allowedStatus.indexOf(p.stateDescription) >= 0;
+            if (!p.stateDescription) return false;
+            return allowedStatus.some((s: string) => s.trim() === p.stateDescription.trim());
         }).length;
     }
 
