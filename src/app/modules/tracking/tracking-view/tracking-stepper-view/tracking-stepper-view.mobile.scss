@@ -7,80 +7,76 @@
                 box-shadow: none;
 
                 .step-container {
-                    position: relative;
 
                     .step-title {
                         text-align: left;
                         margin: 0 0 0 15px;
-                        padding: 31px 0 0 0;
+                        padding: 0;
+                        /* Eliminar padding superior excesivo para alinear con el ícono */
                         overflow-x: hidden;
                         min-width: 160px;
+                        display: flex;
+                        flex-direction: column;
+                        /* Apilar elementos verticalmente */
+                        justify-content: center;
+                        /* Centrar verticalmente respecto al ícono si el contenedor crece */
 
                         &.beginning {
                             padding-top: 0;
                         }
 
                         .title {
-                            white-space: nowrap;
-                            text-overflow: ellipsis;
+                            white-space: normal;
+                            /* Permitir salto de línea en móvil */
                             color: #4d4f57;
                             font-weight: bold;
                             margin-bottom: 2px;
+                            /* Mayor separación */
+                            display: block;
+                            /* Forzar bloque */
+                            width: 100%;
+                            font-size: 13px;
+                            /* Tamaño legible para el título */
                         }
 
                         .sub-title {
-                            font-size: 12px;
+                            font-size: 11px;
+                            /* Letra más pequeña como solicitado */
                             color: #606060;
                             margin-bottom: 2px;
+                            /* Mayor separación */
+                            display: block;
+                            /* Forzar bloque */
+                            width: 100%;
+                            line-height: 1.2;
                         }
 
                         .date {
                             font-size: 12px;
                             font-weight: normal;
                             color: #959494;
+                            display: block;
+                            /* Forzar bloque */
+                            width: 100%;
+                            margin-top: 2px;
                         }
 
                     }
 
                     .step {
-                        position: relative;
-                        display: flex !important; // Sobreescribir d-block de Bootstrap
-                        flex-direction: column !important;
-                        align-items: center !important; // Centra todos los hijos (iconos y líneas)
-                        width: 23px; // Mismo ancho que el icono
-
-                        // Asegurar que el ícono esté por encima de las líneas
-                        .icon {
-                            position: relative;
-                            z-index: 2;
-                            background: white;
-                            width: 23px;
-                            height: 23px;
-                            
-                            &.pending {
-                                z-index: 2;
-                                background: #e5e8ed;
-                                width: 23px;
-                                height: 23px;
-                            }
-                        }
-
                         &.beginning {
-                            margin-top: 0;
-                            
-                            .step-separator.from {
-                                display: none !important;
-                            }
+                            margin-top: 10px;
                         }
 
                         &.in-progress {
                             .step-separator {
                                 min-height: 45px;
 
-                                &.to:not(.end), &.from {
+                                &.to:not(.end),
+                                &.from {
                                     border-left: 4px dotted #00aa00;
                                     border-top: 0;
-                                    margin: 0 auto;
+                                    margin: 2px auto;
                                 }
                             }
 
@@ -110,7 +106,7 @@
                                         &.to:not(.end) {
                                             border-left: 4px dotted #00aa00;
                                             border-top: 0;
-                                            margin: 0 auto;
+                                            margin: 2px auto;
                                         }
                                     }
                                 }
@@ -119,15 +115,18 @@
 
                         &.completed {
                             .step-separator {
+                                // background-color: #003c69;
+
                                 &.beginning {
-                                    border-radius: 5px 5px 0 0;
-                                    background: transparent !important;
-                                    min-height: 0;
-                                    height: 0;
+                                    border-radius: 5px 0 0 5px;
+                                    background: rgb(255, 255, 255);
+                                    background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 44%, #003c69 82%);
                                 }
 
                                 &.end {
-                                    border-radius: 0 0 5px 5px;
+                                    border-radius: 0 5px 5px 0;
+                                    background: rgb(255, 255, 255);
+                                    background: linear-gradient(90deg, #003c69 0%, rgba(255, 255, 255, 1) 44%, rgba(255, 255, 255, 1) 82%);
                                 }
                             }
                         }
@@ -137,14 +136,11 @@
                 .step-separator {
                     width: 2px;
                     min-height: 45px;
+                    margin: -5px auto 0;
                     height: auto;
-                    z-index: 1;
 
                     &.beginning {
                         border-radius: 5px 5px 0 0;
-                        min-height: 0;
-                        height: 0;
-                        background: transparent !important;
                     }
 
                     &.end {

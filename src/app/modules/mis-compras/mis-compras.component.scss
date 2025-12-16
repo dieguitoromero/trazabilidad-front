@@ -481,255 +481,98 @@ $stepper-gray: #c5ced8;
 // STEP SEPARATORS - Lineas entre pasos (usando elementos div)
 // ============================================================================
 .step-separator {
-    position: absolute;
-    height: 2px;
-    background-color: $stepper-gray;
-    top: 14px;
-    z-index: 1;
+  position: absolute;
+  height: 2px;
+  background-color: $stepper-gray;
+  top: 14px;
+  z-index: 1;
 
-    &.from {
-        left: 0;
-        right: 50%;
-    }
+  &.from {
+    left: 0;
+    right: 50%;
+  }
 
-    &.to {
-        left: 50%;
-        right: 0;
-    }
+  &.to {
+    left: 50%;
+    right: 0;
+  }
 
-    // Gradiente a la izquierda del primer paso (Pedido Ingresado)
-    &.beginning {
-        border-radius: 999px 0 0 999px;
-    }
+  // Gradiente a la izquierda del primer paso (Pedido Ingresado)
+  &.beginning {
+    border-radius: 999px 0 0 999px;
+  }
 
-    // Gradiente a la derecha del último paso (Pedido Entregado)
+  // Gradiente a la derecha del último paso (Pedido Entregado)
+  &.end {
+    border-radius: 0 999px 999px 0;
+  }
+
+  // Linea verde punteada (legacy)
+  &.green-line {
+    border-top: 3px dotted #00aa00 !important;
+    margin-right: 3px;
+    background-color: transparent !important;
+    background: none !important;
+    height: 0 !important;
+    z-index: 5 !important;
+
+    // Los gradientes no deben aplicarse a líneas verdes
+    &.beginning,
     &.end {
-        border-radius: 0 999px 999px 0;
+      background: none !important;
+      border-radius: 0 !important;
     }
-
-    // Linea verde punteada (legacy)
-    &.green-line {
-        border-top: 3px dotted #00aa00 !important;
-        margin-right: 3px;
-        background-color: transparent !important;
-        background: none !important;
-        height: 0 !important;
-        z-index: 5 !important;
-        
-        // Los gradientes no deben aplicarse a líneas verdes
-        &.beginning,
-        &.end {
-            background: none !important;
-            border-radius: 0 !important;
-        }
-    }
+  }
 }
 
 // Paso completado: separadores azules
 .step.completed .step-separator:not(.green-line) {
-    background-color: $stepper-blue;
-    
-    // Gradiente azul para el primer paso completado
-    &.beginning {
-        background: linear-gradient(90deg, rgba(0, 60, 105, 0) 0%, rgba(0, 60, 105, 0.3) 20%, rgba(0, 60, 105, 1) 50%);
-    }
-    
-    // Gradiente azul para el último paso completado
-    &.end {
-        background: linear-gradient(90deg, rgba(0, 60, 105, 1) 50%, rgba(0, 60, 105, 0.3) 80%, rgba(0, 60, 105, 0) 100%);
-    }
+  background-color: $stepper-blue;
+
+  // Gradiente azul para el primer paso completado
+  &.beginning {
+    background: linear-gradient(90deg, rgba(0, 60, 105, 0) 0%, rgba(0, 60, 105, 0.3) 20%, rgba(0, 60, 105, 1) 50%);
+  }
+
+  // Gradiente azul para el último paso completado
+  &.end {
+    background: linear-gradient(90deg, rgba(0, 60, 105, 1) 50%, rgba(0, 60, 105, 0.3) 80%, rgba(0, 60, 105, 0) 100%);
+  }
 }
 
 // Gradientes grises para pasos pendientes en el primer y último paso
 .step-separator.beginning:not(.green-line) {
-    background: linear-gradient(90deg, rgba(197, 206, 216, 0) 0%, rgba(197, 206, 216, 0.3) 20%, rgba(197, 206, 216, 1) 50%);
+  background: linear-gradient(90deg, rgba(197, 206, 216, 0) 0%, rgba(197, 206, 216, 0.3) 20%, rgba(197, 206, 216, 1) 50%);
 }
 
 .step-separator.end:not(.green-line) {
-    background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
+  background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
 }
 
 // Paso in-progress: from azul
 .step.in-progress .step-separator.from:not(.green-line) {
-    background-color: $stepper-blue;
+  background-color: $stepper-blue;
 }
 
-/* Línea base - se dibuja desde el centro hacia la derecha */
+// ============================================================================
+// NOTA: Las siguientes reglas de pseudoelementos ::before y ::after 
+// están COMENTADAS porque el stepper del listado usa divs .step-separator
+// igual que tracking-stepper-view, y estas reglas causaban conflicto.
+// Los estilos correctos están en la sección .stepper-view-container más abajo.
+// ============================================================================
+
+/* 
+// REGLAS LEGACY COMENTADAS - No usar con la estructura actual de stepper
+
 .step::before {
   content: '';
   position: absolute;
-  top: 14px;
-  left: 50%;
-  right: 0;
-  height: 2px;
-  background-color: $stepper-gray;
-  z-index: 0;
+  ...
 }
+// ... todas las reglas de ::before y ::after
+*/
 
-/* El último paso no dibuja línea hacia la derecha */
-.step:last-child::before {
-  display: none;
-}
 
-/* Línea desde la izquierda hasta el centro */
-.step:not(:first-child)::after {
-  content: '';
-  position: absolute;
-  top: 14px;
-  left: 0;
-  right: 50%;
-  height: 2px;
-  background-color: $stepper-gray;
-  z-index: 0;
-}
-
-/* Difuminado en el primer paso - lado izquierdo */
-.step:first-child::before {
-  left: 0;
-  width: 100%;
-  border-radius: 999px 0 0 999px;
-  background: linear-gradient(90deg, rgba(197, 206, 216, 0) 0%, rgba(197, 206, 216, 0.3) 20%, rgba(197, 206, 216, 1) 50%);
-}
-
-/* Difuminado en el último paso - lado derecho */
-.step:last-child::after {
-  left: 0;
-  width: 100%;
-  border-radius: 0 999px 999px 0;
-  background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
-}
-
-/* Pasos completados - línea azul hacia la derecha */
-.step.completed::before {
-  background-color: $stepper-blue;
-}
-
-/* Línea desde la izquierda es azul si el paso anterior estaba completado Y el actual también */
-.step.completed+.step.completed::after {
-  background-color: $stepper-blue;
-}
-
-/* Si un paso no completado sigue a uno completado, la línea desde la izquierda debe ser azul hasta el centro, luego gris */
-/* Esta línea se extiende más allá del borde izquierdo para cubrir la línea azul del paso anterior */
-.step.completed+.step:not(.completed):not(.in-progress):not(.has-pending-from)::after {
-  left: -50%;
-  /* Extender hacia atrás para cubrir la línea del paso anterior */
-  right: 50%;
-  background: linear-gradient(90deg, $stepper-blue 0%, $stepper-blue 50%, $stepper-gray 50%, $stepper-gray 100%);
-  z-index: 1;
-  /* Asegurar que esté sobre la línea del paso anterior */
-}
-
-.step.completed:first-child::before {
-  left: 0;
-  background: linear-gradient(90deg, rgba(0, 60, 105, 0) 0%, rgba(0, 60, 105, 0.3) 20%, rgba(0, 60, 105, 1) 50%);
-}
-
-.step.completed:last-child::after {
-  right: 0;
-  background: linear-gradient(90deg, rgba(0, 60, 105, 1) 50%, rgba(0, 60, 105, 0.3) 80%, rgba(0, 60, 105, 0) 100%);
-}
-
-/* Pasos activos - REGLA GENERAL primero */
-.step.active::before,
-.step.active::after {
-  background-color: $stepper-blue;
-}
-
-// ============================================================================
-// REGLAS PARA PASOS EN PROGRESO (más específicas)
-// ============================================================================
-
-/* Paso en progreso: azul desde la izquierda, verde punteada hacia la derecha */
-.step.in-progress {
-
-  // La línea desde la izquierda (::after) es azul (viene de completado)
-  &::after {
-    background-color: $stepper-blue !important;
-  }
-
-  // La línea hacia la derecha (::before) es verde punteada SOLO si hay pendientes después
-  &::before {
-    border-top: 4px dotted #00aa00 !important;
-    background-color: transparent !important;
-    background: none !important;
-    background-image: none !important;
-    border-radius: 0 !important;
-    height: 0 !important;
-    border-bottom: none !important;
-    z-index: 2 !important;
-  }
-}
-
-// ============================================================================
-// REGLAS PARA LÍNEAS VERDES PUNTEADAS (las MÁS específicas al final)
-// ============================================================================
-
-// Cuando un paso completado tiene pasos pendientes después
-.step.completed.has-pending-after::before {
-  border-top: 4px dotted #00aa00 !important;
-  background-color: transparent !important;
-  background: none !important;
-  background-image: none !important;
-  border-radius: 0 !important;
-  height: 0 !important;
-  border-bottom: none !important;
-  z-index: 2 !important;
-}
-
-// Cuando un paso pendiente viene después de completado/en progreso
-.step.has-pending-from {
-
-  // La línea desde la izquierda (::after) debe ser verde punteada
-  &::after {
-    border-top: 4px dotted #00aa00 !important;
-    background-color: transparent !important;
-    background: none !important;
-    background-image: none !important;
-    border-radius: 0 !important;
-    height: 0 !important;
-    border-bottom: none !important;
-    z-index: 2 !important;
-    left: 0 !important;
-    right: 50% !important;
-  }
-
-  // Si NO es el último paso, la línea hacia la derecha (::before) también debe ser verde
-  &:not(:last-child)::before {
-    border-top: 4px dotted #00aa00 !important;
-    background-color: transparent !important;
-    background: none !important;
-    background-image: none !important;
-    border-radius: 0 !important;
-    height: 0 !important;
-    border-bottom: none !important;
-    z-index: 2 !important;
-  }
-}
-
-// IMPORTANTE: Sobrescribir el gradiente que se aplica por defecto a pasos pendientes después de completados
-.step.completed+.step.has-pending-from::after {
-  left: 0 !important;
-  right: 50% !important;
-  background: none !important;
-  background-image: none !important;
-  border-top: 4px dotted #00aa00 !important;
-  background-color: transparent !important;
-  height: 0 !important;
-  z-index: 3 !important;
-}
-
-// Sobrescribir líneas entre dos pasos pendientes consecutivos
-.step.has-pending-from+.step.has-pending-from::after {
-  left: 0 !important;
-  right: 50% !important;
-  background: none !important;
-  background-image: none !important;
-  border-top: 4px dotted #00aa00 !important;
-  background-color: transparent !important;
-  height: 0 !important;
-  z-index: 3 !important;
-}
 
 /* remove legacy dot, use icon-wrapper */
 
@@ -742,7 +585,8 @@ $stepper-gray: #c5ced8;
 }
 
 // =============================================================================
-// STEPPER VIEW CONTAINER - UNIFICADO con tracking-stepper-view
+// STEPPER VIEW CONTAINER - COPIADO EXACTO DE trazabilidad-app/tracking-stepper-view.scss
+// Este es el stepper que se muestra en el listado de compras
 // =============================================================================
 .stepper-view-container {
   margin-top: 0;
@@ -757,12 +601,52 @@ $stepper-gray: #c5ced8;
     text-align: center;
     flex: 1 1 0;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    position: relative;
 
+    // Título del paso - igual que tracking-stepper-view
+    .step-title {
+      margin: 0 0 4px;
+      color: #4d4f57;
+      font-weight: bold;
+
+      p {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: inline-block;
+        margin: 0;
+        font-size: 12px;
+      }
+
+      // Color verde cuando el paso está en progreso
+      &.in-progress {
+        color: #00aa00 !important;
+
+        p,
+        p.title {
+          color: #00aa00 !important;
+        }
+      }
+    }
+
+    // Detalles del paso
+    .step-details {
+      padding: 4px 8px 0;
+      text-align: center;
+
+      p {
+        padding: 0;
+        font-size: 11px;
+        color: #606060;
+        margin: 0 0 2px;
+      }
+
+      span {
+        font-weight: normal;
+        font-size: 11px;
+        color: #959494;
+      }
+    }
+
+    // Contenedor del icono (para el badge de productos)
     .icon-wrapper {
       position: relative;
       display: inline-flex;
@@ -770,7 +654,7 @@ $stepper-gray: #c5ced8;
       justify-content: center;
     }
 
-    // Badge de productos - IGUAL que tracking-stepper-view
+    // Badge de productos
     .product-count-badge {
       position: absolute;
       top: -4px;
@@ -788,127 +672,60 @@ $stepper-gray: #c5ced8;
       z-index: 15;
     }
 
-    // Título - IGUAL que tracking-stepper-view (font-size: 13px)
-      .step-title {
-        margin: 0 0 4px !important;
-        color: #2b3e63;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-        text-align: center !important;
-        overflow: visible;
-        max-width: 100%;
-        flex-shrink: 0;
-        position: relative;
-        z-index: 0;
-        // Altura mínima fija para mantener iconos alineados
-        min-height: 18px;
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-
-        // Color verde cuando el paso está en progreso
-        &.in-progress {
-          color: #00aa00 !important;
-
-          p, p.title {
-            color: #00aa00 !important;
-          }
-        }
-
-        p, p.title {
-          white-space: nowrap !important;
-          text-overflow: ellipsis !important;
-          display: inline-block !important;
-          margin: 0 !important;
-          font-size: 13px !important;
-          font-weight: 600 !important;
-          color: inherit;
-          max-width: 100%;
-          overflow: hidden;
-
-          &.bold {
-            font-weight: 700 !important;
-          }
-        }
-      }
-
-    // Detalles - IGUAL que tracking-stepper-view
-    .step-details {
-      padding: 4px 8px 0;
-      text-align: center;
-      flex-shrink: 0;
-      margin-top: 0;
-      position: relative;
-      z-index: 0;
-
-      p {
-        padding: 0;
-        font-size: 11px;
-        color: #606060;
-        margin: 0 0 2px;
-      }
-
-      span {
-        font-weight: normal;
-        font-size: 11px;
-        color: #959494;
-      }
-    }
-
     .step {
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
-      flex-shrink: 0;
       margin: 4px 0;
-      position: relative;
-      z-index: 1;
 
-      // Icono - IGUAL que tracking-stepper-view (28px)
+      // Icono - tamaño igual que tracking-stepper-view (23px original, usamos 28px para mejor visibilidad)
       .icon {
-        width: 28px;
-        height: 28px;
-        min-width: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 23px;
+        height: 23px;
+        min-width: 23px;
       }
 
       .icon.pending {
-        width: 28px;
-        height: 28px;
-        min-width: 28px;
+        width: 23px;
+        height: 23px;
+        min-width: 23px;
         border-radius: 50%;
         background: #e5e8ed;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
-        color: #9ca3af;
         border: 1px solid #d1d5db;
       }
 
-      // Separadores - IGUAL que tracking-stepper-view
+      // ===================================================================
+      // SEPARADORES - IGUAL que tracking-stepper-view.scss (líneas 45-130)
+      // ===================================================================
       .step-separator {
         height: 2px;
         background-color: #c5ced8;
 
         &.beginning {
           border-radius: 5px 0 0 5px;
-          background: linear-gradient(90deg, rgba(197, 206, 216, 0) 0%, rgba(197, 206, 216, 0.3) 20%, rgba(197, 206, 216, 1) 50%);
+          background: rgb(255, 255, 255);
+          background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 44%, rgba(197, 206, 216, 1) 82%);
         }
 
         &.end {
           border-radius: 0 5px 5px 0;
-          background: linear-gradient(90deg, rgba(197, 206, 216, 1) 50%, rgba(197, 206, 216, 0.3) 80%, rgba(197, 206, 216, 0) 100%);
+          background: rgb(255, 255, 255);
+          background: linear-gradient(90deg, rgba(197, 206, 216, 1) 0%, rgba(255, 255, 255, 1) 44%, rgba(255, 255, 255, 1) 82%);
         }
       }
 
-      // Paso solo en progreso (sin completed) - ambas líneas verde punteado
-      &.in-progress:not(.completed) {
+      // ===================================================================
+      // PASO EN PROGRESO - líneas verdes punteadas
+      // ===================================================================
+      &.in-progress {
         .step-separator {
-          &.to:not(.end), &.from {
+
+          &.to:not(.end),
+          &.from {
             border-top: 4px dotted #00aa00;
             background-color: transparent !important;
             border-radius: 0;
@@ -916,7 +733,7 @@ $stepper-gray: #c5ced8;
           }
         }
 
-        &.last {
+        &.last:not(.completed) {
           .step-separator {
             &.to {
               background-color: transparent;
@@ -927,39 +744,56 @@ $stepper-gray: #c5ced8;
         }
       }
 
-      // Paso completado (incluye los que también están in-progress)
+      // ===================================================================
+      // PASO COMPLETADO CON IN-PROGRESS - línea desde azul hacia verde
+      // ===================================================================
       &.completed {
-        .step-separator {
-          background-color: #003c69;
-          border: 0; // Resetear border
-
-          &.beginning {
-            border-radius: 5px 0 0 5px;
-            background: linear-gradient(90deg, rgba(0, 60, 105, 0) 0%, rgba(0, 60, 105, 0.3) 20%, rgba(0, 60, 105, 1) 50%);
-          }
-
-          &.end {
-            border-radius: 0 5px 5px 0;
-            background: linear-gradient(90deg, rgba(0, 60, 105, 1) 50%, rgba(0, 60, 105, 0.3) 80%, rgba(0, 60, 105, 0) 100%);
-          }
-        }
-
-        // Cuando también está in-progress, la línea .to va hacia pasos pendientes (gris)
         &.in-progress {
           .step-separator {
             &.from {
               background-color: #003c69 !important;
               border: 0;
+              margin: 0 auto;
             }
-            &.to {
-              background-color: #c5ced8 !important; // Gris hacia pendientes
-              border: 0;
+          }
+
+          &.last {
+            .step-separator {
+              &.to:not(.end) {
+                border-top: 4px dotted #00aa00;
+                background-color: transparent !important;
+                border-radius: 0;
+                margin: 0 2px;
+              }
             }
           }
         }
       }
 
-      // Último paso completado - línea .to gris
+      // ===================================================================
+      // PASO COMPLETADO - líneas azules
+      // ===================================================================
+      &.completed {
+        .step-separator {
+          background-color: #003c69;
+
+          &.beginning {
+            border-radius: 5px 0 0 5px;
+            background: rgb(255, 255, 255);
+            background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 44%, #003c69 82%);
+          }
+
+          &.end {
+            border-radius: 0 5px 5px 0;
+            background: rgb(255, 255, 255);
+            background: linear-gradient(90deg, #003c69 0%, rgba(255, 255, 255, 1) 44%, rgba(255, 255, 255, 1) 82%);
+          }
+        }
+      }
+
+      // ===================================================================
+      // ÚLTIMO PASO COMPLETADO - línea .to gris
+      // ===================================================================
       &.last {
         .step-separator {
           &.to {
@@ -1241,7 +1075,7 @@ $stepper-gray: #c5ced8;
   &.active {
     background: #E53935; // Rojo imperial para página actual
     color: #fff;
-    
+
     &:hover {
       background: darken(#E53935, 10%);
     }
@@ -1251,7 +1085,7 @@ $stepper-gray: #c5ced8;
   &.next-page {
     background: #001F36; // Azul imperial para página siguiente
     color: #fff;
-    
+
     &:hover {
       background: darken(#001F36, 10%);
     }
@@ -1261,7 +1095,7 @@ $stepper-gray: #c5ced8;
   &.prev-page {
     background: #001F36; // Azul imperial para página anterior
     color: #fff;
-    
+
     &:hover {
       background: darken(#001F36, 10%);
     }
@@ -1334,7 +1168,7 @@ $stepper-gray: #c5ced8;
       min-width: 0;
       overflow: visible;
       align-items: center;
-      
+
       .step-title {
         font-size: 11px !important;
         overflow: visible;
@@ -1345,7 +1179,8 @@ $stepper-gray: #c5ced8;
         justify-content: center;
         margin-bottom: 4px !important;
 
-        p, p.title {
+        p,
+        p.title {
           font-size: 11px !important;
           white-space: normal !important;
           line-height: 1.2 !important;
@@ -1363,7 +1198,7 @@ $stepper-gray: #c5ced8;
       .step-details {
         margin-top: 0 !important;
         padding-top: 4px !important;
-        
+
         p {
           font-size: 10px !important;
           line-height: 1.2 !important;
@@ -1385,7 +1220,7 @@ $stepper-gray: #c5ced8;
       min-width: 0;
       overflow: visible;
       align-items: center;
-      
+
       .step-title {
         font-size: 11px !important;
         overflow: visible;
@@ -1393,7 +1228,8 @@ $stepper-gray: #c5ced8;
         min-height: 32px !important;
         margin-bottom: 4px !important;
 
-        p, p.title {
+        p,
+        p.title {
           font-size: 11px !important;
           white-space: normal !important;
           line-height: 1.3 !important;
@@ -1410,7 +1246,7 @@ $stepper-gray: #c5ced8;
       .step-details {
         margin-top: 0 !important;
         padding-top: 4px !important;
-        
+
         p {
           font-size: 9px !important;
           line-height: 1.2 !important;
@@ -1435,7 +1271,8 @@ $stepper-gray: #c5ced8;
         // Altura para 2 líneas
         min-height: 28px !important;
 
-        p, p.title {
+        p,
+        p.title {
           font-size: 10px !important;
         }
       }
@@ -1552,9 +1389,9 @@ $stepper-gray: #c5ced8;
 .sku {
   white-space: nowrap;
 }
+
 // Ocultar pseudo-elementos - usamos step-separator en su lugar
 .step::before,
 .step::after {
   display: none !important;
 }
-

@@ -1,30 +1,160 @@
+// ============================================================================
+// MODO COMPLETO - Para vista de detalle (igual que tracking-delivery-details)
+// ============================================================================
 .purchase-summary-card {
   background: #fff;
   border-radius: 2px;
   box-shadow: 0 2px 14px 0 #00000014;
-  padding: 24px 32px;
-  margin-top: 16px;
+  padding: 20px 0;
+  margin-bottom: 30px;
   display: block;
 }
+
 .title {
-  margin: 0 0 16px;
+  margin: 0 0 16px 30px;
   font-size: 20px;
   font-weight: 500;
   color: #1f2937;
 }
-.content-row { display: flex; align-items: flex-start; gap: 16px; }
-.circle {
-  width: 72px; height: 72px; border-radius: 50%; background: #e5ecf5; display:flex; align-items:center; justify-content:center;
+
+.content-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  margin-left: 30px;
+  min-height: 80px;
 }
-.circle img { width: 60px; height: 60px; }
-.text-col { font-size: 14px; color:#374151; }
-.line { margin-bottom: 8px; }
-.tipo { font-weight: 500; }
-.direccion { font-size: 15px; }
-.retiro { color:#374151; }
+
+.icon-col {
+  flex-shrink: 0;
+}
+
+.summary-icon {
+  width: 46px;
+  height: 46px;
+  display: block;
+}
+
+.text-col {
+  font-size: 14px;
+  color: #374151;
+  flex: 1;
+}
+
+.line {
+  margin-bottom: 4px;
+}
+
+.tipo {
+  font-size: 14px;
+  color: #4d4f57;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.direccion {
+  font-size: 13px;
+  color: #3f3e3d;
+
+  strong {
+    font-weight: bold;
+  }
+}
+
+.fecha {
+  color: #3f3e3d;
+  font-size: 13px;
+  font-weight: normal;
+}
+
+// ============================================================================
+// MODO COMPACTO - Para listado de compras (mis-compras)
+// ============================================================================
+.purchase-summary-compact {
+  margin: 8px 0 12px;
+}
+
+.compact-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.compact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+
+  img {
+    width: 46px;
+    height: 46px;
+    display: block;
+  }
+}
+
+.compact-text {
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #344054;
+  line-height: 1.5;
+}
+
+.compact-tipo {
+  font-weight: 500;
+}
+
+.compact-direccion {
+  font-weight: normal;
+}
+
+.compact-fecha {
+  font-size: 13px;
+  color: #667085;
+  margin-top: 4px;
+  margin-left: 56px; // Alinear con el texto (46px icono + 10px gap)
+}
+
+// ============================================================================
+// RESPONSIVE
+// ============================================================================
 @media (max-width: 768px) {
-  .purchase-summary-card { padding: 20px 20px; }
-  .circle { width:56px; height:56px; }
-  .circle img { width:48px; height:48px; }
-  .title { font-size:18px; }
+
+  // Modo completo
+  .purchase-summary-card {
+    padding: 16px 0;
+  }
+
+  .title {
+    font-size: 18px;
+    margin-left: 20px;
+  }
+
+  .content-row {
+    margin-left: 20px;
+    gap: 12px;
+  }
+
+  .summary-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  // Modo compacto
+  .compact-icon {
+    width: 40px;
+    height: 40px;
+
+    img {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  .compact-fecha {
+    margin-left: 50px; // 40px icono + 10px gap
+  }
 }

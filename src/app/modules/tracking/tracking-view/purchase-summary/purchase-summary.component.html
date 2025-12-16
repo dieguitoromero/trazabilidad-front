@@ -1,13 +1,28 @@
-<div class="purchase-summary-card" *ngIf="tipoEntrega || direccionEntrega || fechaRetiro">
+<!-- Modo completo (para vista de detalle) -->
+<div class="purchase-summary-card" *ngIf="hasContent && !compact">
   <h3 class="title">Resumen de tu compra</h3>
   <div class="content-row">
     <div class="icon-col">
-      <div class="circle"><img [src]="tipoEntrega === 'Retiro en tienda' ? 'assets/tienda-icon.svg' : 'assets/domicilio-icon.svg'" alt="Entrega" /></div>
+      <img class="summary-icon" [src]="displayIcon" alt="Entrega" />
     </div>
     <div class="text-col">
-      <div class="line tipo">{{ tipoEntrega }}</div>
-      <div class="line direccion" *ngIf="direccionEntrega"><strong>{{ direccionEntrega }}</strong></div>
-      <div class="line retiro" *ngIf="fechaRetiro">Retira a partir del {{ fechaRetiro }}</div>
+      <div class="line tipo">{{ displayTipoEntrega }}</div>
+      <div class="line direccion" *ngIf="displayDireccion"><strong>{{ displayDireccion }}</strong></div>
+      <div class="line fecha" *ngIf="displayFechaTexto">{{ displayFechaTexto }}</div>
     </div>
   </div>
+</div>
+
+<!-- Modo compacto (para listado de compras) -->
+<div class="purchase-summary-compact" *ngIf="hasContent && compact">
+  <div class="compact-row">
+    <span class="compact-icon">
+      <img [src]="displayIcon" alt="Entrega" />
+    </span>
+    <div class="compact-text">
+      <span class="compact-tipo">{{ displayTipoEntrega }}</span>
+      <span class="compact-direccion" *ngIf="displayDireccion">: {{ displayDireccion }}</span>
+    </div>
+  </div>
+  <div class="compact-fecha" *ngIf="displayFechaTexto">{{ displayFechaTexto }}</div>
 </div>

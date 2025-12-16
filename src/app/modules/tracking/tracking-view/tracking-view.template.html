@@ -12,7 +12,8 @@
 </div>
 
 <!-- Buscador - solo mostrar si no es vista de detalle -->
-<app-tracking-search-box *ngIf="showSearchBox" (search)="onSearch($event)" [searchModel]="searchModel"></app-tracking-search-box>
+<app-tracking-search-box *ngIf="showSearchBox" (search)="onSearch($event)"
+    [searchModel]="searchModel"></app-tracking-search-box>
 
 <!-- Loading state -->
 <div class="loading-container" *ngIf="working">
@@ -28,12 +29,13 @@
 <div class="tracking-content" *ngIf="invoice && !working">
     <!-- Timeline principal de tracking -->
     <div class="box-container">
-        <app-tracking-stepper-view [steps]="invoice?.trackingSteps" [orderDetails]="invoice?.orderProducts"></app-tracking-stepper-view>
+        <app-tracking-stepper-view [steps]="invoice?.trackingSteps"
+            [orderDetails]="invoice?.orderProducts"></app-tracking-stepper-view>
     </div>
 
-    <!-- Detalles de entrega/pickup -->
+    <!-- Detalles de entrega/pickup - mismo componente que en listado para consistencia -->
     <div class="box-container">
-        <app-tracking-delivery-details [pickup]="invoice?.pickup"></app-tracking-delivery-details>
+        <app-purchase-summary [pickup]="invoice?.pickup"></app-purchase-summary>
     </div>
 
     <!-- Detalles de productos si existen -->
@@ -44,7 +46,7 @@
     <!-- Seccion de Dimensionado (Machinable) -->
     <div class="box-container no-padding machinable-section" #trackingStepperView>
         <ng-container *ngFor="let step of invoice?.trackingSteps">
-            <app-tracking-machinable-process 
+            <app-tracking-machinable-process
                 *ngIf="step.machinable && step.machinable.orders && step.machinable.orders.length > 0"
                 [machinableProcess]="step.machinable">
             </app-tracking-machinable-process>

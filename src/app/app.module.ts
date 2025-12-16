@@ -22,6 +22,8 @@ import { TimelineModule } from './modules/timeline/timeline.module';
 import { FormatFechaCompraPipe } from './modules/mis-compras/format-fecha-compra.pipe';
 import { FormsModule } from '@angular/forms';
 
+import { TrackingModule } from './modules/tracking/tracking.module';
+
 registerLocaleData(localeCL);
 
 @NgModule({
@@ -33,6 +35,7 @@ registerLocaleData(localeCL);
     FormsModule,
     HttpClientModule,
     TimelineModule,
+    TrackingModule,
   ],
   providers: [
     LoadingService,
@@ -54,4 +57,4 @@ registerLocaleData(localeCL);
   ],
   bootstrap: [AppComponent],
 })
-export class AppModule {}
+export class AppModule { }

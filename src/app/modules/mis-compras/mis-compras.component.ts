@@ -132,7 +132,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
   // RUT del cliente - se obtiene de query params (requerido)
   rut: string | null = null;
   private rutProporcionadoExplicitamente = false;
-  
+
   // Mapa de estados de productos por paso (para calcular el badge)
   // NOTA: Este mapa debería actualizarse para usar los estados reales que envía el backend
   // en lugar de estados canónicos hardcodeados. El backend debería enviar esta información.
@@ -152,9 +152,9 @@ export class MisComprasComponent implements OnInit, OnDestroy {
   };
 
   constructor(
-    private router: Router, 
-    private route: ActivatedRoute, 
-    private misComprasService: MisComprasService, 
+    private router: Router,
+    private route: ActivatedRoute,
+    private misComprasService: MisComprasService,
     private trackingDataService: TrackingDataService,
     private cdr: ChangeDetectorRef
   ) { }
@@ -198,7 +198,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       this.loading = false;
       return;
     }
-    
+
     this.loading = true;
     this.clienteNoEncontrado = false;
     this.error = false;
@@ -292,28 +292,28 @@ export class MisComprasComponent implements OnInit, OnDestroy {
     // Con paginación server-side: el backend ya devolvió sólo la página actual
     // Si estamos en modo búsqueda, los resultados ya vienen filtrados de la API
     const allCompras = this.fullFiltered();
-    
+
     // En la primera página, mostrar solo 3 documentos inicialmente si no se ha expandido
     // Solo aplicar si hay más de 3 documentos y no estamos en modo búsqueda
     if (this.page === 1 && !this.showMoreFirstPage && !this.isSearching && allCompras.length > 3) {
       return allCompras.slice(0, 3);
     }
-    
+
     // Si se ha expandido, mostrar hasta 10 documentos en la primera página
     if (this.page === 1 && this.showMoreFirstPage && !this.isSearching) {
       return allCompras.slice(0, 10);
     }
-    
+
     return allCompras;
   }
-  
+
   // Verifica si se debe mostrar el botón "Mostrar más" en la primera página
   get shouldShowMoreButton(): boolean {
     const allCompras = this.fullFiltered();
-    return this.page === 1 && 
-           !this.showMoreFirstPage && 
-           !this.isSearching && 
-           allCompras.length > 3;
+    return this.page === 1 &&
+      !this.showMoreFirstPage &&
+      !this.isSearching &&
+      allCompras.length > 3;
   }
 
   get totalFilteredCount(): number { return this.fullFiltered().length; }
@@ -500,31 +500,90 @@ export class MisComprasComponent implements OnInit, OnDestroy {
   }
 
   // Determina si el paso actual es el último completado antes de pasos pendientes
+  // LÓGICA EXACTA de isLastStepCompleted en tracking-stepper-view.component.ts
   public isLastCompleted(steps: StepSnapshot[], index: number): boolean {
     if (!steps || !steps[index]) return false;
-    const current = steps[index];
-    const next = steps[index + 1];
-    
-    // Es el último completado si: está completado/en progreso Y el siguiente es pendiente (o no hay siguiente)
-    if (current.isCompleted || current.isInProgress) {
-      if (!next) return true; // Es el último paso
-      return !next.isCompleted && !next.isInProgress; // El siguiente es pendiente
+
+    const currentIcon = steps[index].icon || '';
+    const nextStep = steps[index + 1];
+
+    if (nextStep !== undefined) {
+      const nextIcon = nextStep.icon || '';
+      // Es el último completado si: el siguiente tiene ícono 'pending' 
+      // Y el actual tiene ícono 'in_progress' o 'complete'
+      return nextIcon.indexOf('pending') > 0 &&
+        (currentIcon.indexOf('in_progress') >= 0 || currentIcon.indexOf('complete') >= 0);
+    } else if (index === steps.length - 1) {
+      // Es el último paso del array
+      return true;
+    } else {
+      // Caso edge: verificar si el actual es pending
+      return currentIcon.indexOf('pending') > 0;
     }
-    return false;
   }
 
-  // Convierte stepperSnapshot al formato de TrackingStepModel para usar tracking-stepper-view
+  // Convierte compra.trazabilidad al formato TrackingStepModel[] para usar tracking-stepper-view
+  // IMPORTANTE: Usa directamente los datos del backend sin pasar por stepperSnapshot
+  // Esto asegura que los íconos, colores y estados sean exactamente los que el backend envía
   public getTrackingSteps(compra: Compra): any[] {
-    const snapshot = this.stepperSnapshot(compra);
-    return snapshot.map(step => ({
-      title: {
-        text: step.label,
-        color: step.color || '#2b3e63',
-        isBold: step.isBold || false
-      },
-      description: step.observacion || '-',
-      date: step.fecha || null,
-      icon: step.icon || 'pending'
+    if (!compra || !compra.trazabilidad || !Array.isArray(compra.trazabilidad)) {
+      return [];
+    }
+
+    // Filtrar "Pedido en Ruta" si es retiro en tienda
+    const isRetiro = this.isRetiroEnTienda(compra);
+    let steps = compra.trazabilidad;
+
+    if (isRetiro) {
+      steps = steps.filter(t => {
+        const titleText = t.title?.text || t.etapa || t.glosa || '';
+        return this.normalize(titleText) !== this.normalize('Pedido en Ruta');
+      });
+    }
+
+    // Ordenar por orden si está disponible
+    steps = this.sortTrazabilidad([...steps]);
+
+    // Mapear directamente al formato TrackingStepModel (igual que tracking-view)
+    return steps.map(t => {
+      // CORRECCIÓN CRÍTICA: El backend envía 'timeline_complete_icon.svg' incluso para pasos pendientes (indProcesado: null).
+      // Si indProcesado es null/undefined, FORZAMOS el ícono de pending para que la lógica visual funcione correctamente.
+      let icon = t.icon;
+      if (t.indProcesado === null || t.indProcesado === undefined) {
+        icon = 'https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg';
+      } else if (!icon) {
+        icon = 'https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg';
+      }
+
+      return {
+        title: t.title || {
+          text: t.etapa || t.glosa || '',
+          color: '#4d4f57',
+          isBold: false
+        },
+        description: t.description !== undefined ? t.description : (t.observacion || '-'),
+        date: t.date !== undefined ? t.date : (t.fechaRegistro || null),
+        icon: icon,
+        machinable: t.machinable
+      };
+    });
+  }
+
+  // Convierte compra.productos al formato OrderDetailsModel[] que espera tracking-stepper-view
+  // El componente usa stateDescription para calcular numberOfItemsOnStatus
+  public getOrderDetails(compra: Compra): any[] {
+    if (!compra || !compra.productos || !Array.isArray(compra.productos)) {
+      return [];
+    }
+
+    return compra.productos.map(p => ({
+      quantity: p.cantidad || 1,
+      code: p.codigo || p.sku || '',
+      codeUnimed: p.unidadMedida || '',
+      image: p.imagen || '',
+      description: p.descripcion || p.nombre || '',
+      descriptionUnimed: p.unidadMedida || '',
+      stateDescription: p.state_description || p.estado || ''
     }));
   }
 
@@ -541,7 +600,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
     const entries = this.sortTrazabilidad(Array.isArray(compra?.trazabilidad) ? [...compra.trazabilidad] : []);
     // Filtrar "Pedido en Ruta" si es retiro en tienda
     const isRetiro = this.isRetiroEnTienda(compra);
-    
+
     // Usar directamente los estados que vienen del backend
     // Filtrar "Pedido en Ruta" si es retiro en tienda
     let filteredEntries = entries;
@@ -551,7 +610,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
         return this.normalize(titleText) !== this.normalize('Pedido en Ruta');
       });
     }
-    
+
     // Mapear directamente los estados del backend
     const snapshots = filteredEntries.map((entry) => {
       // Usar el título del backend si está disponible, sino usar etapa o glosa
@@ -560,71 +619,67 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       // Usar directamente los datos del backend
       const indProcesado = match.indProcesado;
 
-        // Si no hay indProcesado ni estado válido, el paso es pendiente
-        const hasValidState = indProcesado !== undefined && indProcesado !== null;
-        const hasEstado = match.estado && match.estado.trim() && this.isCompletedEstado(match.estado, undefined);
+      // Si no hay indProcesado ni estado válido, el paso es pendiente
+      const hasValidState = indProcesado !== undefined && indProcesado !== null;
+      const hasEstado = match.estado && match.estado.trim() && this.isCompletedEstado(match.estado, undefined);
 
-        // Preferir campos calculados del backend si están disponibles
-        let fecha: string | undefined = undefined;
-        let isCompleted = false;
-        let isInProgress = false;
+      // Preferir campos calculados del backend si están disponibles
+      let fecha: string | undefined = undefined;
+      let isCompleted = false;
+      let isInProgress = false;
 
-        if (match.date !== undefined) {
-          // Usar fecha calculada del backend (puede ser null)
-          fecha = match.date !== null ? match.date : undefined;
-        } else {
-          // Fallback: calcular fecha manualmente
-          fecha = (indProcesado !== null && indProcesado !== undefined && match.fechaRegistro && match.fechaRegistro.trim())
-            ? match.fechaRegistro
-            : undefined;
-        }
+      if (match.date !== undefined) {
+        // Usar fecha calculada del backend (puede ser null)
+        fecha = match.date !== null ? match.date : undefined;
+      } else {
+        // Fallback: calcular fecha manualmente
+        fecha = (indProcesado !== null && indProcesado !== undefined && match.fechaRegistro && match.fechaRegistro.trim())
+          ? match.fechaRegistro
+          : undefined;
+      }
 
-        // Calcular ícono: SIEMPRE usar el del backend si está disponible (el backend siempre envía icon)
-        // El backend envía URLs como: https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg
-        // IMPORTANTE: El backend SIEMPRE envía el campo icon, incluso para etapas pendientes
-        let icon: string;
-        if (match.icon && typeof match.icon === 'string' && match.icon.trim() && match.icon.trim() !== 'null') {
-          // El backend siempre envía una URL de ícono, usarla directamente
-          icon = match.icon.trim();
-        } else if (hasValidState || hasEstado) {
-          // Fallback: calcular manualmente solo si el backend no envió icon
-          icon = this.computeIconFromEstado(match.estado, indProcesado);
-        } else {
-          // Sin estado válido ni icon del backend: usar círculo gris (pending)
-          icon = 'pending';
-        }
+      // Calcular ícono: SIEMPRE usar el del backend si está disponible (el backend siempre envía icon)
+      // El backend envía URLs como: https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg
+      // IMPORTANTE: El backend SIEMPRE envía el campo icon, incluso para etapas pendientes
+      let icon: string;
+      if (match.icon && typeof match.icon === 'string' && match.icon.trim() && match.icon.trim() !== 'null') {
+        // El backend siempre envía una URL de ícono, usarla directamente
+        icon = match.icon.trim();
+      } else if (hasValidState || hasEstado) {
+        // Fallback: calcular manualmente solo si el backend no envió icon
+        icon = this.computeIconFromEstado(match.estado, indProcesado);
+      } else {
+        // Sin estado válido ni icon del backend: usar círculo gris (pending)
+        icon = 'pending';
+      }
 
-        // Determinar estado completado y en progreso basado en indProcesado (mutuamente excluyentes)
-        // IMPORTANTE: Lógica igual que tracking-stepper-view
-        // Un paso con icono real (no pending) tiene completed = true
-        // indProcesado = 0 → en progreso (tiene icono, así que completed = true también)
-        // indProcesado = 1 → completado
-        // indProcesado = null/undefined → pendiente (sin icono)
-        if (indProcesado === 1) {
-          isCompleted = true;
-          isInProgress = false;
-        } else if (indProcesado === 0) {
-          // En progreso: tiene icono real, así que completed = true
-          // Esto es igual a tracking-stepper-view donde isStepCompleted verifica si icono !== 'pending'
-          isCompleted = true;
-          isInProgress = true;
-        } else {
-          // indProcesado es null o undefined → paso pendiente
-          isCompleted = false;
-          isInProgress = false;
-        }
+      // Determinar estado completado y en progreso BASADO EN EL ÍCONO
+      // Esta es la MISMA lógica que tracking-stepper-view.component.ts (fuente de verdad)
+      //
+      // isStepCompleted: return step.icon.indexOf('pending') < 0
+      // Es decir, un paso está completado si su ícono NO contiene 'pending'
+      //
+      // isStepInProgress: depende de si hay productos en estados posteriores
+      // o si el ícono contiene 'in_progress' o 'complete'
 
-        // Preferir campos calculados del backend para color y negrita
-        let color: string;
-        let isBold: boolean;
+      // Paso completado = ícono NO contiene 'pending'
+      isCompleted = icon.indexOf('pending') < 0;
 
-        if (match.title) {
-          color = match.title.color || this.computeTitleColor(indProcesado, match.estado);
-          isBold = match.title.isBold !== undefined ? match.title.isBold : this.computeIsBold(indProcesado, match.estado);
-        } else {
-          color = this.computeTitleColor(indProcesado, match.estado);
-          isBold = this.computeIsBold(indProcesado, match.estado);
-        }
+      // Paso en progreso = ícono contiene 'in_progress' 
+      // (se refinará después cuando sepamos cuál es el último completado)
+      isInProgress = icon.indexOf('in_progress') >= 0;
+
+      // Preferir campos calculados del backend para color y negrita
+      let color: string;
+      let isBold: boolean;
+
+      if (match.title) {
+        color = match.title.color || this.computeTitleColor(indProcesado, match.estado);
+        isBold = match.title.isBold !== undefined ? match.title.isBold : this.computeIsBold(indProcesado, match.estado);
+      } else {
+        color = this.computeTitleColor(indProcesado, match.estado);
+        isBold = this.computeIsBold(indProcesado, match.estado);
+      }
 
       // Calcular productCount basado en los productos de la compra
       // Usar el label real del backend para buscar en statusMap
@@ -709,7 +764,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
         }
       }
     }
-    
+
     if (!allowedStates || allowedStates.length === 0) {
       return 0;
     }
@@ -776,7 +831,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
         return this.normalize(titleText) !== this.normalize('Pedido en Ruta');
       });
     }
-    
+
     // Usar directamente los estados del backend
     return filteredEntries.map((entry) => {
       const match = entry;
@@ -904,7 +959,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       this.goToPage(this.page + 1);
     }
   }
-  
+
   // Muestra más documentos en la primera página (de 3 a 10)
   mostrarMasPrimeraPagina(): void {
     this.showMoreFirstPage = true;
@@ -945,7 +1000,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       this.loading = false;
       return;
     }
-    
+
     console.log('[MisComprasComponent] Llamando a buscarDocumento con:', { rut: this.rut, term, page: 1, perPage: this.perPage });
 
     // Buscar documento específico en la API
@@ -1102,7 +1157,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
     const backendPickup = (encontrado as any)?.pickup || (c as any)?.pickup;
     const tipoEntregaFromBackend = encontrado?.tipoEntrega || c?.tipoEntrega || '';
     const direccionFromBackend = encontrado?.direccionEntrega || c?.direccionEntrega || '';
-    
+
     // Si el backend envió pickup completo, usarlo directamente
     // Si no, construir desde tipoEntrega y direccionEntrega (fallback)
     const pickup = backendPickup ? {
@@ -1110,7 +1165,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       text: backendPickup.text || direccionFromBackend,
       title_date: backendPickup.title_date || (isRetiro ? 'Retira a partir del ' : 'Llega a partir del '),
       date: backendPickup.date || undefined,
-      icon: backendPickup.icon || (isRetiro 
+      icon: backendPickup.icon || (isRetiro
         ? 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
         : 'https://dvimperial.blob.core.windows.net/traceability/delivery_icon.svg')
     } : {
@@ -1118,7 +1173,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       text: direccionFromBackend,
       title_date: isRetiro ? 'Retira a partir del ' : 'Llega a partir del ',
       date: undefined,
-      icon: isRetiro 
+      icon: isRetiro
         ? 'https://dvimperial.blob.core.windows.net/traceability/store_pickup_icon.svg'
         : 'https://dvimperial.blob.core.windows.net/traceability/delivery_icon.svg'
     };
@@ -1202,7 +1257,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       const entry = filteredEntries[idx];
       return entry.title?.text || entry.etapa || entry.glosa || 'Pedido Ingresado';
     }
-    return filteredEntries.length > 0 
+    return filteredEntries.length > 0
       ? (filteredEntries[0].title?.text || filteredEntries[0].etapa || filteredEntries[0].glosa || 'Pedido Ingresado')
       : 'Pedido Ingresado';
   }
@@ -1282,7 +1337,7 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       if (p !== 1) {
         this.showMoreFirstPage = false;
       }
-      
+
       // Scroll al inicio de la página al cambiar de página
       window.scrollTo({ top: 0, behavior: 'smooth' });
 

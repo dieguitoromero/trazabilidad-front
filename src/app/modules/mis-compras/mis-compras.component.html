@@ -23,7 +23,8 @@
   </div>
 
   <div class="loading" *ngIf="loading">Cargando compras...</div>
-  <div class="error" *ngIf="!loading && error && !clienteNoEncontrado && !clienteIdRequerido">No se pudo cargar desde el servicio, mostrando
+  <div class="error" *ngIf="!loading && error && !clienteNoEncontrado && !clienteIdRequerido">No se pudo cargar desde el
+    servicio, mostrando
     datos locales.</div>
 
   <!-- Vista cuando no se encuentra el cliente -->
@@ -43,7 +44,8 @@
     <div class="text">No se encontró documento</div>
   </div>
 
-  <div class="cards" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido" [class.loading-state]="loading">
+  <div class="cards" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido"
+    [class.loading-state]="loading">
     <div class="card" *ngFor="let c of filteredCompras; trackBy: trackByCompra">
       <div class="card-header">
         <div class="doc-title">
@@ -64,53 +66,19 @@
         </div>
       </div>
 
-      <div class="entrega-row" *ngIf="c.tipoEntrega">
-        <span class="icon" *ngIf="c.tipoEntrega">
-          <img [src]="isRetiroEnTienda(c) ? 'assets/tienda-icon.svg' : 'assets/domicilio-icon.svg'" alt="Entrega" />
-        </span>
-        <span class="entrega-text">
-          {{ getTipoEntregaLabel(c) }}{{ c.direccionEntrega ? ': ' + c.direccionEntrega : '' }}
-        </span>
-      </div>
+      <!-- Resumen de entrega - usa el mismo componente que la vista de detalle para consistencia -->
+      <app-purchase-summary *ngIf="c.tipoEntrega || c.pickup" [compact]="true" [pickup]="c.pickup"
+        [tipoEntrega]="getTipoEntregaLabel(c)" [direccionEntrega]="c.direccionEntrega">
+      </app-purchase-summary>
 
 
-      <!-- Stepper - oculto en móvil y cuando el texto se superpone -->
+
+      <!-- Stepper - usa el componente de la fuente de verdad (tracking-stepper-view) -->
       <div class="hide-on-mobile stepper-wrapper">
-        <div class="stepper-view-container d-flex">
-          <ng-container *ngFor="let step of stepperSnapshot(c); let i = index; trackBy: trackByStep">
-            <div class="step-container d-flex flex-column">
-              <div class="step-title"
-                [class.in-progress]="step.isInProgress"
-                [ngStyle]="{ 'color': step.isInProgress ? '#00aa00' : (step.color || '#2b3e63') }">
-                <p class="title" [class.bold]="step.isBold || step.isInProgress">{{ step.label }}</p>
-              </div>
-              <div class="step d-flex"
-                [class.in-progress]="step.isInProgress"
-                [class.completed]="step.isCompleted"
-                [class.last]="isLastCompleted(stepperSnapshot(c), i)"
-                [class.beginning]="i === 0">
-                <div class="step-separator from align-self-center flex-grow-1"
-                  [class.beginning]="i === 0"></div>
-            <div class="icon-wrapper">
-              <ng-container *ngIf="step.icon && step.icon !== 'pending' && step.icon.trim() !== ''; else pendingIcon">
-                <img class="icon" [src]="step.icon" alt="step icon" />
-              </ng-container>
-              <ng-template #pendingIcon>
-                <div class="icon pending"></div>
-              </ng-template>
-                  <span class="product-count-badge" *ngIf="step.productCount && step.productCount > 0">{{ step.productCount }}</span>
-                </div>
-                <div class="step-separator to align-self-center flex-grow-1"
-                  [class.end]="i === stepperSnapshot(c).length - 1"></div>
-            </div>
-              <div class="step-details">
-                <p>{{ step.observacion || '-' }}</p>
-                <span>{{ step.fecha ? (step.fecha | date:'dd-MM-yy') : '-' }}</span>
-          </div>
-            </div>
-          </ng-container>
-        </div>
+        <app-tracking-stepper-view [steps]="getTrackingSteps(c)" [orderDetails]="getOrderDetails(c)">
+        </app-tracking-stepper-view>
       </div>
+
 
       <!-- Timeline detallado removido: solo se mostrará en la pantalla de detalle -->
 
@@ -120,11 +88,13 @@
       </div>
 
       <!-- Facturas asociadas: SOLO para Notas de Venta (NVV) según especificación del backend -->
-      <div class="facturas-asociadas-link" *ngIf="c.tipoDocumento === 'Nota de Venta' && c.facturasAsociadas && c.facturasAsociadas.length > 0">
+      <div class="facturas-asociadas-link"
+        *ngIf="c.tipoDocumento === 'Nota de Venta' && c.facturasAsociadas && c.facturasAsociadas.length > 0">
         <a (click)="toggleAsociadas(c)">Ver facturas asociadas ({{ c.facturasAsociadas.length }})</a>
       </div>
 
-      <div class="asociadas" *ngIf="c.tipoDocumento === 'Nota de Venta' && c.facturasAsociadas && c.facturasAsociadas.length > 0">
+      <div class="asociadas"
+        *ngIf="c.tipoDocumento === 'Nota de Venta' && c.facturasAsociadas && c.facturasAsociadas.length > 0">
         <div class="asociadas-list" *ngIf="isAsociadasOpen(c)">
           <ng-container *ngFor="let f of c.facturasAsociadas; trackBy: trackByFactura">
             <div class="asociada-item" *ngIf="f && (f.numeroFactura || f.fechaEmision)">
@@ -153,12 +123,14 @@
     </button>
   </div>
 
-  <div class="pagination-row desktop-only" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1 && (page !== 1 || showMoreFirstPage)">
+  <div class="pagination-row desktop-only"
+    *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1 && (page !== 1 || showMoreFirstPage)">
     <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
       ‹
     </button>
     <button class="page-box" *ngFor="let p of getVisiblePages(); trackBy: trackByPage" [class.active]="p === page"
-      [class.next-page]="p === page + 1" [class.prev-page]="p === page - 1" [class.ellipsis]="p === '...'" [disabled]="p === '...'" (click)="handlePageClick(p)">
+      [class.next-page]="p === page + 1" [class.prev-page]="p === page - 1" [class.ellipsis]="p === '...'"
+      [disabled]="p === '...'" (click)="handlePageClick(p)">
       {{ p }}
     </button>
     <button class="pagination-arrow" [class.disabled]="page === totalPages" (click)="goToPage(page + 1)"
@@ -168,7 +140,8 @@
   </div>
 
   <!-- Pager condensado móvil -->
-  <div class="mobile-condensed-pager" *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1 && (page !== 1 || showMoreFirstPage)">
+  <div class="mobile-condensed-pager"
+    *ngIf="!hasNoResults && !clienteNoEncontrado && !clienteIdRequerido && totalPages > 1 && (page !== 1 || showMoreFirstPage)">
     <button class="pagination-arrow" [class.disabled]="page === 1" (click)="goToPage(page - 1)" [disabled]="page === 1">
       ‹
     </button>

@@ -4,23 +4,40 @@
         position: relative;
         margin-bottom: 20px;
         padding: 15px 0;
-        max-width: 100%;
-        overflow: hidden;
 
         .step-container {
             text-align: center;
+            flex: 1;
+            /* Distribuir espacio equitativamente */
             min-width: 0;
-            flex-shrink: 1;
+            /* Permitir shrink en flexbox */
+            padding: 0;
+            /* PADDING 0: Eliminar espacio para que las líneas conecten perfectamente */
 
             .step-title {
-                margin: 16px 0;
+                margin: 5px 0 10px 0;
+                /* Reducir márgenes verticales drásticamente */
                 color: #4d4f57;
                 font-weight: bold;
 
+                /* CRÍTICO: Altura mínima fija para alinear los iconos de abajo independientemente del largo del texto */
+                min-height: 34px;
+                display: flex;
+                align-items: flex-end;
+                /* Texto alineado al fondo, cerca del icono */
+                justify-content: center;
+
                 p {
                     white-space: normal;
-                    word-break: break-word;
-                    display: inline-block;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 3;
+                    /* Máximo 3 líneas */
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                    font-size: 10px;
+                    /* Fuente pequeña para acomodar 6 pasos */
+                    line-height: 1.1;
+                    margin: 0;
                 }
             }
 
@@ -44,21 +61,6 @@
 
                 .icon {
                     width: 23px;
-                    height: 23px;
-                    min-width: 23px;
-                    min-height: 23px;
-                    object-fit: contain;
-
-                    &.pending {
-                        width: 23px;
-                        height: 23px;
-                        border-radius: 50%;
-                        background: #e5e8ed;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border: 1px solid #d1d5db;
-                    }
                 }
 
                 .step-separator {
@@ -157,19 +159,13 @@
             margin-top: 0px;
 
             .step-container {
-                position: relative;
-                display: flex;
-                flex-direction: row;
-                align-items: flex-start;
 
                 .step-title {
                     text-align: left;
-                    margin: 0 0 0 15px;
-                    padding-top: 35px;
+                    margin: 31px 0 0 15px;
 
                     &.beginning {
                         margin-top: 0;
-                        padding-top: 0;
                     }
 
                     .title {
@@ -196,59 +192,15 @@
                 }
 
                 .step {
-                    position: relative;
-                    display: flex !important; // Sobreescribir d-block de Bootstrap
-                    flex-direction: column !important;
-                    align-items: center !important; // Centra todos los hijos (iconos y líneas)
-                    width: 23px; // Mismo ancho que el icono
-
-                    // Asegurar que el ícono esté por encima de las líneas
-                    img.icon {
-                        position: relative;
-                        z-index: 2;
-                        background: white;
-                        border-radius: 50%;
-                        flex-shrink: 0;
-                        order: 1;
-                        width: 23px;
-                        height: 23px;
-                    }
-
-                    div.icon {
-                        position: relative;
-                        z-index: 2;
-                        flex-shrink: 0;
-                        order: 1;
-                        width: 23px;
-                        height: 23px;
-
-                        &.pending {
-                            background: #e5e8ed;
-                        }
-                    }
 
                     .step-separator {
                         width: 2px;
-                        min-height: 35px;
+                        min-height: 45px;
+                        margin: -5px auto 0;
                         height: auto;
-                        z-index: 1;
-                        flex: 1 1 auto;
-
-                        &.from {
-                            order: 0;
-                        }
-
-                        &.to {
-                            order: 2;
-                        }
 
                         &.beginning {
                             border-radius: 5px 5px 0 0;
-                            min-height: 0 !important;
-                            height: 0 !important;
-                            background: transparent !important;
-                            flex: 0 0 0 !important;
-                            display: none !important;
                         }
 
                         &.end {
@@ -257,20 +209,7 @@
                     }
 
                     &.beginning {
-                        margin-top: 0;
-
-                        .step-separator.from {
-                            display: none !important;
-                            min-height: 0 !important;
-                            height: 0 !important;
-                        }
-                    }
-                }
-
-                // Primer paso: alinear correctamente
-                &:first-child {
-                    .step-title {
-                        padding-top: 0;
+                        margin-top: 10px;
                     }
                 }
             }
@@ -384,63 +323,6 @@
 
         100% {
             width: 0%
-        }
-    }
-}
-
-// ============================================================================
-// Media queries para pantallas medianas - stepper horizontal responsive
-// ============================================================================
-@media (max-width: 990px) {
-    :host {
-        .stepper-view-container:not(.vertical) {
-            .step-container {
-                .step-title {
-                    font-size: 10px;
-
-                    p,
-                    .title {
-                        font-size: 10px !important;
-                    }
-                }
-
-                .step-details {
-                    p {
-                        font-size: 9px;
-                    }
-
-                    span {
-                        font-size: 9px;
-                    }
-                }
-            }
-        }
-    }
-}
-
-@media (max-width: 900px) {
-    :host {
-        .stepper-view-container:not(.vertical) {
-            .step-container {
-                .step-title {
-                    font-size: 10px;
-
-                    p,
-                    .title {
-                        font-size: 10px !important;
-                    }
-                }
-
-                .step-details {
-                    p {
-                        font-size: 9px;
-                    }
-
-                    span {
-                        font-size: 9px;
-                    }
-                }
-            }
         }
     }
 }
