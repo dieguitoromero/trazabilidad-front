@@ -62,14 +62,17 @@ export class TrackingStepperViewComponent {
         }
 
         // CASO 2B: BRIDGE - Puente visual para saltos en el proceso.
-        // Si hay ALGÚN paso futuro con ícono 'in_progress' (activo), y estamos:
-        // A) En el último paso completado (para iniciar el puente)
-        // B) O en un paso pendiente (para continuar el puente)
-        // Entonces mostramos la línea verde.
+        // Si hay ALGÚN paso futuro con ícono 'in_progress' (activo) O 'complete' (finalizado),
+        // y estamos saltando pasos pendientes, trazamos la línea.
         const futureSteps = this.steps.slice(index + 1);
-        const hasInProgressFuture = futureSteps.some(s => s.icon.indexOf('in_progress') > 0);
 
-        if (hasInProgressFuture) {
+        // CORRECCIÓN: Ahora incluimos 'complete' para soportar casos donde forzamos el check azul
+        // pero queremos mantener la línea de trazabilidad conectada sobre los pasos pendientes.
+        const hasFutureActivity = futureSteps.some(s =>
+            s.icon.indexOf('in_progress') > 0 || s.icon.indexOf('complete') > 0
+        );
+
+        if (hasFutureActivity) {
             // Si soy el último completado O soy un paso intermedio pendiente
             if (this.isLastStepCompleted(index) || step.icon.indexOf('pending') > 0) {
                 return true;

@@ -239,12 +239,25 @@ export class TrackingViewComponent implements OnInit {
         // Generamos una copia de los productos para manipular el estado visual del stepper sin afectar la lista real.
         this.stepperOrderDetails = invoice?.orderProducts ? [...invoice.orderProducts] : [];
 
-        // NO hacer correcciones a los íconos del frontend.
-        // Confiar 100% en los datos que envía el backend.
-        // El backend (TraceabilityMapper.vb o ComprasMapper.vb) ya aplica la lógica correcta:
-        //   - indProcesado = -1 -> pending icon
-        //   - indProcesado = 0 -> in_progress icon (verde)
-        //   - indProcesado = 1 -> complete icon (check)
+        // CORRECCIÓN VISUAL DE ICONO 'ENTREGADO'
+        // Igualando comportamiento con trazabilidad-app:
+        // Si el paso es 'Entregado', forzamos el ícono de check (completado) visualmente.
+        if (this.invoice?.trackingSteps) {
+            this.invoice.trackingSteps.forEach(step => {
+                const text = step.title.text.toLowerCase();
+                if (text.includes('entregado') || text.includes('recibido')) {
+                    // Si el ícono no es de 'completo', lo forzamos.
+                    // Nota: Usamos la URL completa del blob si es necesario, o verificamos cómo se asigna.
+                    // En trazabilidad-app se asignaba 'step_complete', pero aquí parece que usamos URLs completas.
+                    // Si el backend envía URL, intentamos reemplazarla por la versión complete.
+                    // PERO SOLO SI NO ES PENDING (es decir, si está en progreso 'verde' incorrectamente).
+                    if (step.icon && !step.icon.includes('complete') && !step.icon.includes('pending')) {
+                        // Reemplazar cualquier icono (ej. timeline_in_progress) por timeline_complete_icon
+                        step.icon = 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg';
+                    }
+                }
+            });
+        }
 
         this.working = false;
     }

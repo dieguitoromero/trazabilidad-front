@@ -552,7 +552,19 @@ export class MisComprasComponent implements OnInit, OnDestroy {
     //   - indProcesado = 1 -> complete icon (check)
     const stepsMapped = steps.map(t => {
       // Usar el ícono exacto del backend
-      const icon = t.icon || 'https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg';
+      let icon = t.icon || 'https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg';
+
+      // CORRECCIÓN VISUAL DE ICONO 'ENTREGADO'
+      // Igualando comportamiento con trazabilidad-app:
+      // Si el paso es 'Entregado', forzamos el ícono de check (completado) visualmente.
+      const stepTitle = t.title?.text || t.etapa || t.glosa || '';
+      const normalizedTitle = this.normalize(stepTitle);
+
+      if (normalizedTitle.includes('entregado') || normalizedTitle.includes('recibido')) {
+        if (icon && !icon.includes('complete') && !icon.includes('pending')) {
+          icon = 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg';
+        }
+      }
 
       return {
         title: t.title || {
@@ -709,10 +721,25 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       // Calcular ícono: SIEMPRE usar el del backend si está disponible (el backend siempre envía icon)
       // El backend envía URLs como: https://dvimperial.blob.core.windows.net/traceability/timeline_pending_icon.svg
       // IMPORTANTE: El backend SIEMPRE envía el campo icon, incluso para etapas pendientes
-      let icon: string;
+      let icon: string = '';
       if (match.icon && typeof match.icon === 'string' && match.icon.trim() && match.icon.trim() !== 'null') {
         // El backend siempre envía una URL de ícono, usarla directamente
         icon = match.icon.trim();
+      }
+
+      // CORRECCIÓN VISUAL DE ICONO 'ENTREGADO'
+      // Igualando comportamiento con trazabilidad-app:
+      // Si el paso es 'Entregado', forzamos el ícono de check (completado) visualmente.
+      const normalizedTitle = this.normalize(label);
+
+      if (normalizedTitle.includes('entregado') || normalizedTitle.includes('recibido')) {
+        if (icon && !icon.includes('complete') && !icon.includes('pending')) {
+          icon = 'https://dvimperial.blob.core.windows.net/traceability/timeline_complete_icon.svg';
+        }
+      }
+
+      if (icon) {
+        // ya tenemos icono
       } else if (hasValidState || hasEstado) {
         // Fallback: calcular manualmente solo si el backend no envió icon
         icon = this.computeIconFromEstado(match.estado, indProcesado);
