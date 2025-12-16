@@ -36,22 +36,22 @@ export interface MachinableDto {
 }
 
 export interface TrazabilidadDto {
-    etapa?: string;
-    glosa: string;
-    observacion?: string;
-    fechaRegistro: string;
-    estado: string;
-    orden?: number;
-    indProcesado?: number | null; // 1 = completado, 0 = en progreso, null = pendiente
-    // Campos calculados del backend (preferir usar estos cuando estén disponibles)
-    title?: {
-      text: string;
-      color: string;
-      isBold: boolean;
-    };
-    description?: string;
-    date?: string | null; // Fecha ISO 8601 con milisegundos o null
-    icon?: string; // URL del ícono
+  etapa?: string;
+  glosa: string;
+  observacion?: string;
+  fechaRegistro: string;
+  estado: string;
+  orden?: number;
+  indProcesado?: number | null; // 1 = completado, 0 = en progreso, null = pendiente
+  // Campos calculados del backend (preferir usar estos cuando estén disponibles)
+  title?: {
+    text: string;
+    color: string;
+    isBold: boolean;
+  };
+  description?: string;
+  date?: string | null; // Fecha ISO 8601 con milisegundos o null
+  icon?: string; // URL del ícono
   // Machinable (dimensionado) - viene cuando el producto tiene corte/optimización
   machinable?: MachinableDto;
 }
@@ -92,7 +92,7 @@ export class MisComprasService {
   // Unified baseUrl for APIM host; derive API root from it to avoid duplicating '/api' everywhere
   private baseUrl = `${environment.baseUrl}/api`;
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(private http: HttpClient, private authService: AuthService) { }
 
   public getCompras(rut: string | number, page: number = 1, limit: number = environment.limitDefault): Observable<MisComprasResponseDto> {
     const r = typeof rut === 'number' ? rut.toString() : rut;
@@ -159,6 +159,8 @@ export class MisComprasService {
       glosa: step.title?.text || '',
       observacion: step.description || '',
       fechaRegistro: step.date || '',
+      // Mapear indProcesado: si tiene fecha, asumimos procesado (1), si no (0 o null)
+      indProcesado: step.date ? 1 : null,
       estado: step.icon?.includes('complete') ? 'activo' : 'pendiente',
       title: step.title ? {
         text: step.title.text || '',
@@ -188,8 +190,8 @@ export class MisComprasService {
     // Mapear productos - buscar descripción en múltiples campos posibles
     const productos = (doc.DetailsProduct || []).map((p: any) => {
       // Buscar descripción real en múltiples campos posibles
-      const descripcionReal = p.name || p.nombre || p.product_name || p.productName || 
-                              p.titulo || p.title || p.descripcion || p.description || '';
+      const descripcionReal = p.name || p.nombre || p.product_name || p.productName ||
+        p.titulo || p.title || p.descripcion || p.description || '';
       return {
         cantidad: p.quantity || 1,
         codigo: p.code || '',
@@ -215,7 +217,7 @@ export class MisComprasService {
     // Mapear facturas asociadas (SOLO para Notas de Venta según especificación del backend)
     type Asociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
     let asociadas: Asociada[] = [];
-    
+
     // Solo procesar facturas asociadas si es Nota de Venta
     if (esNotaVenta && (doc.facturasAsociadas || doc.associatedInvoices)) {
       const sanitizeNumber = (val: any): string => {
@@ -235,7 +237,7 @@ export class MisComprasService {
         const t = Date.parse(str);
         return isNaN(t) ? 0 : t;
       };
-      
+
       // El backend puede enviar null, undefined o array vacío
       const facturasRaw = doc.facturasAsociadas || doc.associatedInvoices || [];
       asociadas = (Array.isArray(facturasRaw) ? facturasRaw : [])
@@ -359,21 +361,21 @@ export class MisComprasService {
         }
 
         return {
-        etapa: t.etapa || t.stage || t.scope || '',
+          etapa: t.etapa || t.stage || t.scope || '',
           glosa: t.glosa || t.label || t.title?.text || '',
-        observacion: t.observacion || t.observation || t.descripcion || t.description || '',
-        fechaRegistro: t.fechaRegistro || t.date || '',
-        estado: t.estado || t.state || '',
-        orden: typeof t.orden === 'number' ? t.orden : (typeof t.order === 'number' ? t.order : undefined),
-        indProcesado: t.indProcesado !== undefined ? (t.indProcesado === null ? null : Number(t.indProcesado)) : undefined,
-        // Campos calculados del backend (preferir usar estos cuando estén disponibles)
-        title: t.title ? {
-          text: t.title.text || t.etapa || '',
-          color: t.title.color || '',
-          isBold: t.title.isBold !== undefined ? t.title.isBold : false
-        } : undefined,
-        description: t.description !== undefined ? t.description : undefined,
-        date: t.date !== undefined ? t.date : undefined,
+          observacion: t.observacion || t.observation || t.descripcion || t.description || '',
+          fechaRegistro: t.fechaRegistro || t.date || '',
+          estado: t.estado || t.state || '',
+          orden: typeof t.orden === 'number' ? t.orden : (typeof t.order === 'number' ? t.order : undefined),
+          indProcesado: t.indProcesado !== undefined ? (t.indProcesado === null ? null : Number(t.indProcesado)) : undefined,
+          // Campos calculados del backend (preferir usar estos cuando estén disponibles)
+          title: t.title ? {
+            text: t.title.text || t.etapa || '',
+            color: t.title.color || '',
+            isBold: t.title.isBold !== undefined ? t.title.isBold : false
+          } : undefined,
+          description: t.description !== undefined ? t.description : undefined,
+          date: t.date !== undefined ? t.date : undefined,
           icon: (t.icon && t.icon.trim()) ? t.icon.trim() : undefined,
           machinable
         };
@@ -382,10 +384,10 @@ export class MisComprasService {
       // Verificar si es Nota de Venta (SOLO NVV tiene facturas asociadas según especificación del backend)
       const tipoDoc = c.tipoDocumento || c.documentType || '';
       const esNotaVenta = tipoDoc === 'Nota de Venta' || tipoDoc.includes('Nota de Venta');
-      
+
       type Asociada = { numeroFactura: string; fechaEmision: string; idFactura: number };
       let asociadas: Asociada[] = [];
-      
+
       // Solo procesar facturas asociadas si es Nota de Venta
       if (esNotaVenta && (c.facturasAsociadas || c.associatedInvoices)) {
         // El backend puede enviar null, undefined o array vacío
@@ -414,11 +416,11 @@ export class MisComprasService {
       // Determinar si es dimensionado: verificar si viene del backend o si hay machinable en la trazabilidad
       // Verificar también en la estructura original del backend por si la trazabilidad no se mapeó correctamente
       const hasMachinableInTrazabilidad = trazabilidad.some(t => t.machinable && t.machinable.orders && t.machinable.orders.length > 0);
-      const hasMachinableInOriginal = (c.trazabilidad || c.traceability?.steps || c.traceability || []).some((t: any) => 
+      const hasMachinableInOriginal = (c.trazabilidad || c.traceability?.steps || c.traceability || []).some((t: any) =>
         t.machinable && t.machinable.orders && t.machinable.orders.length > 0
       );
       const esDimensionado = c.esDimensionado || c.dimensionado || hasMachinableInTrazabilidad || hasMachinableInOriginal;
-      
+
       return {
         tipoDocumento: c.tipoDocumento || c.documentType || '',
         numeroDocumento: sanitizeNumber(c.numeroDocumento || c.number || ''),
@@ -441,7 +443,7 @@ export class MisComprasService {
       } as CompraApiDto;
     });
 
-  const compras: CompraApiDto[] = comprasRaw.filter((c: CompraApiDto) => (c.numeroDocumento || '').trim().length > 0);
+    const compras: CompraApiDto[] = comprasRaw.filter((c: CompraApiDto) => (c.numeroDocumento || '').trim().length > 0);
 
     const mapped = {
       usuario: resp.usuario || resp.user || undefined,
