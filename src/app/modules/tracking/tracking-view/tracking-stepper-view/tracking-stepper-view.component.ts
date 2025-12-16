@@ -15,9 +15,10 @@ export class TrackingStepperViewComponent {
 
     private status: any = {
         'Pedido Ingresado': ['Pendiente', 'Pendiente de despacho'],
-        'Pedido Aprobado': [],
+        'Pedido Aprobado': [], // No tiene items asociados
         'Pedido pagado': ['Pendiente', 'Pendiente de despacho'],
         'Preparacion de Pedido': ['Pendiente'],
+        'Proceso de fabricacion': ['Pendiente'], // Agregado para soportar dimensionados
         'Pendiente de Envío': ['Pendiente de despacho'],
         'Pedido en Ruta': ['En Ruta'],
         'Disponible para retiro': ['Producto Listo para Retiro'],
@@ -76,19 +77,27 @@ export class TrackingStepperViewComponent {
             return 0;
         }
 
+        const allowedStatus = this.status[stepTitle.text];
+
+        // CORRECCION CRITICA: Si el estado no está mapeado, devolver 0 en lugar de crashear
+        if (!allowedStatus) {
+            console.warn(`Estado no mapeado en stepper: ${stepTitle.text}`);
+            return 0;
+        }
+
         const isLastCompleted = this.isLastStepCompleted(index);
 
         if (!isLastCompleted && this.steps[index].icon.indexOf('pending') < 0) {
             return 0;
         }
 
-        const allowedStatus = this.status[stepTitle.text];
-
         if (index > 0) {
-            const prevStepAllowedStatus = this.status[this.steps[index - 1].title.text];
+            const prevTitleText = this.steps[index - 1].title.text;
+            const prevStepAllowedStatus = this.status[prevTitleText];
             const isInProgress = this.steps[index - 1].icon.indexOf('in_progress') > 0;
 
-            if (prevStepAllowedStatus && prevStepAllowedStatus[0] === allowedStatus[0] && allowedStatus.length === prevStepAllowedStatus.length && isInProgress) {
+            // Verificación defensiva extra
+            if (prevStepAllowedStatus && allowedStatus && prevStepAllowedStatus[0] === allowedStatus[0] && allowedStatus.length === prevStepAllowedStatus.length && isInProgress) {
                 return 0;
             }
         }

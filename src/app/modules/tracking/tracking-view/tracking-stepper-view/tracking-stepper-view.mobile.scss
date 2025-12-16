@@ -27,36 +27,31 @@
 
                         .title {
                             white-space: normal;
-                            /* Permitir salto de línea en móvil */
                             color: #4d4f57;
                             font-weight: bold;
                             margin-bottom: 2px;
-                            /* Mayor separación */
                             display: block;
-                            /* Forzar bloque */
                             width: 100%;
-                            font-size: 13px;
-                            /* Tamaño legible para el título */
+                            font-size: 11px;
+                            /* Reducido a 11px (tamaño 'antiguo') para móvil */
                         }
 
                         .sub-title {
-                            font-size: 11px;
-                            /* Letra más pequeña como solicitado */
+                            font-size: 10px;
+                            /* Reducido proporcionalmente */
                             color: #606060;
                             margin-bottom: 2px;
-                            /* Mayor separación */
                             display: block;
-                            /* Forzar bloque */
                             width: 100%;
                             line-height: 1.2;
                         }
 
                         .date {
-                            font-size: 12px;
+                            font-size: 10px;
+                            /* Reducido proporcionalmente */
                             font-weight: normal;
                             color: #959494;
                             display: block;
-                            /* Forzar bloque */
                             width: 100%;
                             margin-top: 2px;
                         }
@@ -64,6 +59,12 @@
                     }
 
                     .step {
+
+                        /* Forzar tamaño de icono pequeño para móvil */
+                        .icon {
+                            width: 23px !important;
+                        }
+
                         &.beginning {
                             margin-top: 10px;
                         }

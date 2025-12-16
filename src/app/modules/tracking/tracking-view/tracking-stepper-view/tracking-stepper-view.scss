@@ -16,36 +16,33 @@
 
             .step-title {
                 margin: 5px 0 10px 0;
-                /* Reducir márgenes verticales drásticamente */
                 color: #4d4f57;
                 font-weight: bold;
-
-                /* CRÍTICO: Altura mínima fija para alinear los iconos de abajo independientemente del largo del texto */
-                min-height: 34px;
+                min-height: 40px;
+                /* Aumentado por título más grande */
                 display: flex;
                 align-items: flex-end;
-                /* Texto alineado al fondo, cerca del icono */
                 justify-content: center;
 
                 p {
                     white-space: normal;
                     display: -webkit-box;
                     -webkit-line-clamp: 3;
-                    /* Máximo 3 líneas */
                     -webkit-box-orient: vertical;
                     overflow: hidden;
-                    font-size: 10px;
-                    /* Fuente pequeña para acomodar 6 pasos */
-                    line-height: 1.1;
+                    font-size: 13px;
+                    /* Aumentado de 10px a 13px */
+                    line-height: 1.2;
                     margin: 0;
                 }
             }
 
             .step-details {
-                padding: 10px 20px;
+                padding: 10px 10px;
+                /* Reducido padding lateral */
 
                 p {
-                    padding: 0 20px;
+                    padding: 0 5px;
                     font-size: 12px;
                     color: #606060;
                 }
@@ -60,25 +57,26 @@
             .step {
 
                 .icon {
-                    width: 23px;
+                    width: 35px;
+                    /* Aumentado de 23px a 35px */
                 }
 
                 .step-separator {
-                    height: 2px;
+                    height: 3px;
+                    /* Un poco más gruesa */
                     background-color: #c5ced8;
 
                     &.beginning {
                         border-radius: 5px 0 0 5px;
-                        background: rgb(255, 255, 255);
                         background: linear-gradient(90deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 44%, rgba(197, 206, 216, 1) 82%);
                     }
 
                     &.end {
                         border-radius: 0 5px 5px 0;
-                        background: rgb(255, 255, 255);
                         background: linear-gradient(90deg, rgba(197, 206, 216, 1) 0%, rgba(255, 255, 255, 1) 44%, rgba(255, 255, 255, 1) 82%);
                     }
                 }
+
 
                 &.in-progress {
                     .step-separator {
@@ -161,32 +159,52 @@
             .step-container {
 
                 .step-title {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: flex-start !important;
+                    justify-content: flex-start !important;
                     text-align: left;
-                    margin: 31px 0 0 15px;
+                    margin: 0 0 10px 15px;
+                    /* Margen ajustado */
+                    padding-top: 35px;
+                    /* Compensar la altura fija de la línea 'from' */
+                    min-height: auto;
+                    width: 100%;
+                    /* Asegurar que ocupe el espacio disponible */
 
                     &.beginning {
-                        margin-top: 0;
+                        padding-top: 0 !important;
+                        margin-top: 10px;
                     }
 
                     .title {
-                        white-space: nowrap;
-                        text-overflow: ellipsis;
+                        white-space: normal;
+                        /* Permitir saltos de línea */
+                        text-overflow: clip;
+                        /* Quitar ellipsis si hay wrap */
                         color: #4d4f57;
                         font-weight: bold;
                         margin-bottom: 2px;
                         display: block;
+                        font-size: 14px;
+                        /* Tamaño legible */
+                        line-height: 1.2;
                     }
 
                     .sub-title {
                         font-size: 12px;
                         color: #606060;
                         margin-bottom: 2px;
+                        display: block;
+                        line-height: 1.2;
                     }
 
                     .date {
-                        font-size: 12px;
+                        font-size: 11px;
                         font-weight: normal;
                         color: #959494;
+                        display: block;
+                        margin-top: 2px;
                     }
 
                 }
@@ -198,6 +216,22 @@
                         min-height: 45px;
                         margin: -5px auto 0;
                         height: auto;
+
+                        /* ESTRATEGIA DE ALINEACIÓN VERTICAL */
+                        /* La línea de arriba (from) es fija para anclar el icono */
+                        &.from {
+                            height: 40px !important;
+                            min-height: 40px !important;
+                            flex-grow: 0 !important;
+                        }
+
+                        /* La línea de abajo (to) es flexible para llenar espacio */
+                        &.to {
+                            height: auto;
+                            flex-grow: 1 !important;
+                            min-height: 40px;
+                            /* Mínimo visual */
+                        }
 
                         &.beginning {
                             border-radius: 5px 5px 0 0;
