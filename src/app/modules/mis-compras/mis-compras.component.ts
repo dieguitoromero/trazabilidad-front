@@ -618,9 +618,9 @@ export class MisComprasComponent implements OnInit, OnDestroy {
         // Lógica diferenciada para Dimensionado vs Normal
         if (compra.trazabilidad) {
           compra.trazabilidad.forEach(step => {
-            const text = step.title.text.toLowerCase();
-            if (text.includes('entregado') || text.includes('recibido')) {
-              if (!step.icon.includes('complete')) {
+            const text = step.title?.text?.toLowerCase(); // Validación segura
+            if (text && (text.includes('entregado') || text.includes('recibido'))) {
+              if (step.icon && !step.icon.includes('complete')) { // Validación segura
                 step.icon = 'step_complete';
               }
             }
