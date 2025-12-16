@@ -77,11 +77,11 @@ export class TrackingStepperViewComponent {
             return 0;
         }
 
-        const allowedStatus = this.status[stepTitle.text];
+        const allowedStatus = this.status[stepTitle.text.trim()]; // Agregado trim() para robustez
 
         // CORRECCION CRITICA: Si el estado no está mapeado, devolver 0 en lugar de crashear
         if (!allowedStatus) {
-            console.warn(`Estado no mapeado en stepper: ${stepTitle.text}`);
+            console.warn(`Estado no mapeado en stepper: '${stepTitle.text}'`);
             return 0;
         }
 

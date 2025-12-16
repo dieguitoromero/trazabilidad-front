@@ -616,6 +616,17 @@ export class MisComprasComponent implements OnInit, OnDestroy {
         stateToSimulate = 'Producto Listo para Retiro';
       } else if (titleLower.includes('pagado') || titleLower.includes('ingresado')) {
         // Lógica diferenciada para Dimensionado vs Normal
+        if (compra.trazabilidad) {
+          compra.trazabilidad.forEach(step => {
+            const text = step.title.text.toLowerCase();
+            if (text.includes('entregado') || text.includes('recibido')) {
+              if (!step.icon.includes('complete')) {
+                step.icon = 'step_complete';
+              }
+            }
+          });
+        }
+
         if (compra.esDimensionado) {
           // Para dimensionados, si retornamos un estado activo como 'Pendiente' o 'Pendiente de despacho',
           // el stepper activará líneas verdes hacia pasos futuros (Fabricación o Envío).
@@ -624,7 +635,25 @@ export class MisComprasComponent implements OnInit, OnDestroy {
           // Al retornar vacío, el stepper confiará solo en los checks azules del backend y no dibujará progreso futuro.
           return [];
         } else {
-          // Para pedidos normales, mantenemos la lógica de antigüedad y avance progresivo
+          // Lógica para pedidos NORMALES
+
+          // VERIFICACIÓN CRÍTICA: Si el paso "Pedido Entregado" ya está completado visualmente (ícono verde/azul),
+          // NO debemos simular el producto 'Entregado'.
+          // Si lo simulamos, activamos la lógica de "In Progress" (líneas punteadas verdes) retroactivamente,
+          // lo cual se ve incorrecto en pedidos históricos que saltaron pasos (Pagado -> Entregado).
+          // Al retornar [], dejamos que el componente use solo los estilos de "Completed" (Línea Azul Sólida).
+
+          const entregadoStep = compra.trazabilidad?.find(t =>
+            t.title && (t.title.text.toLowerCase().includes('entregado') || t.title.text.toLowerCase().includes('recibido'))
+          );
+
+          // Eliminamos el bloqueo restrictivo. 
+          // Permitimos que fluya la simulación de 'Entregado' por antigüedad, 
+          // lo cual activará las líneas verdes punteadas que el usuario desea ver consistentes.
+          // El componente stepper se encargará de renderizarlo.
+
+          // Si NO está completado visualmente, entonces aplicamos la lógica de antigüedad
+          // para "rellenar" la línea verde si el pedido es muy viejo.
           const isOldOrder = this.isOlderThanMonths(compra.fechaCompra, 6);
           if (isOldOrder) {
             stateToSimulate = 'Entregado';
