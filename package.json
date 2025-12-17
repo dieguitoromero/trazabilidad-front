@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng serve --proxy-config proxy.conf.json",
+    "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng serve",
     "start:legacy": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng serve --proxy-config proxy.conf.json --poll=1000",
     "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng build --base-href /MisCompras-app/ --configuration=production",
     "build:legacy": "cross-env NODE_OPTIONS=--openssl-legacy-provider ng build",

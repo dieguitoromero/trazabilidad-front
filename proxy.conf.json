@@ -1,9 +1,0 @@
-{
-  "/MisCompras/api": {
-    "target": "https://soa-desa-iis.imperial.cl",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug",
-    "followRedirects": true
-  }
-}

@@ -9,9 +9,8 @@ import { InvoiceTokenModel } from "../core/models/invoice-token.model";
 
 @Injectable()
 export class TrackingRepository {
-  // Usar base relativa para aprovechar el proxy de Angular (`proxy.conf.json`)
-  // y evitar dependencias directas a hosts externos (APIM).
-  private readonly baseApiUrl: string = '/MisCompras';
+  // Usar la URL base desde la configuración de entorno (APIM)
+  private readonly baseApiUrl: string = environment.baseUrl;
 
   // Headers anti-caché para forzar datos frescos
   private noCacheHeaders = new HttpHeaders({
