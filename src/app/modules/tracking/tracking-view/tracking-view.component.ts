@@ -8,6 +8,7 @@ import { TrackingDataService } from '../../../services/tracking-data.service';
 import { TrackingStepModel } from '../../../core/models/tracking-step.model';
 import { MachinableProcessModel } from '../../../core/models/machinable-process.model';
 import { OrderDetailsModel } from '../../../core/models/order-details.model';
+import { combineLatest } from 'rxjs';
 
 @Component({
     selector: 'app-tracking-view',
@@ -39,64 +40,72 @@ export class TrackingViewComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        // Suscribirse a los parámetros de ruta
-        this.activeRoute.params.subscribe((params) => {
-            if (params.invoiceId || params.invoiceType) {
-                this.searchModel = new SearchModel(params.invoiceId, params.invoiceType);
-            }
-        });
+        // Suscribirse combinando Params (Ruta) y QueryParams (Legacy/Retorno)
+        combineLatest([this.activeRoute.params, this.activeRoute.queryParams])
+            .subscribe(([params, queryParams]) => {
+                // 1. Prioridad: Parámetros de Ruta Semántica (/detalle/:id/:tipo)
+                let folio = params.invoiceId;
+                let tipo = params.invoiceType;
 
-        // Suscribirse a los query params
-        this.activeRoute.queryParams.subscribe((params) => {
-            // Guardar parámetros de retorno - soportar ambos formatos (nuevo y legacy)
-            this.returnPage = params.page ? Number(params.page) : 1;
-            this.returnPerPage = params.perPage ? Number(params.perPage) : 10;
-            this.returnRut = params.cliente || params.clienteId || params.rut || null;
+                // 2. Fallback: Query Params Legacy (?folio=...&tipo=...)
+                if (!folio) folio = queryParams.folio || queryParams.folioDocumento;
+                if (!tipo) tipo = queryParams.tipo || queryParams.tipoDocumento;
 
-            // Si viene de la vista de detalle (nuevo: detalle=1, legacy: section=details)
-            if (params.detalle === '1' || params.section === 'details') {
-                this.showSearchBox = false;
-                this.isDetailView = true;
-            }
+                // Guardar parámetros de retorno (paginación de mis-compras)
+                this.returnPage = queryParams.page ? Number(queryParams.page) : 1;
+                this.returnPerPage = queryParams.perPage ? Number(queryParams.perPage) : 10;
+                this.returnRut = queryParams.cliente || queryParams.clienteId || queryParams.rut || null;
 
-            // Soportar ambos formatos de parámetros (nuevo y legacy)
-            const folioDocumento = params.folio || params.folioDocumento;
-            const tipoDocumento = params.tipo || params.tipoDocumento;
-
-            if (folioDocumento || tipoDocumento) {
-                this.searchModel = new SearchModel(folioDocumento, tipoDocumento);
-
-                // Intentar obtener datos del servicio de datos primero
-                const invoicePayload = this.trackingDataService.consumeInvoicePayload();
-
-                if (invoicePayload) {
-                    // Usar los datos transportados desde mis-compras
-                    this.processInvoicePayload(invoicePayload);
-                } else if (this.returnRut) {
-                    // Nuevo flujo: usar búsqueda de documentos en Mis Compras
-                    this.working = true;
-                    this.trackingService.getInvoiceFromDocumentsSearch(Number(folioDocumento), tipoDocumento, this.returnRut)
-                        .pipe(take(1))
-                        .subscribe({
-                            next: (invoice) => {
-                                if (invoice) {
-                                    this.onSuccess(invoice);
-                                } else {
-                                    // Si no hay resultado, usar API legacy
-                                    this.onSearch(this.searchModel!);
-                                }
-                            },
-                            error: () => {
-                                // En caso de error, mantener compatibilidad con API legacy
-                                this.onSearch(this.searchModel!);
-                            }
-                        });
-                } else {
-                    // Fallback: cargar desde API antigua
-                    this.onSearch(this.searchModel!);
+                // Configurar modo vista detalle (sin buscador)
+                if (queryParams.detalle === '1' || queryParams.section === 'details') {
+                    this.showSearchBox = false;
+                    this.isDetailView = true;
                 }
-            }
-        });
+
+                // Iniciar carga si tenemos los identificadores
+                if (folio && tipo) {
+                    // Evitar recargar si ya estamos mostrando el mismo documento
+                    // (aunque combineLatest puede emitir varias veces, la verificación simple ayuda)
+                    if (this.searchModel && this.searchModel.invoiceId == folio && this.searchModel.invoiceType == tipo && this.invoice) {
+                        return;
+                    }
+
+                    this.searchModel = new SearchModel(folio, tipo);
+                    this.loadInvoiceData(folio, tipo);
+                }
+            });
+    }
+
+    private loadInvoiceData(folio: string, tipo: string): void {
+        // Intentar obtener datos del servicio de datos primero (payload desde mis-compras)
+        const invoicePayload = this.trackingDataService.consumeInvoicePayload();
+
+        if (invoicePayload) {
+            // Usar los datos transportados
+            this.processInvoicePayload(invoicePayload);
+        } else if (this.returnRut) {
+            // Nuevo flujo: usar búsqueda de documentos en Mis Compras (BD local + Legacy)
+            this.working = true;
+            this.trackingService.getInvoiceFromDocumentsSearch(Number(folio), tipo, this.returnRut)
+                .pipe(take(1))
+                .subscribe({
+                    next: (invoice) => {
+                        if (invoice) {
+                            this.onSuccess(invoice);
+                        } else {
+                            // Si no hay resultado, fallback a API legacy directa
+                            this.onSearch(this.searchModel!);
+                        }
+                    },
+                    error: () => {
+                        // En caso de error, fallback a API legacy directa
+                        this.onSearch(this.searchModel!);
+                    }
+                });
+        } else {
+            // Fallback: cargar desde API antigua directamente
+            this.onSearch(this.searchModel!);
+        }
     }
 
     /**
@@ -213,13 +222,13 @@ export class TrackingViewComponent implements OnInit {
                 queryParamsHandling: 'merge'
             });
         } else {
-            this.router.navigate(['/', search.invoiceId, search.invoiceType]);
+            this.router.navigate(['/tracking/detalle', search.invoiceId, search.invoiceType]);
         }
     }
 
     private onSuccess(invoice: InvoiceModel | undefined): void {
         if (!invoice) {
-            this.router.navigate(['not-found']);
+            this.router.navigate(['/tracking/no-encontrado']);
             return;
         }
 

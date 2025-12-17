@@ -23,8 +23,16 @@ export class InvoiceModel {
         this.orderProducts = [];
     }
 
+    get isMachinable(): boolean {
+        return this.trackingSteps.some(step => step.machinable && step.machinable.orders && step.machinable.orders.length > 0);
+    }
+
     get hasProductDetails(): boolean {
-        return this.orderProducts.length > 0;
+        // Si es dimensionado, ocultar la lista plana de productos porque ya se muestra en el stepper
+        if (this.isMachinable) {
+            return false;
+        }
+        return this.orderProducts && this.orderProducts.length > 0;
     }
 
 

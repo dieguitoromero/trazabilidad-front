@@ -11,9 +11,7 @@
     <p class="document-number">Documento N°: {{ getFormattedDocumentNumber() }}</p>
 </div>
 
-<!-- Buscador - solo mostrar si no es vista de detalle -->
-<app-tracking-search-box *ngIf="showSearchBox" (search)="onSearch($event)"
-    [searchModel]="searchModel"></app-tracking-search-box>
+
 
 <!-- Loading state -->
 <div class="loading-container" *ngIf="working">

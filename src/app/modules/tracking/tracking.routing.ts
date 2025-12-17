@@ -14,15 +14,11 @@ const routes: Routes = [
                 component: TrackingViewComponent
             },
             {
-                path: 'tracking',
+                path: 'detalle/:invoiceId/:invoiceType',
                 component: TrackingViewComponent
             },
             {
-                path: ':invoiceId/:invoiceType',
-                component: TrackingViewComponent
-            },
-            {
-                path: 'not-found',
+                path: 'no-encontrado',
                 component: TrackingNotFoundComponent
             }
         ]

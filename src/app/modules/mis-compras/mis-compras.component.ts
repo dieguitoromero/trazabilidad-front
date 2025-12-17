@@ -1315,14 +1315,12 @@ export class MisComprasComponent implements OnInit, OnDestroy {
       trazabilidad: encontrado?.trazabilidad || c?.trazabilidad || []
     };
     this.trackingDataService.setInvoicePayload(legacyInvoice);
-    // URL simplificada: solo los parámetros necesarios para la vista de detalle
-    // Incluir page y perPage para poder volver a la misma página
-    this.router.navigate(['/tracking'], {
+    // URL semántica y limpia: /tracking/detalle/:folio/:tipo
+    // Se mantienen queryParams solo para metadatos de navegación (volver, contexto)
+    this.router.navigate(['/tracking/detalle', folioDigits, tipoDocumentoCode], {
       queryParams: {
-        folio: folioDigits,
-        tipo: tipoDocumentoCode,
         cliente: this.rut,
-        detalle: '1', // Indica que es vista de detalle
+        detalle: '1', // Indica que es vista de detalle (oculta buscador)
         page: this.page,
         perPage: this.perPage
       },
